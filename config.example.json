@@ -1,0 +1,10 @@
+{
+  "ApiId": 12345,
+  "ApiHash": "5f4dcc3b5aa765d61d8327deb882cf99",
+  "IgnoreChatIds": {
+    "-1001234567890": true
+  },
+  "IgnoreAuthorIds": {
+    "123456789": true
+  }
+}
