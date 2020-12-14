@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"go-tdlib/client"
@@ -154,14 +155,28 @@ func listenUpdates()  {
 
 					break
 				}
-				mongoId := saveUpdate(t, upd, upd.EditDate)
 				req := &client.GetChatRequest{ChatId: upd.ChatId}
 				fullChat, err := tdlibClient.GetChat(req)
+				var chatName string
 				if err != nil {
-					log.Printf("[%s] EDITED msg! Chat: %d, msg %d, ERROR %s", mongoId, upd.ChatId, upd.MessageId, err)
+					chatName = fmt.Sprintf("ERROR %s", err)
 				} else {
-					log.Printf("[%s] EDITED msg! Chat: %d, msg %d, `%s`", mongoId, upd.ChatId, upd.MessageId, fullChat.Title)
+					chatName = fmt.Sprintf("`%s`", fullChat.Title)
 				}
+
+				if upd.ReplyMarkup != nil {
+					m, err := json.Marshal(upd.ReplyMarkup)
+					var ms string
+					if err != nil {
+						ms = "ERROR"
+					} else {
+						ms = string(m)
+					}
+					fmt.Sprintf("SKIP EDITED msg! Chat: %d, msg %d, %s | %s", upd.ChatId, upd.MessageId, chatName, ms)
+					break
+				}
+				mongoId := saveUpdate(t, upd, upd.EditDate)
+				log.Printf("[%s] EDITED msg! Chat: %d, msg %d, %s", mongoId, upd.ChatId, upd.MessageId, chatName)
 
 				break
 			case "updateMessageContent":
