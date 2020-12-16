@@ -6,5 +6,6 @@
   },
   "IgnoreAuthorIds": {
     "123456789": true
-  }
+  },
+  "WebListen": "localhost:8092"
 }
