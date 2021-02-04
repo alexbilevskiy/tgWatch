@@ -107,7 +107,7 @@ func ListenUpdates()  {
 
 			case "updateNewMessage":
 				upd := update.(*client.UpdateNewMessage)
-				senderChatId := getChatIdBySender(upd.Message.Sender)
+				senderChatId := GetChatIdBySender(upd.Message.Sender)
 				if config.Config.IgnoreChatIds[strconv.FormatInt(upd.Message.ChatId, 10)] || config.Config.IgnoreAuthorIds[strconv.FormatInt(senderChatId, 10)] {
 
 					break
@@ -117,7 +117,7 @@ func ListenUpdates()  {
 				link := GetLink(tdlibClient, upd.Message.ChatId, upd.Message.Id)
 				chatName := GetChatName(upd.Message.ChatId)
 				intLink := fmt.Sprintf("http://%s/%d/%d", config.Config.WebListen, upd.Message.ChatId, upd.Message.Id)
-				log.Printf("[%s] New Message from chat: %d, %s, %s, %s", mongoId, upd.Message.ChatId, chatName, link, intLink)
+				log.Printf("[%s] New Message from chat: %d, `%s`, %s, %s", mongoId, upd.Message.ChatId, chatName, link, intLink)
 
 				break
 			case "updateMessageEdited":
@@ -135,7 +135,8 @@ func ListenUpdates()  {
 				mongoId := SaveUpdate(t, upd, upd.EditDate)
 				link := GetLink(tdlibClient, upd.ChatId, upd.MessageId)
 				chatName := GetChatName(upd.ChatId)
-				log.Printf("[%s] EDITED msg! Chat: %d, msg %d, %s, %s", mongoId, upd.ChatId, upd.MessageId, chatName, link)
+				intLink := fmt.Sprintf("http://%s/%d/%d", config.Config.WebListen, upd.ChatId, upd.MessageId)
+				log.Printf("[%s] EDITED msg! Chat: %d, msg %d, `%s`, %s, %s", mongoId, upd.ChatId, upd.MessageId, chatName, link, intLink)
 
 				break
 			case "updateMessageContent":
@@ -163,7 +164,7 @@ func ListenUpdates()  {
 	}
 }
 
-func getChatIdBySender(sender client.MessageSender) int64 {
+func GetChatIdBySender(sender client.MessageSender) int64 {
 	senderChatId := int64(0)
 	if sender.MessageSenderType() == "messageSenderChat" {
 		senderChatId = sender.(*client.MessageSenderChat).ChatId
@@ -173,10 +174,50 @@ func getChatIdBySender(sender client.MessageSender) int64 {
 
 	return senderChatId
 }
+
+func GetSenderName(sender client.MessageSender) string {
+	if sender.MessageSenderType() == "messageSenderChat" {
+		chatId := sender.(*client.MessageSenderChat).ChatId
+		chatReq := &client.GetChatRequest{ChatId: chatId}
+		chat, err := tdlibClient.GetChat(chatReq)
+		if err != nil {
+			log.Printf("Failed to request chat info by id %d: %s", chatId, err)
+
+			return "unkown_chat";
+		}
+		return fmt.Sprintf("%s", chat.Title)
+	} else if sender.MessageSenderType() == "messageSenderUser" {
+		userId := sender.(*client.MessageSenderUser).UserId
+		user, err := GetUser(userId)
+		if err != nil {
+			log.Printf("Failed to request user info by id %d: %s", userId, err)
+
+			return "unkown_user"
+		}
+		name := ""
+		if user.FirstName != "" {
+			name = user.FirstName
+		}
+		if user.LastName != "" {
+			name = fmt.Sprintf("%s %s", name, user.LastName)
+		}
+		if user.Username != "" {
+			name = fmt.Sprintf("%s (@%s)", name, user.Username)
+		}
+		return name
+	}
+	log.Printf("Unknown sender chat type: %s", sender.MessageSenderType())
+
+	return "unkown_chattype"
+}
+
 func GetLink(tdlibClient *client.Client, chatId int64, messageId int64) string {
 	linkReq := &client.GetMessageLinkRequest{ChatId: chatId, MessageId: messageId}
 	link, err := tdlibClient.GetMessageLink(linkReq)
 	if err != nil {
+		if err.Error() != "400 Public message links are available only for messages in supergroups and channel chats" {
+			log.Printf("Failed to get msg link by chat id %d, msg id %d: %s", chatId, messageId, err)
+		}
 
 		return "no_link"
 	}
@@ -185,20 +226,26 @@ func GetLink(tdlibClient *client.Client, chatId int64, messageId int64) string {
 }
 
 func GetChatName(chatId int64) string {
-	fullChat, err := getChat(chatId)
+	fullChat, err := GetChat(chatId)
 	if err != nil {
+		log.Printf("Failed to get chat name by id %d: %s", chatId, err)
 
 		return "no_title"
 	}
 
-	return fmt.Sprintf("`%s`", fullChat.Title)
+	return fmt.Sprintf("%s", fullChat.Title)
 }
 
-func getChat(chatId int64) (*client.Chat, error) {
+func GetChat(chatId int64) (*client.Chat, error) {
 	req := &client.GetChatRequest{ChatId: chatId}
 	fullChat, err := tdlibClient.GetChat(req)
 
 	return fullChat, err
+}
+func GetUser(userId int32) (*client.User, error) {
+	userReq := &client.GetUserRequest{UserId: userId}
+
+	return tdlibClient.GetUser(userReq)
 }
 
 func GetContent(content client.MessageContent) string {

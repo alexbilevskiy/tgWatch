@@ -48,7 +48,6 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 }
 
 func processTgMessage(chatId int64, messageId int64) string {
-
 	msg := updatesColl.FindOne(mongoContext, bson.D{{"t", "updateNewMessage"}, {"upd.message.id", messageId}})
 
 	var res bson.M
@@ -61,7 +60,6 @@ func processTgMessage(chatId int64, messageId int64) string {
 	}
 	rawJsonBytes := res["raw"].(primitive.Binary).Data
 
-	fmt.Printf("RAW JSON: %s\n", string(rawJsonBytes))
 	upd, err := client.UnmarshalUpdateNewMessage(rawJsonBytes)
 	if err != nil {
 		fmt.Printf("Error decode update: %s", err)
@@ -70,9 +68,15 @@ func processTgMessage(chatId int64, messageId int64) string {
 	}
 	content := GetContent(upd.Message.Content)
 
-	senderChatId := getChatIdBySender(upd.Message.Sender)
+	senderChatId := GetChatIdBySender(upd.Message.Sender)
 
-	text := fmt.Sprintf("sender id: %d\nsender name: %s\ncontent: %s", senderChatId, GetChatName(senderChatId), content)
+	text := fmt.Sprintf(
+		"Chat ID: %d\n" +
+		"Chat name: %s\n" +
+		"sender ID: %d\n" +
+		"sender name: %s\n" +
+		"content: %s",
+		upd.Message.ChatId, GetChatName(upd.Message.ChatId), senderChatId, GetSenderName(upd.Message.Sender), content)
 
 	return text
 }
