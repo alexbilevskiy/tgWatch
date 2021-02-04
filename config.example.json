@@ -7,5 +7,6 @@
   "IgnoreAuthorIds": {
     "123456789": true
   },
-  "WebListen": "localhost:8092"
+  "WebListen": "localhost:8092",
+  "MongoUri": "mongodb://localhost:27017"
 }

@@ -6,4 +6,5 @@ type ConfigFileStruct struct {
 	IgnoreChatIds map[string]bool `json:"IgnoreChatIds"`
 	IgnoreAuthorIds map[string]bool `json:"IgnoreAuthorIds"`
 	WebListen string `json:"WebListen"`
+	MongoUri string `json:"MongoUri"`
 }

@@ -90,6 +90,8 @@ func ListenUpdates()  {
 			case "updateChatUnreadMentionCount":
 			case "updateMessageMentionRead":
 			case "updateConnectionState":
+			case "updateMessageIsPinned":
+			case "updateChatHasScheduledMessages":
 
 			case "updateNewChat":
 			case "updateHavePendingNotifications":
@@ -105,12 +107,7 @@ func ListenUpdates()  {
 
 			case "updateNewMessage":
 				upd := update.(*client.UpdateNewMessage)
-				senderChatId := int64(0)
-				if upd.Message.Sender.MessageSenderType() == "messageSenderChat" {
-					senderChatId = upd.Message.Sender.(*client.MessageSenderChat).ChatId
-				} else if upd.Message.Sender.MessageSenderType() == "messageSenderUser" {
-					senderChatId = int64(upd.Message.Sender.(*client.MessageSenderUser).UserId)
-				}
+				senderChatId := getChatIdBySender(upd.Message.Sender)
 				if config.Config.IgnoreChatIds[strconv.FormatInt(upd.Message.ChatId, 10)] || config.Config.IgnoreAuthorIds[strconv.FormatInt(senderChatId, 10)] {
 
 					break
@@ -118,7 +115,7 @@ func ListenUpdates()  {
 				mongoId := SaveUpdate(t, upd, upd.Message.Date)
 
 				link := GetLink(tdlibClient, upd.Message.ChatId, upd.Message.Id)
-				chatName := GetChatName(tdlibClient, upd.Message.ChatId)
+				chatName := GetChatName(upd.Message.ChatId)
 				intLink := fmt.Sprintf("http://%s/%d/%d", config.Config.WebListen, upd.Message.ChatId, upd.Message.Id)
 				log.Printf("[%s] New Message from chat: %d, %s, %s, %s", mongoId, upd.Message.ChatId, chatName, link, intLink)
 
@@ -137,7 +134,7 @@ func ListenUpdates()  {
 				}
 				mongoId := SaveUpdate(t, upd, upd.EditDate)
 				link := GetLink(tdlibClient, upd.ChatId, upd.MessageId)
-				chatName := GetChatName(tdlibClient, upd.ChatId)
+				chatName := GetChatName(upd.ChatId)
 				log.Printf("[%s] EDITED msg! Chat: %d, msg %d, %s, %s", mongoId, upd.ChatId, upd.MessageId, chatName, link)
 
 				break
@@ -154,7 +151,7 @@ func ListenUpdates()  {
 				mongoId := SaveUpdate(t, upd, 0)
 
 				link := GetLink(tdlibClient, upd.ChatId, upd.MessageId)
-				chatName := GetChatName(tdlibClient, upd.ChatId)
+				chatName := GetChatName(upd.ChatId)
 				log.Printf("[%s] EDITED content! Chat: %d, msg %d, %s, %s", mongoId, upd.ChatId, upd.MessageId, chatName, link)
 				log.Printf("%s", GetContent(upd.NewContent))
 
@@ -166,6 +163,16 @@ func ListenUpdates()  {
 	}
 }
 
+func getChatIdBySender(sender client.MessageSender) int64 {
+	senderChatId := int64(0)
+	if sender.MessageSenderType() == "messageSenderChat" {
+		senderChatId = sender.(*client.MessageSenderChat).ChatId
+	} else if sender.MessageSenderType() == "messageSenderUser" {
+		senderChatId = int64(sender.(*client.MessageSenderUser).UserId)
+	}
+
+	return senderChatId
+}
 func GetLink(tdlibClient *client.Client, chatId int64, messageId int64) string {
 	linkReq := &client.GetMessageLinkRequest{ChatId: chatId, MessageId: messageId}
 	link, err := tdlibClient.GetMessageLink(linkReq)
@@ -177,15 +184,21 @@ func GetLink(tdlibClient *client.Client, chatId int64, messageId int64) string {
 	return link.Link
 }
 
-func GetChatName(tdlibClient *client.Client, chatId int64) string {
-	req := &client.GetChatRequest{ChatId: chatId}
-	fullChat, err := tdlibClient.GetChat(req)
+func GetChatName(chatId int64) string {
+	fullChat, err := getChat(chatId)
 	if err != nil {
 
 		return "no_title"
 	}
 
 	return fmt.Sprintf("`%s`", fullChat.Title)
+}
+
+func getChat(chatId int64) (*client.Chat, error) {
+	req := &client.GetChatRequest{ChatId: chatId}
+	fullChat, err := tdlibClient.GetChat(req)
+
+	return fullChat, err
 }
 
 func GetContent(content client.MessageContent) string {
@@ -202,7 +215,11 @@ func GetContent(content client.MessageContent) string {
 	case "messageVideo":
 		msg := content.(*client.MessageVideo)
 
-		return fmt.Sprintf("Photo, %s", msg.Caption.Text)
+		return fmt.Sprintf("Video, %s", msg.Caption.Text)
+	case "messageAnimation":
+		msg := content.(*client.MessageAnimation)
+
+		return fmt.Sprintf("GIF, %s", msg.Caption.Text)
 	case "messagePoll":
 		msg := content.(*client.MessagePoll)
 

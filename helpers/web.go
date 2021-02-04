@@ -2,13 +2,14 @@ package helpers
 
 import (
 	"fmt"
+	"go-tdlib/client"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 	"net/http"
 	"regexp"
 	"strconv"
 	"tgWatch/config"
-	"tgWatch/structs"
 )
 
 func initWeb() {
@@ -21,6 +22,12 @@ func initWeb() {
 
 type HttpHandler struct{}
 func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+	if req.RequestURI == "/favicon.ico" {
+		res.WriteHeader(404)
+		res.Write([]byte("Not found"))
+
+		return
+	}
 	log.Printf("HTTP: %s", req.RequestURI)
 	r := regexp.MustCompile(`^/(-?\d+)/(\d+)$`)
 
@@ -43,13 +50,31 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 func processTgMessage(chatId int64, messageId int64) string {
 
 	msg := updatesColl.FindOne(mongoContext, bson.D{{"t", "updateNewMessage"}, {"upd.message.id", messageId}})
-	var res structs.TgUpdate
+
+	var res bson.M
 	err := msg.Decode(&res)
 	if err != nil {
-		return fmt.Sprintf("ERROR: %s", err)
+		errmsg := fmt.Sprintf("ERROR mongo decode: %s", err)
+		fmt.Printf(errmsg)
+
+		return errmsg
 	}
+	rawJsonBytes := res["raw"].(primitive.Binary).Data
 
+	fmt.Printf("RAW JSON: %s\n", string(rawJsonBytes))
+	upd, err := client.UnmarshalUpdateNewMessage(rawJsonBytes)
+	if err != nil {
+		fmt.Printf("Error decode update: %s", err)
 
-	return res.T
+		return "Failed decode! " + string(rawJsonBytes)
+	}
+	content := GetContent(upd.Message.Content)
+
+	senderChatId := getChatIdBySender(upd.Message.Sender)
+
+	text := fmt.Sprintf("sender id: %d\nsender name: %s\ncontent: %s", senderChatId, GetChatName(senderChatId), content)
+
+	return text
 }
+
 
