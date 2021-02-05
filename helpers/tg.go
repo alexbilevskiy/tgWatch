@@ -1,7 +1,6 @@
 package helpers
 
 import (
-	"encoding/json"
 	"fmt"
 	"go-tdlib/client"
 	"log"
@@ -102,7 +101,20 @@ func ListenUpdates()  {
 			case "updateChatPhoto":
 			case "updateUser":
 			case "updateChatTitle":
+				break
 			case "updateDeleteMessages":
+				upd := update.(*client.UpdateDeleteMessages)
+				if config.Config.IgnoreChatIds[strconv.FormatInt(upd.ChatId, 10)] {
+
+					break
+				}
+				mongoId := SaveUpdate(t, upd, 0)
+
+				chatName := GetChatName(upd.ChatId)
+				intLink := fmt.Sprintf("http://%s/d/%d/%s", config.Config.WebListen, upd.ChatId, ImplodeInt(upd.MessageIds))
+				count := len(upd.MessageIds)
+				log.Printf("[%s] DELETED %d Messages from chat: %d, `%s`, %s", mongoId, count, upd.ChatId, chatName, intLink)
+
 				break
 
 			case "updateNewMessage":
@@ -112,12 +124,12 @@ func ListenUpdates()  {
 
 					break
 				}
-				mongoId := SaveUpdate(t, upd, upd.Message.Date)
-
-				link := GetLink(tdlibClient, upd.Message.ChatId, upd.Message.Id)
-				chatName := GetChatName(upd.Message.ChatId)
-				intLink := fmt.Sprintf("http://%s/%d/%d", config.Config.WebListen, upd.Message.ChatId, upd.Message.Id)
-				log.Printf("[%s] New Message from chat: %d, `%s`, %s, %s", mongoId, upd.Message.ChatId, chatName, link, intLink)
+				SaveUpdate(t, upd, upd.Message.Date)
+				//mongoId := SaveUpdate(t, upd, upd.Message.Date)
+				//link := GetLink(tdlibClient, upd.Message.ChatId, upd.Message.Id)
+				//chatName := GetChatName(upd.Message.ChatId)
+				//intLink := fmt.Sprintf("http://%s/e/%d/%d", config.Config.WebListen, upd.Message.ChatId, upd.Message.Id)
+				//log.Printf("[%s] New Message from chat: %d, `%s`, %s, %s", mongoId, upd.Message.ChatId, chatName, link, intLink)
 
 				break
 			case "updateMessageEdited":
@@ -135,7 +147,7 @@ func ListenUpdates()  {
 				mongoId := SaveUpdate(t, upd, upd.EditDate)
 				link := GetLink(tdlibClient, upd.ChatId, upd.MessageId)
 				chatName := GetChatName(upd.ChatId)
-				intLink := fmt.Sprintf("http://%s/%d/%d", config.Config.WebListen, upd.ChatId, upd.MessageId)
+				intLink := fmt.Sprintf("http://%s/e/%d/%d", config.Config.WebListen, upd.ChatId, upd.MessageId)
 				log.Printf("[%s] EDITED msg! Chat: %d, msg %d, `%s`, %s, %s", mongoId, upd.ChatId, upd.MessageId, chatName, link, intLink)
 
 				break
@@ -153,7 +165,8 @@ func ListenUpdates()  {
 
 				link := GetLink(tdlibClient, upd.ChatId, upd.MessageId)
 				chatName := GetChatName(upd.ChatId)
-				log.Printf("[%s] EDITED content! Chat: %d, msg %d, %s, %s", mongoId, upd.ChatId, upd.MessageId, chatName, link)
+				intLink := fmt.Sprintf("http://%s/e/%d/%d", config.Config.WebListen, upd.ChatId, upd.MessageId)
+				log.Printf("[%s] EDITED content! Chat: %d, msg %d, %s, %s, %s", mongoId, upd.ChatId, upd.MessageId, chatName, link, intLink)
 				//log.Printf("%s", GetContent(upd.NewContent))
 
 				break
@@ -273,20 +286,9 @@ func GetContent(content client.MessageContent) string {
 		return fmt.Sprintf("Poll, %s", msg.Poll.Question)
 	default:
 
-		return jsonMarshalStr(content)
+		return JsonMarshalStr(content)
 	}
 }
-
-func jsonMarshalStr(j interface{}) string {
-	m, err := json.Marshal(j)
-	if err != nil {
-
-		return "INVALID_JSON"
-	}
-
-	return string(m)
-}
-
 
 func getChatsList(tdlibClient *client.Client, ) {
 	maxChatId := client.JsonInt64(int64((^uint64(0)) >> 1))

@@ -29,7 +29,7 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	log.Printf("HTTP: %s", req.RequestURI)
-	r := regexp.MustCompile(`^/(-?\d+)/(\d+)$`)
+	r := regexp.MustCompile(`^/([a-z])/.+$`)
 
 	m := r.FindStringSubmatch(req.RequestURI)
 	if m == nil {
@@ -38,16 +38,49 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 		return
 	}
+	data := []byte(fmt.Sprintf("Request URL: %s", req.RequestURI))
 
-	data := []byte(fmt.Sprintf("%s, %s, %s", m[0], m[1], m[2]))
-	chatId, _ := strconv.ParseInt(m[1], 10, 64)
-	messageId, _ := strconv.ParseInt(m[2], 10, 64)
-	data = []byte(processTgMessage(chatId, messageId))
+	action := m[1]
+
+	switch action {
+	case "e":
+		r := regexp.MustCompile(`^/e/(-?\d+)/(\d+)$`)
+		m := r.FindStringSubmatch(req.RequestURI)
+		if m == nil {
+			data := []byte(fmt.Sprintf("Unknown path %s", req.RequestURI))
+			res.Write(data)
+
+			return
+		}
+		chatId, _ := strconv.ParseInt(m[1], 10, 64)
+		messageId, _ := strconv.ParseInt(m[2], 10, 64)
+		data = []byte(processTgEdit(chatId, messageId))
+		break
+	case "d":
+		r := regexp.MustCompile(`^/d/(-?\d+)/([\d,]+)$`)
+		m := r.FindStringSubmatch(req.RequestURI)
+		if m == nil {
+			data := []byte(fmt.Sprintf("Unknown path %s", req.RequestURI))
+			res.Write(data)
+
+			return
+		}
+		chatId, _ := strconv.ParseInt(m[1], 10, 64)
+		messageIds := m[2]
+		data = []byte(processTgDelete(chatId, ExplodeInt(messageIds)))
+		break
+	}
+
 
 	res.Write(data)
 }
 
-func processTgMessage(chatId int64, messageId int64) string {
+func processTgDelete(chatId int64, messageIds []int64) string {
+
+	return "not implemented"
+}
+
+func processTgEdit(chatId int64, messageId int64) string {
 	//msg := updatesColl.FindOne(mongoContext, bson.D{{"t", "updateNewMessage"}, {"upd.message.id", messageId}})
 	//upd, err := client.UnmarshalUpdateNewMessage(rawJsonBytes)
 
