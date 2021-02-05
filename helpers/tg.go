@@ -71,7 +71,6 @@ func ListenUpdates()  {
 			case "updateChatActionBar":
 			case "updateChatIsBlocked":
 			case "updateChatPosition":
-			case "updateChatFilters":
 
 			case "updateOption":
 			case "updateChatDraftMessage":
@@ -101,6 +100,12 @@ func ListenUpdates()  {
 			case "updateChatPhoto":
 			case "updateUser":
 			case "updateChatTitle":
+				break
+
+			case "updateChatFilters":
+				upd := update.(*client.UpdateChatFilters)
+				SaveChatFilters(upd)
+
 				break
 
 			case "updateDeleteMessages":
@@ -314,7 +319,7 @@ func GetContent(content client.MessageContent) string {
 	}
 }
 
-func getChatsList(tdlibClient *client.Client, ) {
+func getChatsList() {
 	maxChatId := client.JsonInt64(int64((^uint64(0)) >> 1))
 	offsetOrder := maxChatId
 	log.Printf("Requesting chats with max id: %d", maxChatId)
@@ -362,6 +367,22 @@ func checkSkippedChat(chatId string) bool {
 	if _, ok := config.Config.IgnoreChatIds[chatId]; ok {
 
 		return true
+	}
+
+	i, _ := strconv.ParseInt(chatId, 10, 64)
+
+	return checkChatFilter(i)
+}
+
+func checkChatFilter(chatId int64) bool {
+	for _, filter := range chatFilters {
+		for _, chatInFilter := range filter.IncludedChats {
+			if chatInFilter == chatId && config.Config.IgnoreFolders[filter.Title] {
+				log.Printf("Skip chat %d because it's in skipped folder %s", chatId, filter.Title)
+
+				return true
+			}
+		}
 	}
 
 	return false

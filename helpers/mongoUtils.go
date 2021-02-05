@@ -83,14 +83,15 @@ func initMongo() {
 	//rb.RegisterTypeDecoder(reflect.TypeOf(client.MessageSenderChat{})	, messageSenderDecoder{})
 
 	registry := rb.Build()
-	clientOptions := options.Client().ApplyURI(config.Config.MongoUri).SetRegistry(registry)
+	clientOptions := options.Client().ApplyURI(config.Config.Mongo["uri"]).SetRegistry(registry)
 
 	var err error
 	mongoClient, err = mongo.Connect(mongoContext, clientOptions)
 	if err != nil {
 		log.Fatalf("Mongo error: %s", err)
 	}
-	updatesColl = mongoClient.Database("tg").Collection("updates")
+	updatesColl = mongoClient.Database(config.Config.Mongo["db"]).Collection("updates")
+	chatFiltersColl = mongoClient.Database(config.Config.Mongo["db"]).Collection("chatFilters")
 }
 
 func SaveUpdate(t string, upd interface{}, timestamp int32) string {
@@ -172,4 +173,42 @@ func FindAllMessageChanges(messageId int64) ([][]byte, []string, error) {
 	}
 
 	return jsons, types, nil
+}
+
+func SaveChatFilters(chatFilters *client.UpdateChatFilters) {
+	fmt.Printf("Chat filters update! %s\n", chatFilters.Type)
+
+	for _, filterInfo := range chatFilters.ChatFilters {
+		fmt.Printf("New chat filter: id: %d, n: %s\n", filterInfo.Id, filterInfo.Title)
+		//@TODO: tg request logic shoud be in tg.go
+		req := &client.GetChatFilterRequest{ChatFilterId: filterInfo.Id}
+		chatFilter, err := tdlibClient.GetChatFilter(req)
+		if err != nil {
+			fmt.Printf("Failed to load chat filter: id: %d, n: %s\n", filterInfo.Id, filterInfo.Title)
+
+			continue
+		}
+		filStr := structs.ChatFilter{Id: filterInfo.Id, Title: filterInfo.Title, IncludedChats: chatFilter.IncludedChatIds}
+		crit := bson.D{{"id", filterInfo.Id}}
+		update := bson.D{{"$set", filStr}}
+		t := true
+		opts := &options.UpdateOptions{Upsert: &t}
+		_, err = chatFiltersColl.UpdateOne(mongoContext, crit, update, opts)
+		if err != nil {
+			fmt.Printf("Failed to save chat filter: id: %d, n: %s, err: %s\n", filterInfo.Id, filterInfo.Title, err)
+		}
+	}
+	LoadChatFilters()
+}
+
+func LoadChatFilters() {
+	cur, _ := chatFiltersColl.Find(mongoContext, bson.M{})
+	err := cur.All(mongoContext, &chatFilters);
+	if err != nil {
+		errmsg := fmt.Sprintf("ERROR load chat filters: %s", err)
+		fmt.Printf(errmsg)
+
+		return
+	}
+	log.Printf("Loaded %d chat folders", len(chatFilters))
 }

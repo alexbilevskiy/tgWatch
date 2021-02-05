@@ -6,3 +6,9 @@ type TgUpdate struct {
 	Upd  interface{}
 	Raw []byte
 }
+
+type ChatFilter struct {
+	Id int32
+	Title string
+	IncludedChats []int64
+}

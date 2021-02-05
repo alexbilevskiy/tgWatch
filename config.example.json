@@ -7,6 +7,12 @@
   "IgnoreAuthorIds": {
     "123456789": "title (any)"
   },
+  "IgnoreFolders": {
+    "FolderName": true
+  },
   "WebListen": "localhost:8092",
-  "MongoUri": "mongodb://localhost:27017"
+  "Mongo": {
+    "uri": "mongodb://localhost:27017",
+    "db": "tg"
+  }
 }
