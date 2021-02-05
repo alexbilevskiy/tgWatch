@@ -128,7 +128,7 @@ func ListenUpdates()  {
 				}
 
 				if upd.ReplyMarkup != nil {
-					//log.Printf("SKIP EDITED msg! Chat: %d, msg %d, %s | %s", upd.ChatId, upd.MessageId, chatName, jsonMarshalStr(upd.ReplyMarkup))
+					//messages with buttons - reactions, likes etc
 
 					break
 				}
@@ -154,7 +154,7 @@ func ListenUpdates()  {
 				link := GetLink(tdlibClient, upd.ChatId, upd.MessageId)
 				chatName := GetChatName(upd.ChatId)
 				log.Printf("[%s] EDITED content! Chat: %d, msg %d, %s, %s", mongoId, upd.ChatId, upd.MessageId, chatName, link)
-				log.Printf("%s", GetContent(upd.NewContent))
+				//log.Printf("%s", GetContent(upd.NewContent))
 
 				break
 			default:
