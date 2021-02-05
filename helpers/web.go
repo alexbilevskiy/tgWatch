@@ -3,8 +3,6 @@ package helpers
 import (
 	"fmt"
 	"go-tdlib/client"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 	"net/http"
 	"regexp"
@@ -77,80 +75,63 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 func processTgDelete(chatId int64, messageIds []int64) string {
 
-	return "not implemented"
-}
-
-func processTgEdit(chatId int64, messageId int64) string {
-	//msg := updatesColl.FindOne(mongoContext, bson.D{{"t", "updateNewMessage"}, {"upd.message.id", messageId}})
-	//upd, err := client.UnmarshalUpdateNewMessage(rawJsonBytes)
-
-	crit := bson.D{
-		{"$or", []interface{}{
-			bson.D{{"t", "updateNewMessage"}, {"upd.message.id", messageId}},
-			bson.D{{"t", "updateMessageEdited"}, {"upd.messageid", messageId}},
-			bson.D{{"t", "updateMessageContent"}, {"upd.messageid", messageId}},
-		}},
-	}
-	cur, _ := updatesColl.Find(mongoContext, crit)
-
-	var updates []bson.M
-	err := cur.All(mongoContext, &updates);
-	if err != nil {
-		errmsg := fmt.Sprintf("ERROR mongo select: %s", err)
-		fmt.Printf(errmsg)
-
-		return errmsg
-	}
 	fullContent := ""
-	for _, updObj := range updates {
-		rawJsonBytes := updObj["raw"].(primitive.Binary).Data
-		t := updObj["t"].(string)
-		content := ""
-		switch t {
-		case "updateNewMessage":
-			content = singleUpdateNewMessage(rawJsonBytes)
-			break
-		case "updateMessageEdited":
-			content = singleUpdateMessageEdited(rawJsonBytes)
-			break
-		case "updateMessageContent":
-			content = singleUpdateMessageContent(rawJsonBytes)
-			break
-		default:
-			fmt.Printf("Invalid update received from mongo: %s", t)
+	for _, messageId := range messageIds {
+		upd, err := FindUpdateNewMessage(messageId)
+		if err != nil {
+			fullContent += fmt.Sprintf("\n\nmessage %d failed: %s", messageId, err)
+
+			continue
 		}
-		fullContent = fmt.Sprintf("%s\n\n%s", fullContent, content)
+
+		fullContent += "\n\n" + fmt.Sprintf("Deleted %d:\n%s", messageId, parseUpdateNewMessage(upd))
 	}
 
 	return fullContent
 }
 
-func singleUpdateMessageEdited(rawJsonBytes []byte) string {
-	upd, err := client.UnmarshalUpdateMessageEdited(rawJsonBytes)
+func processTgEdit(chatId int64, messageId int64) string {
+	updates, updateTypes, err := FindAllMessageChanges(messageId)
 	if err != nil {
-		fmt.Printf("Error decode update: %s", err)
-
-		return "Failed decode! " + string(rawJsonBytes)
+		return "not found messages"
+	}
+	fullContent := ""
+	for i, rawJsonBytes := range updates {
+		content := ""
+		switch updateTypes[i] {
+		case "updateNewMessage":
+			upd, _ := client.UnmarshalUpdateNewMessage(rawJsonBytes)
+			content = "New messsage: \n" + parseUpdateNewMessage(upd)
+			break
+		case "updateMessageEdited":
+			upd, _ := client.UnmarshalUpdateMessageEdited(rawJsonBytes)
+			content = parseUpdateMessageEdited(upd)
+			break
+		case "updateMessageContent":
+			upd, _ := client.UnmarshalUpdateMessageContent(rawJsonBytes)
+			content = parseUpdateMessageContent(upd)
+			break
+		default:
+			fmt.Printf("Invalid update received from mongo: %s", updateTypes[i])
+		}
+		fullContent += "\n\n" + content
 	}
 
+	return fullContent
+}
+
+func parseUpdateMessageEdited(upd *client.UpdateMessageEdited) string {
 	text := fmt.Sprintf("Edited at %d", upd.EditDate)
 
 	return text
 }
 
-func singleUpdateNewMessage(rawJsonBytes []byte) string {
-	upd, err := client.UnmarshalUpdateNewMessage(rawJsonBytes)
-	if err != nil {
-		fmt.Printf("Error decode update: %s", err)
-
-		return "Failed decode! " + string(rawJsonBytes)
-	}
+func parseUpdateNewMessage(upd *client.UpdateNewMessage) string {
 	content := GetContent(upd.Message.Content)
 
 	senderChatId := GetChatIdBySender(upd.Message.Sender)
 
 	text := fmt.Sprintf(
-		"New Message!\n"+
 			"date: %d\n"+
 			"Chat ID: %d\n"+
 			"Chat name: %s\n"+
@@ -162,13 +143,7 @@ func singleUpdateNewMessage(rawJsonBytes []byte) string {
 	return text
 }
 
-func singleUpdateMessageContent(rawJsonBytes []byte) string {
-	upd, err := client.UnmarshalUpdateMessageContent(rawJsonBytes)
-	if err != nil {
-		fmt.Printf("Error decode update: %s", err)
-
-		return "Failed decode! " + string(rawJsonBytes)
-	}
+func parseUpdateMessageContent(upd *client.UpdateMessageContent) string {
 	content := GetContent(upd.NewContent)
 
 	text := fmt.Sprintf("New content: %s",content)

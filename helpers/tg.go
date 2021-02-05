@@ -102,9 +102,33 @@ func ListenUpdates()  {
 			case "updateUser":
 			case "updateChatTitle":
 				break
+
 			case "updateDeleteMessages":
 				upd := update.(*client.UpdateDeleteMessages)
+				if !upd.IsPermanent || upd.FromCache {
+
+					break
+				}
 				if config.Config.IgnoreChatIds[strconv.FormatInt(upd.ChatId, 10)] {
+
+					break
+				}
+
+				skipUpdate := 0
+				for _, messageId := range upd.MessageIds {
+					savedMessage, err := FindUpdateNewMessage(messageId)
+					if err != nil {
+
+						continue
+					}
+					if config.Config.IgnoreAuthorIds[strconv.FormatInt(GetChatIdBySender(savedMessage.Message.Sender), 10)] {
+						log.Printf("Skip deleted message from sender %d", GetChatIdBySender(savedMessage.Message.Sender))
+						skipUpdate++
+
+						continue
+					}
+				}
+				if skipUpdate == len(upd.MessageIds) {
 
 					break
 				}

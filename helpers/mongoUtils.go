@@ -3,6 +3,7 @@ package helpers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"go-tdlib/client"
 	"go.mongodb.org/mongo-driver/bson"
@@ -111,4 +112,64 @@ func SaveUpdate(t string, upd interface{}, timestamp int32) string {
 	}
 
 	return res.InsertedID.(primitive.ObjectID).String()
+}
+
+func FindUpdateNewMessage(messageId int64) (*client.UpdateNewMessage, error) {
+	msg := updatesColl.FindOne(mongoContext, bson.D{{"t", "updateNewMessage"}, {"upd.message.id", messageId}})
+	if msg == nil {
+
+		return nil, errors.New("message not found")
+
+	}
+	var updObj bson.M
+	err := msg.Decode(&updObj)
+	if err != nil {
+
+		return nil, err
+	}
+	var rawJsonBytes []byte
+	if reflect.TypeOf(updObj["raw"]) == reflect.TypeOf(primitive.Binary{}) {
+		rawJsonBytes = updObj["raw"].(primitive.Binary).Data
+	} else {
+		rawJsonBytes = []byte(updObj["raw"].(string))
+	}
+
+	upd, err := client.UnmarshalUpdateNewMessage(rawJsonBytes)
+	if err != nil {
+		fmt.Printf("Error decode update: %s", err)
+
+		return nil, errors.New("failed to unmarshal update")
+	}
+
+	return upd, nil
+}
+
+func FindAllMessageChanges(messageId int64) ([][]byte, []string, error) {
+	crit := bson.D{
+		{"$or", []interface{}{
+			bson.D{{"t", "updateNewMessage"}, {"upd.message.id", messageId}},
+			bson.D{{"t", "updateMessageEdited"}, {"upd.messageid", messageId}},
+			bson.D{{"t", "updateMessageContent"}, {"upd.messageid", messageId}},
+		}},
+	}
+	cur, _ := updatesColl.Find(mongoContext, crit)
+
+	var updates []bson.M
+	err := cur.All(mongoContext, &updates);
+	if err != nil {
+		errmsg := fmt.Sprintf("ERROR mongo select: %s", err)
+		fmt.Printf(errmsg)
+
+		return nil, nil, errors.New("failed mongo select")
+	}
+	var jsons [][]byte
+	var types []string
+	for _, updObj := range updates {
+		rawJsonBytes := updObj["raw"].(primitive.Binary).Data
+		t := updObj["t"].(string)
+		types = append(types, t)
+		jsons = append(jsons, rawJsonBytes)
+	}
+
+	return jsons, types, nil
 }
