@@ -109,7 +109,7 @@ func ListenUpdates()  {
 
 					break
 				}
-				if config.Config.IgnoreChatIds[strconv.FormatInt(upd.ChatId, 10)] {
+				if checkSkippedChat(strconv.FormatInt(upd.ChatId, 10)) {
 
 					break
 				}
@@ -121,7 +121,7 @@ func ListenUpdates()  {
 
 						continue
 					}
-					if config.Config.IgnoreAuthorIds[strconv.FormatInt(GetChatIdBySender(savedMessage.Message.Sender), 10)] {
+					if checkSkippedChat(strconv.FormatInt(GetChatIdBySender(savedMessage.Message.Sender), 10)) {
 						log.Printf("Skip deleted message from sender %d", GetChatIdBySender(savedMessage.Message.Sender))
 						skipUpdate++
 
@@ -144,7 +144,7 @@ func ListenUpdates()  {
 			case "updateNewMessage":
 				upd := update.(*client.UpdateNewMessage)
 				senderChatId := GetChatIdBySender(upd.Message.Sender)
-				if config.Config.IgnoreChatIds[strconv.FormatInt(upd.Message.ChatId, 10)] || config.Config.IgnoreAuthorIds[strconv.FormatInt(senderChatId, 10)] {
+				if checkSkippedChat(strconv.FormatInt(upd.Message.ChatId, 10)) || checkSkippedChat(strconv.FormatInt(senderChatId, 10)) {
 
 					break
 				}
@@ -158,7 +158,7 @@ func ListenUpdates()  {
 				break
 			case "updateMessageEdited":
 				upd := update.(*client.UpdateMessageEdited)
-				if config.Config.IgnoreChatIds[strconv.FormatInt(upd.ChatId, 10)] {
+				if checkSkippedChat(strconv.FormatInt(upd.ChatId, 10)) {
 
 					break
 				}
@@ -177,7 +177,7 @@ func ListenUpdates()  {
 				break
 			case "updateMessageContent":
 				upd := update.(*client.UpdateMessageContent)
-				if config.Config.IgnoreChatIds[strconv.FormatInt(upd.ChatId, 10)] {
+				if checkSkippedChat(strconv.FormatInt(upd.ChatId, 10)) {
 
 					break
 				}
@@ -352,4 +352,17 @@ func getChatsList(tdlibClient *client.Client, ) {
 		page++
 		log.Println()
 	}
+}
+
+func checkSkippedChat(chatId string) bool {
+	if _, ok := config.Config.IgnoreAuthorIds[chatId]; ok {
+
+		return true
+	}
+	if _, ok := config.Config.IgnoreChatIds[chatId]; ok {
+
+		return true
+	}
+
+	return false
 }

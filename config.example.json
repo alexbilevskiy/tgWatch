@@ -2,10 +2,10 @@
   "ApiId": 12345,
   "ApiHash": "5f4dcc3b5aa765d61d8327deb882cf99",
   "IgnoreChatIds": {
-    "-1001234567890": true
+    "-1001234567890": "title (any, just for info)"
   },
   "IgnoreAuthorIds": {
-    "123456789": true
+    "123456789": "title (any)"
   },
   "WebListen": "localhost:8092",
   "MongoUri": "mongodb://localhost:27017"
