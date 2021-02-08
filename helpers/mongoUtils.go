@@ -151,10 +151,25 @@ func FindAllMessageChanges(messageId int64) ([][]byte, []string, error) {
 			bson.D{{"t", "updateNewMessage"}, {"upd.message.id", messageId}},
 			bson.D{{"t", "updateMessageEdited"}, {"upd.messageid", messageId}},
 			bson.D{{"t", "updateMessageContent"}, {"upd.messageid", messageId}},
+			bson.D{{"t", "updateDeleteMessages"}, {"upd.messageids", messageId}},
 		}},
 	}
 	cur, _ := updatesColl.Find(mongoContext, crit)
 
+	return iterateCursor(cur)
+}
+
+func FindRecentChanges(limit int64) ([][]byte, []string, error) {
+	availableTypes := []string{"updateNewMessage", "updateMessageContent", "updateDeleteMessages"}
+	crit := bson.D{{"t", bson.M{"$in": availableTypes}}}
+	lim := &limit
+	opts := options.FindOptions{Limit: lim, Sort: bson.M{"_id": -1}}
+	cur, _ := updatesColl.Find(mongoContext, crit, &opts)
+
+	return iterateCursor(cur)
+}
+
+func iterateCursor(cur *mongo.Cursor) ([][]byte, []string, error) {
 	var updates []bson.M
 	err := cur.All(mongoContext, &updates);
 	if err != nil {

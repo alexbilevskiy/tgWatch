@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func ImplodeInt(a []int64) string {
@@ -31,4 +32,9 @@ func JsonMarshalStr(j interface{}) string {
 	}
 
 	return string(m)
+}
+
+func FormatTime(timestamp int32) string {
+
+	return time.Unix(int64(timestamp), 0).Format(time.RFC3339)
 }

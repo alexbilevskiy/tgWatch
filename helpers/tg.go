@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"errors"
 	"fmt"
 	"go-tdlib/client"
 	"log"
@@ -114,7 +115,7 @@ func ListenUpdates()  {
 
 					break
 				}
-				if checkSkippedChat(strconv.FormatInt(upd.ChatId, 10)) {
+				if checkSkippedChat(strconv.FormatInt(upd.ChatId, 10)) || checkChatFilter(upd.ChatId) {
 
 					break
 				}
@@ -127,7 +128,13 @@ func ListenUpdates()  {
 						continue
 					}
 					if checkSkippedChat(strconv.FormatInt(GetChatIdBySender(savedMessage.Message.Sender), 10)) {
-						log.Printf("Skip deleted message from sender %d", GetChatIdBySender(savedMessage.Message.Sender))
+						log.Printf("Skip deleted message %d from sender %d, `%s`", messageId, GetChatIdBySender(savedMessage.Message.Sender), GetSenderName(savedMessage.Message.Sender))
+						skipUpdate++
+
+						continue
+					}
+					if savedMessage.Message.Content.MessageContentType() == "messageChatAddMembers" {
+						log.Printf("Skip deleted message %d (chat join of user %d)", messageId, GetChatIdBySender(savedMessage.Message.Sender))
 						skipUpdate++
 
 						continue
@@ -148,11 +155,11 @@ func ListenUpdates()  {
 
 			case "updateNewMessage":
 				upd := update.(*client.UpdateNewMessage)
-				senderChatId := GetChatIdBySender(upd.Message.Sender)
-				if checkSkippedChat(strconv.FormatInt(upd.Message.ChatId, 10)) || checkSkippedChat(strconv.FormatInt(senderChatId, 10)) {
+				if checkSkippedChat(strconv.FormatInt(upd.Message.ChatId, 10)) || checkChatFilter(upd.Message.ChatId) {
 
 					break
 				}
+				//senderChatId := GetChatIdBySender(upd.Message.Sender)
 				SaveUpdate(t, upd, upd.Message.Date)
 				//mongoId := SaveUpdate(t, upd, upd.Message.Date)
 				//link := GetLink(tdlibClient, upd.Message.ChatId, upd.Message.Id)
@@ -163,7 +170,7 @@ func ListenUpdates()  {
 				break
 			case "updateMessageEdited":
 				upd := update.(*client.UpdateMessageEdited)
-				if checkSkippedChat(strconv.FormatInt(upd.ChatId, 10)) {
+				if checkSkippedChat(strconv.FormatInt(upd.ChatId, 10)) || checkChatFilter(upd.ChatId) {
 
 					break
 				}
@@ -173,16 +180,17 @@ func ListenUpdates()  {
 
 					break
 				}
-				mongoId := SaveUpdate(t, upd, upd.EditDate)
-				link := GetLink(tdlibClient, upd.ChatId, upd.MessageId)
-				chatName := GetChatName(upd.ChatId)
-				intLink := fmt.Sprintf("http://%s/e/%d/%d", config.Config.WebListen, upd.ChatId, upd.MessageId)
-				log.Printf("[%s] EDITED msg! Chat: %d, msg %d, `%s`, %s, %s", mongoId, upd.ChatId, upd.MessageId, chatName, link, intLink)
+				SaveUpdate(t, upd, upd.EditDate)
+				//mongoId := SaveUpdate(t, upd, upd.EditDate)
+				//link := GetLink(tdlibClient, upd.ChatId, upd.MessageId)
+				//chatName := GetChatName(upd.ChatId)
+				//intLink := fmt.Sprintf("http://%s/e/%d/%d", config.Config.WebListen, upd.ChatId, upd.MessageId)
+				//log.Printf("[%s] EDITED msg! Chat: %d, msg %d, `%s`, %s, %s", mongoId, upd.ChatId, upd.MessageId, chatName, link, intLink)
 
 				break
 			case "updateMessageContent":
 				upd := update.(*client.UpdateMessageContent)
-				if checkSkippedChat(strconv.FormatInt(upd.ChatId, 10)) {
+				if checkSkippedChat(strconv.FormatInt(upd.ChatId, 10)) || checkChatFilter(upd.ChatId) {
 
 					break
 				}
@@ -218,24 +226,15 @@ func GetChatIdBySender(sender client.MessageSender) int64 {
 }
 
 func GetSenderName(sender client.MessageSender) string {
+	chat, err := GetSenderObj(sender)
+	if err != nil {
+
+		return err.Error()
+	}
 	if sender.MessageSenderType() == "messageSenderChat" {
-		chatId := sender.(*client.MessageSenderChat).ChatId
-		chatReq := &client.GetChatRequest{ChatId: chatId}
-		chat, err := tdlibClient.GetChat(chatReq)
-		if err != nil {
-			log.Printf("Failed to request chat info by id %d: %s", chatId, err)
-
-			return "unkown_chat";
-		}
-		return fmt.Sprintf("%s", chat.Title)
+		return fmt.Sprintf("%s", chat.(*client.Chat).Title)
 	} else if sender.MessageSenderType() == "messageSenderUser" {
-		userId := sender.(*client.MessageSenderUser).UserId
-		user, err := GetUser(userId)
-		if err != nil {
-			log.Printf("Failed to request user info by id %d: %s", userId, err)
-
-			return "unkown_user"
-		}
+		user := chat.(*client.User)
 		name := ""
 		if user.FirstName != "" {
 			name = user.FirstName
@@ -248,9 +247,34 @@ func GetSenderName(sender client.MessageSender) string {
 		}
 		return name
 	}
-	log.Printf("Unknown sender chat type: %s", sender.MessageSenderType())
 
 	return "unkown_chattype"
+}
+
+func GetSenderObj(sender client.MessageSender) (interface{}, error) {
+	if sender.MessageSenderType() == "messageSenderChat" {
+		chatId := sender.(*client.MessageSenderChat).ChatId
+		chat, err := GetChat(chatId)
+		if err != nil {
+			log.Printf("Failed to request sender chat info by id %d: %s", chatId, err)
+
+			return nil, errors.New("unknown chat")
+		}
+
+		return chat, nil
+	} else if sender.MessageSenderType() == "messageSenderUser" {
+		userId := sender.(*client.MessageSenderUser).UserId
+		user, err := GetUser(userId)
+		if err != nil {
+			log.Printf("Failed to request user info by id %d: %s", userId, err)
+
+			return nil, errors.New("unknown user")
+		}
+
+		return user, nil
+	}
+
+	return nil, errors.New("unknown sender type")
 }
 
 func GetLink(tdlibClient *client.Client, chatId int64, messageId int64) string {
@@ -280,6 +304,7 @@ func GetChatName(chatId int64) string {
 
 func GetChat(chatId int64) (*client.Chat, error) {
 	req := &client.GetChatRequest{ChatId: chatId}
+	//@TODO sometimes it fails on `json: cannot unmarshal object into Go struct field .last_message of type client.MessageSender`
 	fullChat, err := tdlibClient.GetChat(req)
 
 	return fullChat, err
@@ -369,9 +394,7 @@ func checkSkippedChat(chatId string) bool {
 		return true
 	}
 
-	i, _ := strconv.ParseInt(chatId, 10, 64)
-
-	return checkChatFilter(i)
+	return false
 }
 
 func checkChatFilter(chatId int64) bool {
