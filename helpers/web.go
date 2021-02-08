@@ -134,7 +134,7 @@ func processTgJournal(limit int64) []byte {
 			break
 		case "updateDeleteMessages":
 			upd, _ := client.UnmarshalUpdateDeleteMessages(rawJsonBytes)
-			fc += fmt.Sprintf("[%s] Deleted %d messages in chat \"%s\"<br>", "", len(upd.MessageIds), GetChatName(upd.ChatId))
+			fc += fmt.Sprintf("[%s] Deleted %s<br>", "", formatDeletedMessagesLink(upd))
 			break
 		default:
 			fc += fmt.Sprintf("[%s] Unknown update type \"%s\"<br>", "", updateTypes[i])
@@ -276,4 +276,9 @@ func formatNewMessageLink(upd *client.UpdateNewMessage) string {
 		return fmt.Sprintf(`<a href="/e/%d/%d">message</a> from <a href="/c/%d">%s</a> in chat <a href="/c/%d">%s</a>`, upd.Message.ChatId, upd.Message.Id, GetChatIdBySender(upd.Message.Sender), GetSenderName(upd.Message.Sender), chat.Id, chat.Title)
 	}
 
+}
+func formatDeletedMessagesLink(upd *client.UpdateDeleteMessages) string {
+	chat, _ := GetChat(upd.ChatId)
+
+	return fmt.Sprintf(`<a href="/d/%d/%s">%d messages</a> from chat <a href="/c/%d">%s</a>`, upd.ChatId, ImplodeInt(upd.MessageIds), len(upd.MessageIds), chat.Id, chat.Title)
 }
