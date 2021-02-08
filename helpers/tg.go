@@ -378,7 +378,7 @@ func checkChatFilter(chatId int64) bool {
 	for _, filter := range chatFilters {
 		for _, chatInFilter := range filter.IncludedChats {
 			if chatInFilter == chatId && config.Config.IgnoreFolders[filter.Title] {
-				log.Printf("Skip chat %d because it's in skipped folder %s", chatId, filter.Title)
+				//log.Printf("Skip chat %d because it's in skipped folder %s", chatId, filter.Title)
 
 				return true
 			}
