@@ -130,7 +130,7 @@ func processTgJournal(limit int64) []byte {
 			break
 		case "updateMessageContent":
 			upd, _ := client.UnmarshalUpdateMessageContent(rawJsonBytes)
-			fc += fmt.Sprintf("[%s] Updated message in chat \"%s\"<br>", FormatTime(dates[i]), GetChatName(upd.ChatId))
+			fc += fmt.Sprintf("[%s] Updated %s<br>", FormatTime(dates[i]), formatUpdatedContentLink(upd))
 			break
 		case "updateDeleteMessages":
 			upd, _ := client.UnmarshalUpdateDeleteMessages(rawJsonBytes)
@@ -275,10 +275,25 @@ func formatNewMessageLink(upd *client.UpdateNewMessage) string {
 	} else {
 		return fmt.Sprintf(`<a href="/e/%d/%d">message</a> from <a href="/c/%d">%s</a> in chat <a href="/c/%d">%s</a>`, upd.Message.ChatId, upd.Message.Id, GetChatIdBySender(upd.Message.Sender), GetSenderName(upd.Message.Sender), chat.Id, chat.Title)
 	}
-
 }
+
 func formatDeletedMessagesLink(upd *client.UpdateDeleteMessages) string {
 	chat, _ := GetChat(upd.ChatId)
 
 	return fmt.Sprintf(`<a href="/d/%d/%s">%d messages</a> from chat <a href="/c/%d">%s</a>`, upd.ChatId, ImplodeInt(upd.MessageIds), len(upd.MessageIds), chat.Id, chat.Title)
+}
+
+func formatUpdatedContentLink(upd *client.UpdateMessageContent) string {
+	chat, _ := GetChat(upd.ChatId)
+	m, err := FindUpdateNewMessage(upd.MessageId)
+	if err != nil {
+
+		return fmt.Sprintf(`<a href="/e/%d/%d">message</a> in chat <a href="/c/%d">%s</a>`, upd.ChatId, upd.MessageId, chat.Id, chat.Title)
+	}
+
+	if m.Message.Sender.MessageSenderType() == "messageSenderChat" {
+		return fmt.Sprintf(`<a href="/e/%d/%d">message</a> in channel <a href="/c/%d">%s</a>`, m.Message.ChatId, m.Message.Id, chat.Id, chat.Title)
+	} else {
+		return fmt.Sprintf(`<a href="/e/%d/%d">message</a> from <a href="/c/%d">%s</a> in chat <a href="/c/%d">%s</a>`, m.Message.ChatId, m.Message.Id, GetChatIdBySender(m.Message.Sender), GetSenderName(m.Message.Sender), chat.Id, chat.Title)
+	}
 }

@@ -160,7 +160,11 @@ func FindAllMessageChanges(messageId int64) ([][]byte, []string, []int32, error)
 }
 
 func FindRecentChanges(limit int64) ([][]byte, []string, []int32, error) {
-	availableTypes := []string{"updateNewMessage", "updateMessageContent", "updateDeleteMessages"}
+	availableTypes := []string{
+		//"updateNewMessage",
+		"updateMessageContent",
+		"updateDeleteMessages",
+	}
 	crit := bson.D{{"t", bson.M{"$in": availableTypes}}}
 	lim := &limit
 	opts := options.FindOptions{Limit: lim, Sort: bson.M{"_id": -1}}
