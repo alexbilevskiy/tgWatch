@@ -304,7 +304,6 @@ func GetChatName(chatId int64) string {
 
 func GetChat(chatId int64) (*client.Chat, error) {
 	req := &client.GetChatRequest{ChatId: chatId}
-	//@TODO sometimes it fails on `json: cannot unmarshal object into Go struct field .last_message of type client.MessageSender`
 	fullChat, err := tdlibClient.GetChat(req)
 
 	return fullChat, err
