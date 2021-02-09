@@ -110,7 +110,7 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 func processTgJournal(limit int64) []byte {
 	fc := "<html><body>"
 
-	updates, updateTypes, err := FindRecentChanges(limit)
+	updates, updateTypes, dates, err := FindRecentChanges(limit)
 	if err != nil {
 
 		fc = "Error: " + err.Error()
@@ -122,22 +122,22 @@ func processTgJournal(limit int64) []byte {
 		switch updateTypes[i] {
 		case "updateNewMessage":
 			upd, _ := client.UnmarshalUpdateNewMessage(rawJsonBytes)
-			fc += fmt.Sprintf("[%s] New %s<br>", FormatTime(upd.Message.Date), formatNewMessageLink(upd))
+			fc += fmt.Sprintf("[%s] New %s<br>", FormatTime(dates[i]), formatNewMessageLink(upd))
 			break
 		case "updateMessageEdited":
 			upd, _ := client.UnmarshalUpdateMessageEdited(rawJsonBytes)
-			fc += fmt.Sprintf("[%s] Edited message in chat \"%s\"<br>", FormatTime(upd.EditDate), GetChatName(upd.ChatId))
+			fc += fmt.Sprintf("[%s] Edited message in chat \"%s\"<br>", FormatTime(dates[i]), GetChatName(upd.ChatId))
 			break
 		case "updateMessageContent":
 			upd, _ := client.UnmarshalUpdateMessageContent(rawJsonBytes)
-			fc += fmt.Sprintf("[%s] Updated message in chat \"%s\"<br>", "", GetChatName(upd.ChatId))
+			fc += fmt.Sprintf("[%s] Updated message in chat \"%s\"<br>", FormatTime(dates[i]), GetChatName(upd.ChatId))
 			break
 		case "updateDeleteMessages":
 			upd, _ := client.UnmarshalUpdateDeleteMessages(rawJsonBytes)
-			fc += fmt.Sprintf("[%s] Deleted %s<br>", "", formatDeletedMessagesLink(upd))
+			fc += fmt.Sprintf("[%s] Deleted %s<br>", FormatTime(dates[i]), formatDeletedMessagesLink(upd))
 			break
 		default:
-			fc += fmt.Sprintf("[%s] Unknown update type \"%s\"<br>", "", updateTypes[i])
+			fc += fmt.Sprintf("[%s] Unknown update type \"%s\"<br>", FormatTime(dates[i]), updateTypes[i])
 		}
 	}
 	fc += "</body></html>"
@@ -169,7 +169,7 @@ func processTgDelete(chatId int64, messageIds []int64) []byte {
 func processTgEdit(chatId int64, messageId int64) []byte {
 	var fullContentJ []interface{}
 
-	updates, updateTypes, err := FindAllMessageChanges(messageId)
+	updates, updateTypes, _, err := FindAllMessageChanges(messageId)
 	if err != nil {
 		m := structs.MessageError{T: "Error", MessageId: messageId, Error: fmt.Sprintf("Error: %s", err)}
 		fullContentJ = append(fullContentJ, m)

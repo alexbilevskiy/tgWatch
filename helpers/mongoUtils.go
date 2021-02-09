@@ -145,7 +145,7 @@ func FindUpdateNewMessage(messageId int64) (*client.UpdateNewMessage, error) {
 	return upd, nil
 }
 
-func FindAllMessageChanges(messageId int64) ([][]byte, []string, error) {
+func FindAllMessageChanges(messageId int64) ([][]byte, []string, []int32, error) {
 	crit := bson.D{
 		{"$or", []interface{}{
 			bson.D{{"t", "updateNewMessage"}, {"upd.message.id", messageId}},
@@ -159,7 +159,7 @@ func FindAllMessageChanges(messageId int64) ([][]byte, []string, error) {
 	return iterateCursor(cur)
 }
 
-func FindRecentChanges(limit int64) ([][]byte, []string, error) {
+func FindRecentChanges(limit int64) ([][]byte, []string, []int32, error) {
 	availableTypes := []string{"updateNewMessage", "updateMessageContent", "updateDeleteMessages"}
 	crit := bson.D{{"t", bson.M{"$in": availableTypes}}}
 	lim := &limit
@@ -169,25 +169,27 @@ func FindRecentChanges(limit int64) ([][]byte, []string, error) {
 	return iterateCursor(cur)
 }
 
-func iterateCursor(cur *mongo.Cursor) ([][]byte, []string, error) {
+func iterateCursor(cur *mongo.Cursor) ([][]byte, []string, []int32, error) {
 	var updates []bson.M
 	err := cur.All(mongoContext, &updates);
 	if err != nil {
 		errmsg := fmt.Sprintf("ERROR mongo select: %s", err)
 		fmt.Printf(errmsg)
 
-		return nil, nil, errors.New("failed mongo select")
+		return nil, nil, nil, errors.New("failed mongo select")
 	}
 	var jsons [][]byte
 	var types []string
+	var dates []int32
 	for _, updObj := range updates {
 		rawJsonBytes := updObj["raw"].(primitive.Binary).Data
 		t := updObj["t"].(string)
 		types = append(types, t)
 		jsons = append(jsons, rawJsonBytes)
+		dates = append(dates, updObj["time"].(int32))
 	}
 
-	return jsons, types, nil
+	return jsons, types, dates, nil
 }
 
 func SaveChatFilters(chatFilters *client.UpdateChatFilters) {
