@@ -36,5 +36,5 @@ func JsonMarshalStr(j interface{}) string {
 
 func FormatTime(timestamp int32) string {
 
-	return time.Unix(int64(timestamp), 0).Format(time.RFC3339)
+	return time.Unix(int64(timestamp), 0).Format("2006-01-02 15:04:05")
 }

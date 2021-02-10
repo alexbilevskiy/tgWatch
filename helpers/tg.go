@@ -337,6 +337,10 @@ func GetContent(content client.MessageContent) string {
 		msg := content.(*client.MessagePoll)
 
 		return fmt.Sprintf("Poll, %s", msg.Poll.Question)
+	case "messageSticker":
+		msg := content.(*client.MessageSticker)
+
+		return fmt.Sprintf("Sticker, %s", msg.Sticker.Emoji)
 	default:
 
 		return JsonMarshalStr(content)

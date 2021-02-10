@@ -6,6 +6,7 @@ import (
 	"go-tdlib/client"
 	"log"
 	"net/http"
+	"os"
 	"regexp"
 	"strconv"
 	"tgWatch/config"
@@ -24,19 +25,24 @@ func initWeb() {
 
 type HttpHandler struct{}
 func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	if req.RequestURI == "/favicon.ico" {
-		res.WriteHeader(404)
-		res.Write([]byte("Not found"))
+	if req.URL.Path == "/" {
+		req.URL.Path = "index.html"
+	}
+	path := "web/" + req.URL.Path
+	stat, err := os.Stat(path);
+	if err == nil && !stat.IsDir() {
+		http.ServeFile(res, req, path)
 
 		return
 	}
-	log.Printf("HTTP: %s", req.RequestURI)
-	r := regexp.MustCompile(`^/([a-z])($|/.+$)`)
+
+	log.Printf("HTTP: %s", req.URL.Path)
+	r := regexp.MustCompile(`^/([a-z]+?)($|/.+$)`)
 
 	m := r.FindStringSubmatch(req.URL.Path)
 	if m == nil {
-		data := []byte(fmt.Sprintf("Unknown base path %s", req.RequestURI))
-		res.Write(data)
+		res.WriteHeader(404)
+		res.Write([]byte("not found "+ req.URL.Path))
 
 		return
 	}
@@ -51,6 +57,11 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	}
 
 	switch action {
+	case "routes":
+
+		res.Write([]byte(`{"routes":[{"/j":"journal"}]}`))
+
+		return
 	case "e":
 		r := regexp.MustCompile(`^/e/(-?\d+)/(\d+)$`)
 		m := r.FindStringSubmatch(req.URL.Path)
@@ -97,13 +108,13 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		data = processTgChat(chatId)
 		break
 	default:
-		data := []byte(fmt.Sprintf("Unknown path %s %s", action, req.URL.Path))
-		res.Write(data)
+		res.WriteHeader(404)
+		res.Write([]byte("not found " + req.URL.Path))
 
 		return
 	}
 
-
+	res.WriteHeader(200)
 	res.Write(data)
 }
 
