@@ -107,6 +107,44 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		chatId, _ := strconv.ParseInt(m[1], 10, 64)
 		data = processTgChat(chatId)
 		break
+	case "f":
+		r := regexp.MustCompile(`^/f/((\d+)|([\w\-_]+))$`)
+		m := r.FindStringSubmatch(req.URL.Path)
+		var file *client.File
+		var err error
+		if m == nil {
+			data := []byte(fmt.Sprintf("Unknown path %s %s", action, req.URL.Path))
+			res.Write(data)
+
+			return
+		} else if m[2] != "" {
+			imageId, _ := strconv.ParseInt(m[2], 10, 32)
+			file, err = DownloadFile(int32(imageId))
+		} else if m[3] != "" {
+			file, err = DownloadFileByRemoteId(m[3])
+		} else {
+			data := []byte(fmt.Sprintf("Unknown file name %s %s", action, req.URL.Path))
+			res.Write(data)
+
+			return
+		}
+		if err != nil {
+			errMsg := structs.MessageAttachmentError{T:"attachmentError", Id: m[1], Error: err.Error()}
+			j, _ := json.Marshal(errMsg)
+			data = j
+
+			break
+		}
+		if file.Local.Path != "" && !verbose {
+			//res.Header().Add("Content-Type", "file/jpeg")
+			http.ServeFile(res, req, file.Local.Path)
+
+			return
+		}
+		j, _ := json.Marshal(file)
+		data = j
+
+		break
 	default:
 		res.WriteHeader(404)
 		res.Write([]byte("not found " + req.URL.Path))
@@ -133,7 +171,7 @@ func processTgJournal(limit int64) []byte {
 		switch updateTypes[i] {
 		case "updateNewMessage":
 			upd, _ := client.UnmarshalUpdateNewMessage(rawJsonBytes)
-			fc += fmt.Sprintf("[%s] New %s<br>", FormatTime(dates[i]), formatNewMessageLink(upd))
+			fc += fmt.Sprintf("[%s] %s<br>", FormatTime(dates[i]), formatNewMessageLink(upd))
 			break
 		case "updateMessageEdited":
 			upd, _ := client.UnmarshalUpdateMessageEdited(rawJsonBytes)
@@ -141,11 +179,11 @@ func processTgJournal(limit int64) []byte {
 			break
 		case "updateMessageContent":
 			upd, _ := client.UnmarshalUpdateMessageContent(rawJsonBytes)
-			fc += fmt.Sprintf("[%s] Updated %s<br>", FormatTime(dates[i]), formatUpdatedContentLink(upd))
+			fc += fmt.Sprintf("[%s] %s<br>", FormatTime(dates[i]), formatUpdatedContentLink(upd))
 			break
 		case "updateDeleteMessages":
 			upd, _ := client.UnmarshalUpdateDeleteMessages(rawJsonBytes)
-			fc += fmt.Sprintf("[%s] Deleted %s<br>", FormatTime(dates[i]), formatDeletedMessagesLink(upd))
+			fc += fmt.Sprintf("[%s] %s<br>", FormatTime(dates[i]), formatDeletedMessagesLink(upd))
 			break
 		default:
 			fc += fmt.Sprintf("[%s] Unknown update type \"%s\"<br>", FormatTime(dates[i]), updateTypes[i])
@@ -247,16 +285,17 @@ func parseUpdateNewMessage(upd *client.UpdateNewMessage) structs.MessageInfo {
 	senderChatId := GetChatIdBySender(upd.Message.Sender)
 
 	result := structs.MessageInfo{
-		T:          "NewMessage",
-		MessageId:  upd.Message.Id,
-		Date:       upd.Message.Date,
-		DateStr:    FormatTime(upd.Message.Date),
-		ChatId:     upd.Message.ChatId,
-		ChatName:   GetChatName(upd.Message.ChatId),
-		SenderId:   senderChatId,
-		SenderName: GetSenderName(upd.Message.Sender),
-		Content:    content,
-		ContentRaw: nil,
+		T:           "NewMessage",
+		MessageId:   upd.Message.Id,
+		Date:        upd.Message.Date,
+		DateStr:     FormatTime(upd.Message.Date),
+		ChatId:      upd.Message.ChatId,
+		ChatName:    GetChatName(upd.Message.ChatId),
+		SenderId:    senderChatId,
+		SenderName:  GetSenderName(upd.Message.Sender),
+		Content:     content,
+		Attachments: GetContentStructs(upd.Message.Content),
+		ContentRaw:  nil,
 	}
 	if verbose {
 		result.ContentRaw = upd.Message.Content
@@ -279,32 +318,43 @@ func parseUpdateMessageContent(upd *client.UpdateMessageContent) structs.Message
 	return result
 }
 
+func formatMessageLink(chatId int64, messageId int64) string {
+	link := GetLink(chatId, messageId)
+	if link != "" {
+		return fmt.Sprintf(`<a href="%s">message</a>`, link)
+	} else {
+		return "message"
+	}
+}
+
 func formatNewMessageLink(upd *client.UpdateNewMessage) string {
 	chat, _ := GetChat(upd.Message.ChatId)
+	link := formatMessageLink(upd.Message.ChatId, upd.Message.Id)
 	if upd.Message.Sender.MessageSenderType() == "messageSenderChat" {
-		return fmt.Sprintf(`<a href="/e/%d/%d">message</a> in channel <a href="/c/%d">%s</a>`, upd.Message.ChatId, upd.Message.Id, chat.Id, chat.Title)
+		return fmt.Sprintf(`<a href="/e/%d/%d">new</a> %s in channel <a href="/c/%d">%s</a>`, upd.Message.ChatId, upd.Message.Id, link, chat.Id, chat.Title)
 	} else {
-		return fmt.Sprintf(`<a href="/e/%d/%d">message</a> from <a href="/c/%d">%s</a> in chat <a href="/c/%d">%s</a>`, upd.Message.ChatId, upd.Message.Id, GetChatIdBySender(upd.Message.Sender), GetSenderName(upd.Message.Sender), chat.Id, chat.Title)
+		return fmt.Sprintf(`<a href="/e/%d/%d">new</a> %s from <a href="/c/%d">%s</a> in chat <a href="/c/%d">%s</a>`, upd.Message.ChatId, upd.Message.Id, link, GetChatIdBySender(upd.Message.Sender), GetSenderName(upd.Message.Sender), chat.Id, chat.Title)
 	}
 }
 
 func formatDeletedMessagesLink(upd *client.UpdateDeleteMessages) string {
 	chat, _ := GetChat(upd.ChatId)
 
-	return fmt.Sprintf(`<a href="/d/%d/%s">%d messages</a> from chat <a href="/c/%d">%s</a>`, upd.ChatId, ImplodeInt(upd.MessageIds), len(upd.MessageIds), chat.Id, chat.Title)
+	return fmt.Sprintf(`<a href="/d/%d/%s">deleted</a> %d messages from chat <a href="/c/%d">%s</a>`, upd.ChatId, ImplodeInt(upd.MessageIds), len(upd.MessageIds), chat.Id, chat.Title)
 }
 
 func formatUpdatedContentLink(upd *client.UpdateMessageContent) string {
 	chat, _ := GetChat(upd.ChatId)
 	m, err := FindUpdateNewMessage(upd.MessageId)
+	link := formatMessageLink(upd.ChatId, upd.MessageId)
 	if err != nil {
 
-		return fmt.Sprintf(`<a href="/e/%d/%d">message</a> in chat <a href="/c/%d">%s</a>`, upd.ChatId, upd.MessageId, chat.Id, chat.Title)
+		return fmt.Sprintf(`<a href="/e/%d/%d">updated</a> %s in chat <a href="/c/%d">%s</a>`, upd.ChatId, upd.MessageId, link, chat.Id, chat.Title)
 	}
 
 	if m.Message.Sender.MessageSenderType() == "messageSenderChat" {
-		return fmt.Sprintf(`<a href="/e/%d/%d">message</a> in channel <a href="/c/%d">%s</a>`, m.Message.ChatId, m.Message.Id, chat.Id, chat.Title)
+		return fmt.Sprintf(`<a href="/e/%d/%d">updated</a> %s in channel <a href="/c/%d">%s</a>`, m.Message.ChatId, m.Message.Id, link, chat.Id, chat.Title)
 	} else {
-		return fmt.Sprintf(`<a href="/e/%d/%d">message</a> from <a href="/c/%d">%s</a> in chat <a href="/c/%d">%s</a>`, m.Message.ChatId, m.Message.Id, GetChatIdBySender(m.Message.Sender), GetSenderName(m.Message.Sender), chat.Id, chat.Title)
+		return fmt.Sprintf(`<a href="/e/%d/%d">updated</a> %s from <a href="/c/%d">%s</a> in chat <a href="/c/%d">%s</a>`, m.Message.ChatId, m.Message.Id, link, GetChatIdBySender(m.Message.Sender), GetSenderName(m.Message.Sender), chat.Id, chat.Title)
 	}
 }

@@ -1,6 +1,8 @@
 package helpers
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"go-tdlib/client"
@@ -8,6 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"tgWatch/config"
+	"tgWatch/structs"
 	"time"
 )
 
@@ -200,15 +203,25 @@ func ListenUpdates()  {
 				}
 				mongoId := SaveUpdate(t, upd, 0)
 
-				link := GetLink(tdlibClient, upd.ChatId, upd.MessageId)
+				link := GetLink(upd.ChatId, upd.MessageId)
 				chatName := GetChatName(upd.ChatId)
 				intLink := fmt.Sprintf("http://%s/e/%d/%d", config.Config.WebListen, upd.ChatId, upd.MessageId)
 				log.Printf("[%s] EDITED content! Chat: %d, msg %d, %s, %s, %s", mongoId, upd.ChatId, upd.MessageId, chatName, link, intLink)
 				//log.Printf("%s", GetContent(upd.NewContent))
 
 				break
+			case "updateFile":
+				upd := update.(*client.UpdateFile)
+				if upd.File.Local.IsDownloadingActive {
+					log.Printf("File downloading: %d/%d bytes", upd.File.Local.DownloadedSize, upd.File.ExpectedSize)
+				} else {
+					log.Printf("File downloaded: %d bytes, path: %s", upd.File.Local.DownloadedSize, upd.File.Local.Path)
+				}
+
+				break
 			default:
-				log.Printf("%s : %#v", t, update)
+				j, _ := json.Marshal(update)
+				log.Printf("Unknown update %s : %s", t, string(j))
 			}
 		}
 	}
@@ -277,7 +290,7 @@ func GetSenderObj(sender client.MessageSender) (interface{}, error) {
 	return nil, errors.New("unknown sender type")
 }
 
-func GetLink(tdlibClient *client.Client, chatId int64, messageId int64) string {
+func GetLink(chatId int64, messageId int64) string {
 	linkReq := &client.GetMessageLinkRequest{ChatId: chatId, MessageId: messageId}
 	link, err := tdlibClient.GetMessageLink(linkReq)
 	if err != nil {
@@ -285,7 +298,7 @@ func GetLink(tdlibClient *client.Client, chatId int64, messageId int64) string {
 			log.Printf("Failed to get msg link by chat id %d, msg id %d: %s", chatId, messageId, err)
 		}
 
-		return "no_link"
+		return ""
 	}
 
 	return link.Link
@@ -344,6 +357,94 @@ func GetContent(content client.MessageContent) string {
 	default:
 
 		return JsonMarshalStr(content)
+	}
+}
+
+func DownloadFile(id int32) (*client.File, error) {
+	req := client.DownloadFileRequest{FileId: id, Priority: 1, Synchronous: true}
+	file, err := tdlibClient.DownloadFile(&req)
+	if err != nil {
+		log.Printf("Cannot download file: %s %d", err, id)
+
+		return nil, err
+	}
+
+	return file, nil
+}
+
+func DownloadFileByRemoteId(id string) (*client.File, error) {
+	remoteFileReq := client.GetRemoteFileRequest{RemoteFileId: id}
+	remoteFile, err := tdlibClient.GetRemoteFile(&remoteFileReq)
+	if err != nil {
+		log.Printf("Cannot download remote file: %s %s", err, id)
+
+		return nil, err
+	}
+
+	return DownloadFile(remoteFile.Id)
+}
+
+func GetContentStructs(content client.MessageContent) []structs.MessageAttachment {
+	cType := content.MessageContentType()
+	var cnt []structs.MessageAttachment
+	switch cType {
+	case "messageText":
+
+		return nil
+	case "messagePhoto":
+		msg := content.(*client.MessagePhoto)
+		s := structs.MessageAttachment{
+			T: msg.Photo.Type,
+			Id: msg.Photo.Sizes[0].Photo.Remote.Id,
+			Thumb: base64.StdEncoding.EncodeToString(msg.Photo.Minithumbnail.Data),
+		}
+		for _, size := range msg.Photo.Sizes {
+			s.Link = append(s.Link, fmt.Sprintf("http://%s/f/%s", config.Config.WebListen, size.Photo.Remote.Id))
+		}
+		cnt = append(cnt, s)
+
+		return cnt
+	case "messageVideo":
+		msg := content.(*client.MessageVideo)
+		s := structs.MessageAttachment{
+			T: msg.Video.Type,
+			Id: msg.Video.Video.Remote.Id,
+			Link: append(make([]string, 0), fmt.Sprintf("http://%s/f/%s", config.Config.WebListen, msg.Video.Video.Remote.Id)),
+			Thumb: base64.StdEncoding.EncodeToString(msg.Video.Minithumbnail.Data),
+		}
+		cnt = append(cnt, s)
+
+		return cnt
+	case "messageAnimation":
+		msg := content.(*client.MessageAnimation)
+		s := structs.MessageAttachment{
+			T: msg.Animation.Type,
+			Id: msg.Animation.Animation.Remote.Id,
+			Link: append(make([]string, 0), fmt.Sprintf("http://%s/f/%s", config.Config.WebListen, msg.Animation.Animation.Remote.Id)),
+			Thumb: base64.StdEncoding.EncodeToString(msg.Animation.Minithumbnail.Data),
+		}
+
+		cnt = append(cnt, s)
+
+		return cnt
+	case "messagePoll":
+		//msg := content.(*client.MessagePoll)
+
+		return nil
+	case "messageSticker":
+		msg := content.(*client.MessageSticker)
+		s := structs.MessageAttachment{
+			T: msg.Sticker.Type,
+			Id: msg.Sticker.Sticker.Remote.Id,
+			Link: append(make([]string, 0), fmt.Sprintf("http://%s/f/%s", config.Config.WebListen, msg.Sticker.Sticker.Remote.Id)),
+		}
+		cnt = append(cnt, s)
+
+		return cnt
+	default:
+		log.Printf("Unknown content type: %s", cType)
+
+		return nil
 	}
 }
 

@@ -1,16 +1,17 @@
 package structs
 
 type MessageInfo struct {
-	T          string
-	MessageId  int64
-	Date       int32
-	DateStr    string
-	ChatId     int64
-	ChatName   string
-	SenderId   int64
-	SenderName string
-	Content    string
-	ContentRaw interface{}
+	T           string
+	MessageId   int64
+	Date        int32
+	DateStr     string
+	ChatId      int64
+	ChatName    string
+	SenderId    int64
+	SenderName  string
+	Content     string
+	Attachments []MessageAttachment
+	ContentRaw  interface{}
 }
 
 type MessageNewContent struct {
@@ -31,4 +32,17 @@ type MessageError struct {
 	T         string
 	MessageId int64
 	Error	  string
+}
+
+type MessageAttachment struct {
+	T     string
+	Id    string
+	Link  []string
+	Thumb string
+}
+
+type MessageAttachmentError struct {
+	T     string
+	Id    string
+	Error string
 }
