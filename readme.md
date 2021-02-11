@@ -1,5 +1,13 @@
 # TgWatch
-Simple telegram client to store updates locally for future analysis
+
+Initially this client was intended for logging and viewing deleted and updated messages in telegram chats.   
+Now it's more like a telegram explorer - view raw messages and chats viewer, files downloader, etc.
+
+Next ideas: 
+* mute chats by conditions. For example, mute chat for 6 hours if someone sends birthday congratulations card
+* merge multiple outgoing one-line messages into one
+* auto-respond
+* 
 
 ### install:
 `go build`
