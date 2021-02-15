@@ -173,6 +173,63 @@ func FindRecentChanges(limit int64) ([][]byte, []string, []int32, error) {
 	return iterateCursor(cur)
 }
 
+
+type chatInfo struct {
+	ChatId int64
+	Counters map[string]int32
+}
+func GetChatsStats() ([]chatInfo, error) {
+	agg := bson.A{
+		bson.D{
+			{"$match", bson.D{{"t", bson.D{{"$in", bson.A{
+				//"updateNewMessage",
+				"updateMessageEdited",
+				"updateDeleteMessages",
+			}}}}}}},
+		bson.D{
+			{"$group", bson.D{
+				{"_id", bson.D{{"$cond", bson.A{"$upd.message.chatid", "$upd.message.chatid", bson.D{{"$cond", bson.A{"$upd.chatid", "$upd.chatid", 0}}}}}}},
+				//{"countUpdateNewMessage", bson.D{{"$sum", bson.D{{"$cond", bson.A{bson.D{{"$eq", bson.A{"$t", "updateNewMessage"}}}, 1, 0}}}}}},
+				{"countUpdateMessageEdited", bson.D{{"$sum", bson.D{{"$cond", bson.A{bson.D{{"$eq", bson.A{"$t", "updateMessageEdited"}}}, 1, 0}}}}}},
+				{"countUpdateDeleteMessages", bson.D{{"$sum", bson.D{{"$cond", bson.A{bson.D{{"$eq", bson.A{"$t", "updateDeleteMessages"}}}, 1, 0}}}}}},
+				{"count", bson.D{{"$sum", 1}}},
+			},
+			},
+		},
+		bson.D{
+			{"$sort", bson.D{{"count", -1}}},
+		},
+	}
+	cur, err := updatesColl.Aggregate(mongoContext, agg)
+	if err != nil {
+		errmsg := fmt.Sprintf("ERROR mongo agg: %s\n", err)
+		fmt.Printf(errmsg)
+		return nil, err
+	}
+	var chatsStats []bson.M
+	err = cur.All(mongoContext, &chatsStats)
+	if err != nil {
+		errmsg := fmt.Sprintf("ERROR mongo itreate: %s\n", err)
+		fmt.Printf(errmsg)
+
+		return nil, errors.New("failed mongo select")
+	}
+	var result []chatInfo
+	for _, aggItem := range chatsStats {
+		c := chatInfo{
+			ChatId: aggItem["_id"].(int64),
+		}
+		c.Counters = make(map[string]int32, 3)
+		c.Counters["total"] = aggItem["count"].(int32)
+		//c.Counters["updateNewMessage"] = aggItem["countUpdateNewMessage"].(int32)
+		c.Counters["updateMessageEdited"] = aggItem["countUpdateMessageEdited"].(int32)
+		c.Counters["updateDeleteMessages"] = aggItem["countUpdateDeleteMessages"].(int32)
+		result = append(result, c)
+	}
+
+	return result, nil
+}
+
 func iterateCursor(cur *mongo.Cursor) ([][]byte, []string, []int32, error) {
 	var updates []bson.M
 	err := cur.All(mongoContext, &updates);

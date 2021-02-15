@@ -1,7 +1,7 @@
 # TgWatch
 
 Initially this client was intended for logging and viewing deleted and updated messages in telegram chats.   
-Now it's more like a telegram explorer - view raw messages and chats viewer, files downloader, etc.
+Now it's more like a telegram explorer - view raw messages and chats, files downloader, etc.
 
 Next ideas: 
 * mute chats by conditions. For example, mute chat for 6 hours if someone sends birthday congratulations card

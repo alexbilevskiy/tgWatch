@@ -95,6 +95,13 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		}
 		data = processTgJournal(limit)
 		break
+	case "o":
+		limit := int64(50)
+		if req.FormValue("limit") != "" {
+			limit, _ = strconv.ParseInt(req.FormValue("limit"), 10, 64)
+		}
+		data = processTgOverview(limit)
+		break
 	case "c":
 		r := regexp.MustCompile(`^/c/(-?\d+)$`)
 		m := r.FindStringSubmatch(req.URL.Path)
@@ -188,6 +195,22 @@ func processTgJournal(limit int64) []byte {
 		default:
 			fc += fmt.Sprintf("[%s] Unknown update type \"%s\"<br>", FormatTime(dates[i]), updateTypes[i])
 		}
+	}
+	fc += "</body></html>"
+
+	return []byte(fc)
+}
+
+func processTgOverview(limit int64) []byte {
+	s, err := GetChatsStats()
+	if err != nil {
+
+		return []byte(err.Error())
+	}
+	fc := "<html><body>"
+	for _, ci := range s {
+		name := GetChatName(ci.ChatId)
+		fc += fmt.Sprintf(`<a href="/c/%d">%s</a> (%d total, %d updates, %d deletes)<br>`, ci.ChatId, name, ci.Counters["total"], ci.Counters["updateMesageEdited"], ci.Counters["updateDeleteMessages"])
 	}
 	fc += "</body></html>"
 
