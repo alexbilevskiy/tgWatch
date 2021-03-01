@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"go-tdlib/client"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -93,8 +94,8 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		if req.FormValue("limit") != "" {
 			limit, _ = strconv.ParseInt(req.FormValue("limit"), 10, 64)
 		}
-		data = processTgJournal(limit)
-		break
+		processTgJournal(limit, res)
+		return
 	case "o":
 		limit := int64(50)
 		if req.FormValue("limit") != "" {
@@ -163,42 +164,145 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	res.Write(data)
 }
 
-func processTgJournal(limit int64) []byte {
-	fc := "<html><body>"
+type ChatInfo struct {
+	ChatId int64
+	ChatName string
+}
+type JournalItem struct {
+	T string
+	Time int32
+	Date string
+	MessageId []int64
+	Chat ChatInfo
+	From ChatInfo
+	Link string
+	IntLink string
+	Message string
+	Error string
+}
+type Journal struct {
+	J []JournalItem
+}
+type JSON struct {
+	JSON string
+}
+func processTgJournal(limit int64, w http.ResponseWriter)  {
+	updates, updateTypes, dates, errSelect := FindRecentChanges(limit)
+	if errSelect != nil {
+		fmt.Printf("Error select updates: %s\n", errSelect)
 
-	updates, updateTypes, dates, err := FindRecentChanges(limit)
-	if err != nil {
-
-		fc = "Error: " + err.Error()
-
-		return []byte(fc)
+		return
 	}
+	var t *template.Template
+	var errParse error
+	if verbose {
+		t, errParse = template.New(`json.html`).ParseFiles(`templates/json.html`)
+	} else {
+		t, errParse = template.New(`journal.html`).ParseFiles(`templates/journal.html`)
+	}
+
+	if errParse != nil {
+		fmt.Printf("Error parse tpl: %s\n", errParse)
+		return
+	}
+	var data Journal
 
 	for i, rawJsonBytes := range updates {
 		switch updateTypes[i] {
 		case "updateNewMessage":
 			upd, _ := client.UnmarshalUpdateNewMessage(rawJsonBytes)
-			fc += fmt.Sprintf("[%s] %s<br>", FormatTime(dates[i]), formatNewMessageLink(upd))
+			item := JournalItem{
+				T: updateTypes[i],
+				Time: dates[i],
+				Date: FormatTime(dates[i]),
+				Link: GetLink(upd.Message.ChatId, upd.Message.Id),
+				IntLink: fmt.Sprintf("/e/%d/%d", upd.Message.ChatId, upd.Message.Id), //@TODO: link shoud be /m
+				Chat: ChatInfo{
+					ChatId: upd.Message.ChatId,
+					ChatName: GetChatName(upd.Message.ChatId),
+				},
+			}
+			if upd.Message.Sender.MessageSenderType() == "messageSenderChat" {
+			} else {
+				item.From = ChatInfo{ChatId: GetChatIdBySender(upd.Message.Sender), ChatName: GetSenderName(upd.Message.Sender)}
+			}
+			data.J = append(data.J, item)
+
 			break
 		case "updateMessageEdited":
 			upd, _ := client.UnmarshalUpdateMessageEdited(rawJsonBytes)
-			fc += fmt.Sprintf("[%s] Edited message in chat \"%s\"<br>", FormatTime(dates[i]), GetChatName(upd.ChatId))
+			item := JournalItem{
+				T: updateTypes[i],
+				Time: dates[i],
+				Date: FormatTime(dates[i]),
+				Link: GetLink(upd.ChatId, upd.MessageId),
+				IntLink: fmt.Sprintf("/e/%d/%d", upd.ChatId, upd.MessageId),
+				Chat: ChatInfo{
+					ChatId: upd.ChatId,
+					ChatName: GetChatName(upd.ChatId),
+				},
+			}
+			data.J = append(data.J, item)
+
 			break
 		case "updateMessageContent":
 			upd, _ := client.UnmarshalUpdateMessageContent(rawJsonBytes)
-			fc += fmt.Sprintf("[%s] %s<br>", FormatTime(dates[i]), formatUpdatedContentLink(upd))
+			item := JournalItem{
+				T: updateTypes[i],
+				Time: dates[i],
+				Date: FormatTime(dates[i]),
+				Link: GetLink(upd.ChatId, upd.MessageId),
+				IntLink: fmt.Sprintf("/e/%d/%d", upd.ChatId, upd.MessageId),
+				Chat: ChatInfo{
+					ChatId: upd.ChatId,
+					ChatName: GetChatName(upd.ChatId),
+				},
+			}
+			m, err := FindUpdateNewMessage(upd.MessageId)
+			if err != nil {
+				item.Error = fmt.Sprintf("Message not found: %s", err)
+				data.J = append(data.J, item)
+
+				break
+			}
+
+			if m.Message.Sender.MessageSenderType() == "messageSenderChat" {
+			} else {
+				item.From = ChatInfo{ChatId: GetChatIdBySender(m.Message.Sender), ChatName: GetSenderName(m.Message.Sender)}
+			}
+			data.J = append(data.J, item)
+
 			break
 		case "updateDeleteMessages":
 			upd, _ := client.UnmarshalUpdateDeleteMessages(rawJsonBytes)
-			fc += fmt.Sprintf("[%s] %s<br>", FormatTime(dates[i]), formatDeletedMessagesLink(upd))
+			item := JournalItem{
+				T: updateTypes[i],
+				Time: dates[i],
+				Date: FormatTime(dates[i]),
+				IntLink: fmt.Sprintf("/d/%d/%s", upd.ChatId, ImplodeInt(upd.MessageIds)),
+				Chat: ChatInfo{
+					ChatId: upd.ChatId,
+					ChatName: GetChatName(upd.ChatId),
+				},
+				MessageId: upd.MessageIds,
+			}
+			data.J = append(data.J, item)
 			break
 		default:
-			fc += fmt.Sprintf("[%s] Unknown update type \"%s\"<br>", FormatTime(dates[i]), updateTypes[i])
+			//fc += fmt.Sprintf("[%s] Unknown update type \"%s\"<br>", FormatTime(dates[i]), updateTypes[i])
 		}
 	}
-	fc += "</body></html>"
+	var err error
+	if verbose {
+		err = t.Execute(w, JSON{JSON: JsonMarshalStr(data)})
+	} else {
+		err = t.Execute(w, data)
+	}
 
-	return []byte(fc)
+	if err != nil {
+		fmt.Printf("Error tpl: %s\n", err)
+		return
+	}
 }
 
 func processTgOverview(limit int64) []byte {
@@ -241,7 +345,7 @@ func processTgDelete(chatId int64, messageIds []int64) []byte {
 func processTgEdit(chatId int64, messageId int64) []byte {
 	var fullContentJ []interface{}
 
-	updates, updateTypes, _, err := FindAllMessageChanges(messageId)
+	updates, updateTypes, dates, err := FindAllMessageChanges(messageId)
 	if err != nil {
 		m := structs.MessageError{T: "Error", MessageId: messageId, Error: fmt.Sprintf("Error: %s", err)}
 		fullContentJ = append(fullContentJ, m)
@@ -263,6 +367,10 @@ func processTgEdit(chatId int64, messageId int64) []byte {
 		case "updateMessageContent":
 			upd, _ := client.UnmarshalUpdateMessageContent(rawJsonBytes)
 			fullContentJ = append(fullContentJ, parseUpdateMessageContent(upd))
+			break
+		case "updateDeleteMessages":
+			upd, _ := client.UnmarshalUpdateDeleteMessages(rawJsonBytes)
+			fullContentJ = append(fullContentJ, parseUpdateDeleteMessages(upd, dates[i]))
 			break
 		default:
 			m := structs.MessageError{T:"Error", MessageId: messageId, Error: fmt.Sprintf("Unknown update type: %s", updateTypes[i])}
@@ -293,7 +401,7 @@ func processTgChat(chatId int64) []byte {
 
 func parseUpdateMessageEdited(upd *client.UpdateMessageEdited) structs.MessageEditedMeta {
 	m := structs.MessageEditedMeta{
-		T:         "Meta",
+		T:         "EditedMeta",
 		MessageId: upd.MessageId,
 		Date:      upd.EditDate,
 		DateStr:   FormatTime(upd.EditDate),
@@ -336,6 +444,27 @@ func parseUpdateMessageContent(upd *client.UpdateMessageContent) structs.Message
 	}
 	if verbose {
 		result.ContentRaw = upd.NewContent
+	}
+
+	return result
+}
+
+func parseUpdateDeleteMessages(upd *client.UpdateDeleteMessages, date int32) structs.DeleteMessages {
+	result := structs.DeleteMessages{
+		T:          "DeleteMessages",
+		MessageIds: upd.MessageIds,
+		ChatId:     upd.ChatId,
+		ChatName:   GetChatName(upd.ChatId),
+		Date:       date,
+		DateStr:    FormatTime(date),
+	}
+	for _, messageId := range upd.MessageIds {
+		m, err := FindUpdateNewMessage(messageId)
+		if err != nil {
+			result.Messages = append(result.Messages, structs.MessageError{T: "Error", MessageId: messageId, Error: fmt.Sprintf("not found deleted message %s", err)})
+			continue
+		}
+		result.Messages = append(result.Messages, parseUpdateNewMessage(m))
 	}
 
 	return result

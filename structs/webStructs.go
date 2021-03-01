@@ -28,6 +28,16 @@ type MessageEditedMeta struct {
 	DateStr   string
 }
 
+type DeleteMessages struct {
+	T          string
+	MessageIds []int64
+	ChatId     int64
+	ChatName   string
+	Date       int32
+	DateStr    string
+	Messages   []interface{} //MessageInfo OR MessageError
+}
+
 type MessageError struct {
 	T         string
 	MessageId int64
