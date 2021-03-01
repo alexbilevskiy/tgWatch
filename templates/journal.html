@@ -7,22 +7,48 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous">
 </head>
 <body>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">TgWatch</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Actions
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href="/j">Journal</a></li>
+                        <li><a class="dropdown-item" href="/o">Overview</a></li>
+                        <li><a class="dropdown-item" href="/e">Edited message</a></li>
+                        <li><a class="dropdown-item" href="/d">Deleted message</a></li>
+                        <li><a class="dropdown-item" href="/f">File</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
 <div class="container-fluid">
-    <ul>
+    <div class="row">
+    <ul class="list-group list-group-flush">
         {{range .J}}
-        <li>{{$t := "UNK_TYPE"}}
+        <li class="list-group-item">{{$t := "UNK_TYPE"}}
 
         [{{.Date}}]
         {{if eq .T "updateMessageContent"}}
 
-        <a href="{{.IntLink}}">Updated</a> message in
+        <a href="{{.IntLink}}" class="link-info">Updated</a> message in
         {{if .From.ChatId}} chat {{else}} channel {{end}} <a href="/c/{{.Chat.ChatId}}">{{.Chat.ChatName}}</a>
         {{if .From.ChatId}} by <a href="/c/{{.From.ChatId}}">{{.From.ChatName}}</a>{{end}}
 
         {{else if eq .T "updateDeleteMessages"}}
 
         {{$len := .MessageId | len}}
-        <a href="{{.IntLink}}">Deleted</a> {{$len}} message{{if gt $len 1}}s{{end}} from chat <a href="/c/{{.Chat.ChatId}}">{{.Chat.ChatName}}</a>
+        <a href="{{.IntLink}}" class="link-danger">Deleted</a> {{$len}} message{{if gt $len 1}}s{{end}} from chat <a href="/c/{{.Chat.ChatId}}">{{.Chat.ChatName}}</a>
 
         {{else}}
 
@@ -32,6 +58,7 @@
         <br>
         {{end}}
     </ul>
+    </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/js/bootstrap.bundle.min.js" integrity="sha384-b5kHyXgcpbZJO/tY9Ul7kGkf1S0CWuKcCD38l8YkeH8z8QjE0GmW1gYU5S9FOnJ0" crossorigin="anonymous"></script>
 </body>

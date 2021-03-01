@@ -95,7 +95,6 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 			limit, _ = strconv.ParseInt(req.FormValue("limit"), 10, 64)
 		}
 		processTgJournal(limit, res)
-		return
 	case "o":
 		limit := int64(50)
 		if req.FormValue("limit") != "" {
