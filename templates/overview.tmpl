@@ -1,13 +1,32 @@
 {{define "main"}}
-<div class="row">
-    <ul class="list-group list-group-flush">
+        <div class="row">
+            <div class="col-3">
+                Chat
+            </div>
+            <div class="col-auto">
+                Total
+            </div>
+            <div class="col-auto">
+                Edits
+            </div>
+            <div class="col-auto">
+                Deletes
+            </div>
+        </div>
         {{range .O}}
-        <li class="list-group-item">
-            <a href="/c/{{.Chat.ChatId}}">{{.Chat.ChatName}}</a>
-            <span class="badge bg-secondary">{{.CountTotal}}</span> messages
-            <span class="badge bg-info">{{.CountEdits}}</span> edits
-            <span class="badge bg-danger">{{.CountDeletes}}</span> deletes
+        <div class="row">
+            <div class="col-3">
+                <a href="/c/{{.Chat.ChatId}}">{{.Chat.ChatName}}</a>
+            </div>
+            <div class="col-auto">
+                <span class="badge bg-secondary">{{.CountTotal}}</span>
+            </div>
+            <div class="col-auto">
+                <span class="badge bg-info">{{.CountEdits}}</span>
+            </div>
+            <div class="col-auto">
+                <span class="badge bg-danger">{{.CountDeletes}}</span>
+            </div>
+        </div>
         {{end}}
-    </ul>
-</div>
 {{end}}
