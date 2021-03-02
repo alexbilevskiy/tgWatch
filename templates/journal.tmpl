@@ -1,0 +1,28 @@
+{{define "main"}}
+<div class="row">
+    <ul class="list-group list-group-flush">
+        {{range .J}}
+        <li class="list-group-item">{{$t := "UNK_TYPE"}}
+
+            [{{.Date}}]
+            {{if eq .T "updateMessageContent"}}
+
+            <a href="{{.IntLink}}" class="link-info">Updated</a> <a href="{{.Link}}">message</a> in
+            {{if .From.ChatId}} chat {{else}} channel {{end}} <a href="/c/{{.Chat.ChatId}}">{{.Chat.ChatName}}</a>
+            {{if .From.ChatId}} by <a href="/c/{{.From.ChatId}}">{{.From.ChatName}}</a>{{end}}
+
+            {{else if eq .T "updateDeleteMessages"}}
+
+            {{$len := .MessageId | len}}
+            <a href="{{.IntLink}}" class="link-danger">Deleted</a> {{$len}} message{{if gt $len 1}}s{{end}} from chat <a href="/c/{{.Chat.ChatId}}">{{.Chat.ChatName}}</a>
+
+            {{else}}
+
+            unknown type {{.T}}
+
+            {{end}}
+            <br>
+            {{end}}
+    </ul>
+</div>
+{{end}}

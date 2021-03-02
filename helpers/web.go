@@ -27,7 +27,13 @@ func initWeb() {
 type HttpHandler struct{}
 func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	if req.URL.Path == "/" {
-		req.URL.Path = "index.html"
+		t, errParse := template.New(`base.tmpl`).ParseFiles(`templates/base.tmpl`, `templates/navbar.tmpl`, `templates/index.tmpl`)
+		if errParse != nil {
+			req.URL.Path = "index.html"
+		} else {
+			t.Execute(res, structs.Index{T: "Hello, gopher"})
+			return
+		}
 	}
 	path := "web/" + req.URL.Path
 	stat, err := os.Stat(path);
@@ -95,6 +101,7 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 			limit, _ = strconv.ParseInt(req.FormValue("limit"), 10, 64)
 		}
 		processTgJournal(limit, res)
+		return
 	case "o":
 		limit := int64(50)
 		if req.FormValue("limit") != "" {
@@ -163,28 +170,6 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	res.Write(data)
 }
 
-type ChatInfo struct {
-	ChatId int64
-	ChatName string
-}
-type JournalItem struct {
-	T string
-	Time int32
-	Date string
-	MessageId []int64
-	Chat ChatInfo
-	From ChatInfo
-	Link string
-	IntLink string
-	Message string
-	Error string
-}
-type Journal struct {
-	J []JournalItem
-}
-type JSON struct {
-	JSON string
-}
 func processTgJournal(limit int64, w http.ResponseWriter)  {
 	updates, updateTypes, dates, errSelect := FindRecentChanges(limit)
 	if errSelect != nil {
@@ -195,48 +180,49 @@ func processTgJournal(limit int64, w http.ResponseWriter)  {
 	var t *template.Template
 	var errParse error
 	if verbose {
-		t, errParse = template.New(`json.html`).ParseFiles(`templates/json.html`)
+		t, errParse = template.New(`json.tmpl`).ParseFiles(`templates/json.tmpl`)
 	} else {
-		t, errParse = template.New(`journal.html`).ParseFiles(`templates/journal.html`)
+		t, errParse = template.New(`base.tmpl`).ParseFiles(`templates/base.tmpl`, `templates/navbar.tmpl`, `templates/journal.tmpl`)
 	}
 
 	if errParse != nil {
 		fmt.Printf("Error parse tpl: %s\n", errParse)
 		return
 	}
-	var data Journal
+	var data structs.Journal
+	data.T = "Journal"
 
 	for i, rawJsonBytes := range updates {
 		switch updateTypes[i] {
 		case "updateNewMessage":
 			upd, _ := client.UnmarshalUpdateNewMessage(rawJsonBytes)
-			item := JournalItem{
+			item := structs.JournalItem{
 				T: updateTypes[i],
 				Time: dates[i],
 				Date: FormatTime(dates[i]),
 				Link: GetLink(upd.Message.ChatId, upd.Message.Id),
 				IntLink: fmt.Sprintf("/e/%d/%d", upd.Message.ChatId, upd.Message.Id), //@TODO: link shoud be /m
-				Chat: ChatInfo{
+				Chat: structs.ChatInfo{
 					ChatId: upd.Message.ChatId,
 					ChatName: GetChatName(upd.Message.ChatId),
 				},
 			}
 			if upd.Message.Sender.MessageSenderType() == "messageSenderChat" {
 			} else {
-				item.From = ChatInfo{ChatId: GetChatIdBySender(upd.Message.Sender), ChatName: GetSenderName(upd.Message.Sender)}
+				item.From = structs.ChatInfo{ChatId: GetChatIdBySender(upd.Message.Sender), ChatName: GetSenderName(upd.Message.Sender)}
 			}
 			data.J = append(data.J, item)
 
 			break
 		case "updateMessageEdited":
 			upd, _ := client.UnmarshalUpdateMessageEdited(rawJsonBytes)
-			item := JournalItem{
+			item := structs.JournalItem{
 				T: updateTypes[i],
 				Time: dates[i],
 				Date: FormatTime(dates[i]),
 				Link: GetLink(upd.ChatId, upd.MessageId),
 				IntLink: fmt.Sprintf("/e/%d/%d", upd.ChatId, upd.MessageId),
-				Chat: ChatInfo{
+				Chat: structs.ChatInfo{
 					ChatId: upd.ChatId,
 					ChatName: GetChatName(upd.ChatId),
 				},
@@ -246,13 +232,13 @@ func processTgJournal(limit int64, w http.ResponseWriter)  {
 			break
 		case "updateMessageContent":
 			upd, _ := client.UnmarshalUpdateMessageContent(rawJsonBytes)
-			item := JournalItem{
+			item := structs.JournalItem{
 				T: updateTypes[i],
 				Time: dates[i],
 				Date: FormatTime(dates[i]),
 				Link: GetLink(upd.ChatId, upd.MessageId),
 				IntLink: fmt.Sprintf("/e/%d/%d", upd.ChatId, upd.MessageId),
-				Chat: ChatInfo{
+				Chat: structs.ChatInfo{
 					ChatId: upd.ChatId,
 					ChatName: GetChatName(upd.ChatId),
 				},
@@ -267,19 +253,19 @@ func processTgJournal(limit int64, w http.ResponseWriter)  {
 
 			if m.Message.Sender.MessageSenderType() == "messageSenderChat" {
 			} else {
-				item.From = ChatInfo{ChatId: GetChatIdBySender(m.Message.Sender), ChatName: GetSenderName(m.Message.Sender)}
+				item.From = structs.ChatInfo{ChatId: GetChatIdBySender(m.Message.Sender), ChatName: GetSenderName(m.Message.Sender)}
 			}
 			data.J = append(data.J, item)
 
 			break
 		case "updateDeleteMessages":
 			upd, _ := client.UnmarshalUpdateDeleteMessages(rawJsonBytes)
-			item := JournalItem{
+			item := structs.JournalItem{
 				T: updateTypes[i],
 				Time: dates[i],
 				Date: FormatTime(dates[i]),
 				IntLink: fmt.Sprintf("/d/%d/%s", upd.ChatId, ImplodeInt(upd.MessageIds)),
-				Chat: ChatInfo{
+				Chat: structs.ChatInfo{
 					ChatId: upd.ChatId,
 					ChatName: GetChatName(upd.ChatId),
 				},
@@ -293,7 +279,7 @@ func processTgJournal(limit int64, w http.ResponseWriter)  {
 	}
 	var err error
 	if verbose {
-		err = t.Execute(w, JSON{JSON: JsonMarshalStr(data)})
+		err = t.Execute(w, structs.JSON{JSON: JsonMarshalStr(data)})
 	} else {
 		err = t.Execute(w, data)
 	}
