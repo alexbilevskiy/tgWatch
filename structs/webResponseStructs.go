@@ -23,6 +23,16 @@ type Journal struct {
 type Index struct {
 	T string
 }
+type OverviewItem struct {
+	Chat         ChatInfo
+	CountTotal   int32
+	CountEdits   int32
+	CountDeletes int32
+}
+type Overview struct {
+	T string
+	O []OverviewItem
+}
 type JSON struct {
 	JSON string
 }

@@ -1,0 +1,13 @@
+{{define "main"}}
+<div class="row">
+    <ul class="list-group list-group-flush">
+        {{range .O}}
+        <li class="list-group-item">
+            <a href="/c/{{.Chat.ChatId}}">{{.Chat.ChatName}}</a>
+            <span class="badge bg-secondary">{{.CountTotal}}</span> messages
+            <span class="badge bg-info">{{.CountEdits}}</span> edits
+            <span class="badge bg-danger">{{.CountDeletes}}</span> deletes
+        {{end}}
+    </ul>
+</div>
+{{end}}

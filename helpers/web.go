@@ -107,8 +107,8 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		if req.FormValue("limit") != "" {
 			limit, _ = strconv.ParseInt(req.FormValue("limit"), 10, 64)
 		}
-		data = processTgOverview(limit)
-		break
+		processTgOverview(limit, res)
+		return
 	case "c":
 		r := regexp.MustCompile(`^/c/(-?\d+)$`)
 		m := r.FindStringSubmatch(req.URL.Path)
@@ -290,20 +290,39 @@ func processTgJournal(limit int64, w http.ResponseWriter)  {
 	}
 }
 
-func processTgOverview(limit int64) []byte {
+func processTgOverview(limit int64, w http.ResponseWriter) {
 	s, err := GetChatsStats()
 	if err != nil {
+		fmt.Printf("Error tpl: %s\n", err)
 
-		return []byte(err.Error())
+		return
 	}
-	fc := "<html><body>"
+	t, errParse := template.New(`base.tmpl`).ParseFiles(`templates/base.tmpl`, `templates/navbar.tmpl`, `templates/overview.tmpl`)
+	if errParse != nil {
+		fmt.Printf("Error tpl: %s\n", err)
+
+		return
+	}
+
+	data := structs.Overview{T: "Overview"}
 	for _, ci := range s {
-		name := GetChatName(ci.ChatId)
-		fc += fmt.Sprintf(`<a href="/c/%d">%s</a> (%d total, %d updates, %d deletes)<br>`, ci.ChatId, name, ci.Counters["total"], ci.Counters["updateMesageEdited"], ci.Counters["updateDeleteMessages"])
+		oi := structs.OverviewItem{
+			Chat: structs.ChatInfo{
+				ChatId: ci.ChatId,
+				ChatName: GetChatName(ci.ChatId),
+			},
+			CountTotal: ci.Counters["total"],
+			CountDeletes: ci.Counters["updateDeleteMessages"],
+			CountEdits: ci.Counters["updateMesageEdited"],
+		}
+		data.O = append(data.O, oi)
 	}
-	fc += "</body></html>"
+	err = t.Execute(w, data)
 
-	return []byte(fc)
+	if err != nil {
+		fmt.Printf("Error tpl: %s\n", err)
+		return
+	}
 }
 
 func processTgDelete(chatId int64, messageIds []int64) []byte {
