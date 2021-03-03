@@ -182,14 +182,14 @@ func GetChatsStats() ([]chatInfo, error) {
 	agg := bson.A{
 		bson.D{
 			{"$match", bson.D{{"t", bson.D{{"$in", bson.A{
-				//"updateNewMessage",
+				"updateNewMessage",
 				"updateMessageEdited",
 				"updateDeleteMessages",
 			}}}}}}},
 		bson.D{
 			{"$group", bson.D{
 				{"_id", bson.D{{"$cond", bson.A{"$upd.message.chatid", "$upd.message.chatid", bson.D{{"$cond", bson.A{"$upd.chatid", "$upd.chatid", 0}}}}}}},
-				//{"countUpdateNewMessage", bson.D{{"$sum", bson.D{{"$cond", bson.A{bson.D{{"$eq", bson.A{"$t", "updateNewMessage"}}}, 1, 0}}}}}},
+				{"countUpdateNewMessage", bson.D{{"$sum", bson.D{{"$cond", bson.A{bson.D{{"$eq", bson.A{"$t", "updateNewMessage"}}}, 1, 0}}}}}},
 				{"countUpdateMessageEdited", bson.D{{"$sum", bson.D{{"$cond", bson.A{bson.D{{"$eq", bson.A{"$t", "updateMessageEdited"}}}, 1, 0}}}}}},
 				{"countUpdateDeleteMessages", bson.D{{"$sum", bson.D{{"$cond", bson.A{bson.D{{"$eq", bson.A{"$t", "updateDeleteMessages"}}}, 1, 0}}}}}},
 				{"count", bson.D{{"$sum", 1}}},
@@ -221,7 +221,7 @@ func GetChatsStats() ([]chatInfo, error) {
 		}
 		c.Counters = make(map[string]int32, 3)
 		c.Counters["total"] = aggItem["count"].(int32)
-		//c.Counters["updateNewMessage"] = aggItem["countUpdateNewMessage"].(int32)
+		c.Counters["updateNewMessage"] = aggItem["countUpdateNewMessage"].(int32)
 		c.Counters["updateMessageEdited"] = aggItem["countUpdateMessageEdited"].(int32)
 		c.Counters["updateDeleteMessages"] = aggItem["countUpdateDeleteMessages"].(int32)
 		result = append(result, c)

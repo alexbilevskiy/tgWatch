@@ -297,7 +297,13 @@ func processTgOverview(limit int64, w http.ResponseWriter) {
 
 		return
 	}
-	t, errParse := template.New(`base.tmpl`).ParseFiles(`templates/base.tmpl`, `templates/navbar.tmpl`, `templates/overview.tmpl`)
+	var t *template.Template
+	var errParse error
+	if verbose {
+		t, errParse = template.New(`json.tmpl`).ParseFiles(`templates/json.tmpl`)
+	} else {
+		t, errParse = template.New(`base.tmpl`).ParseFiles(`templates/base.tmpl`, `templates/navbar.tmpl`, `templates/overview.tmpl`)
+	}
 	if errParse != nil {
 		fmt.Printf("Error tpl: %s\n", err)
 
@@ -312,12 +318,17 @@ func processTgOverview(limit int64, w http.ResponseWriter) {
 				ChatName: GetChatName(ci.ChatId),
 			},
 			CountTotal: ci.Counters["total"],
+			CountMessages: ci.Counters["updateNewMessage"],
 			CountDeletes: ci.Counters["updateDeleteMessages"],
-			CountEdits: ci.Counters["updateMesageEdited"],
+			CountEdits: ci.Counters["updateMessageEdited"],
 		}
 		data.O = append(data.O, oi)
 	}
-	err = t.Execute(w, data)
+	if verbose {
+		err = t.Execute(w, structs.JSON{JSON: JsonMarshalStr(data)})
+	} else {
+		err = t.Execute(w, data)
+	}
 
 	if err != nil {
 		fmt.Printf("Error tpl: %s\n", err)

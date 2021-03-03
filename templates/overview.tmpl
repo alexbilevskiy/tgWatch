@@ -3,13 +3,16 @@
             <div class="col-3">
                 Chat
             </div>
-            <div class="col-auto">
+            <div class="col-1">
                 Total
             </div>
-            <div class="col-auto">
+            <div class="col-1">
+                Messages
+            </div>
+            <div class="col-1">
                 Edits
             </div>
-            <div class="col-auto">
+            <div class="col-1">
                 Deletes
             </div>
         </div>
@@ -18,13 +21,16 @@
             <div class="col-3">
                 <a href="/c/{{.Chat.ChatId}}">{{.Chat.ChatName}}</a>
             </div>
-            <div class="col-auto">
+            <div class="col-1">
                 <span class="badge bg-secondary">{{.CountTotal}}</span>
             </div>
-            <div class="col-auto">
+            <div class="col-1">
+                <span class="badge bg-success">{{.CountMessages}}</span>
+            </div>
+            <div class="col-1">
                 <span class="badge bg-info">{{.CountEdits}}</span>
             </div>
-            <div class="col-auto">
+            <div class="col-1">
                 <span class="badge bg-danger">{{.CountDeletes}}</span>
             </div>
         </div>

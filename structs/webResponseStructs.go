@@ -24,10 +24,11 @@ type Index struct {
 	T string
 }
 type OverviewItem struct {
-	Chat         ChatInfo
-	CountTotal   int32
-	CountEdits   int32
-	CountDeletes int32
+	Chat          ChatInfo
+	CountTotal    int32
+	CountMessages int32
+	CountEdits    int32
+	CountDeletes  int32
 }
 type Overview struct {
 	T string
