@@ -1,38 +1,46 @@
 {{define "main"}}
-        <div class="row">
-            <div class="col-3">
+<div class="col">
+    <table class="table table-hover table-sm ">
+        <thead class="">
+        <tr>
+            <th scope="col">
                 Chat
-            </div>
-            <div class="col-1">
+            </th>
+            <th scope="col">
                 Total
-            </div>
-            <div class="col-1">
+            </th>
+            <th scope="col">
                 Messages
-            </div>
-            <div class="col-1">
+            </th>
+            <th scope="col">
                 Edits
-            </div>
-            <div class="col-1">
+            </th>
+            <th scope="col">
                 Deletes
-            </div>
-        </div>
+            </th>
+        </tr>
+        </thead>
+        <tbody>
         {{range .O}}
-        <div class="row">
-            <div class="col-3">
+        <tr>
+            <td>
                 <a href="/c/{{.Chat.ChatId}}">{{.Chat.ChatName}}</a>
-            </div>
-            <div class="col-1">
+            </td>
+            <td>
                 <span class="badge bg-secondary">{{.CountTotal}}</span>
-            </div>
-            <div class="col-1">
+            </td>
+            <td>
                 <span class="badge bg-success">{{.CountMessages}}</span>
-            </div>
-            <div class="col-1">
+            </td>
+            <td>
                 <span class="badge bg-info">{{.CountEdits}}</span>
-            </div>
-            <div class="col-1">
+            </td>
+            <td>
                 <span class="badge bg-danger">{{.CountDeletes}}</span>
-            </div>
-        </div>
+            </td>
+        </tr>
         {{end}}
+        </tbody>
+    </table>
+</div>
 {{end}}
