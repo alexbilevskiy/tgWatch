@@ -173,12 +173,7 @@ func FindRecentChanges(limit int64) ([][]byte, []string, []int32, error) {
 	return iterateCursor(cur)
 }
 
-
-type chatInfo struct {
-	ChatId int64
-	Counters map[string]int32
-}
-func GetChatsStats() ([]chatInfo, error) {
+func GetChatsStats() ([]structs.ChatCounters, error) {
 	agg := bson.A{
 		bson.D{
 			{"$match", bson.D{{"t", bson.D{{"$in", bson.A{
@@ -214,9 +209,9 @@ func GetChatsStats() ([]chatInfo, error) {
 
 		return nil, errors.New("failed mongo select")
 	}
-	var result []chatInfo
+	var result []structs.ChatCounters
 	for _, aggItem := range chatsStats {
-		c := chatInfo{
+		c := structs.ChatCounters{
 			ChatId: aggItem["_id"].(int64),
 		}
 		c.Counters = make(map[string]int32, 3)
@@ -228,6 +223,15 @@ func GetChatsStats() ([]chatInfo, error) {
 	}
 
 	return result, nil
+}
+
+func GetChatHistory(chatId int64, limit int64) ([][]byte, []string, []int32, error) {
+	crit := bson.D{{"t", "updateNewMessage"}, {"upd.message.chatid", chatId}}
+	lim := &limit
+	opts := options.FindOptions{Limit: lim, Sort: bson.M{"_id": -1}}
+	cur, _ := updatesColl.Find(mongoContext, crit, &opts)
+
+	return iterateCursor(cur)
 }
 
 func iterateCursor(cur *mongo.Cursor) ([][]byte, []string, []int32, error) {

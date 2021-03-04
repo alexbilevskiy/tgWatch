@@ -1,0 +1,14 @@
+{{define "main"}}
+<div class="col">
+    <h3><a href="/c/{{.Chat.ChatId}}">{{.Chat.ChatName}}</a></h3>
+    {{$chatId := .Chat.ChatId}}
+    <ul class="list-group list-group-flush">
+        {{range .Messages}}
+        <li class="list-group-item">
+            <a href="/e/{{$chatId}}/{{.MessageId}}">{{.DateStr}}</a><br>
+            <a href="/c/{{.SenderId}}">{{.SenderName}}</a>: {{.Content}}
+        </li>
+        {{end}}
+    </ul>
+</div>
+{{end}}

@@ -36,7 +36,7 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		}
 	}
 	path := "web/" + req.URL.Path
-	stat, err := os.Stat(path);
+	stat, err := os.Stat(path)
 	if err == nil && !stat.IsDir() {
 		http.ServeFile(res, req, path)
 
@@ -64,11 +64,6 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	}
 
 	switch action {
-	case "routes":
-
-		res.Write([]byte(`{"routes":[{"/j":"journal"}]}`))
-
-		return
 	case "e":
 		r := regexp.MustCompile(`^/e/(-?\d+)/(\d+)$`)
 		m := r.FindStringSubmatch(req.URL.Path)
@@ -121,6 +116,24 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		chatId, _ := strconv.ParseInt(m[1], 10, 64)
 		data = processTgChat(chatId)
 		break
+	case "h":
+		r := regexp.MustCompile(`^/h/(-?\d+)$`)
+		m := r.FindStringSubmatch(req.URL.Path)
+		if m == nil {
+			data := []byte(fmt.Sprintf("Unknown path %s %s", action, req.URL.Path))
+			res.Write(data)
+
+			return
+		}
+		limit := int64(50)
+		if req.FormValue("limit") != "" {
+			limit, _ = strconv.ParseInt(req.FormValue("limit"), 10, 64)
+		}
+
+		chatId, _ := strconv.ParseInt(m[1], 10, 64)
+		processTgChatHistory(chatId, limit, res)
+
+		return
 	case "f":
 		r := regexp.MustCompile(`^/f/((\d+)|([\w\-_]+))$`)
 		m := r.FindStringSubmatch(req.URL.Path)
@@ -412,6 +425,75 @@ func processTgChat(chatId int64) []byte {
 	j, _ := json.Marshal(chat)
 
 	return j
+}
+
+func processTgChatHistory(chatId int64, limit int64, w http.ResponseWriter) {
+	updates, updateTypes, _, errSelect := GetChatHistory(chatId, limit)
+	if errSelect != nil {
+		fmt.Printf("Error select updates: %s\n", errSelect)
+
+		return
+	}
+	var t *template.Template
+	var errParse error
+	if verbose {
+		t, errParse = template.New(`json.tmpl`).ParseFiles(`templates/json.tmpl`)
+	} else {
+		t, errParse = template.New(`base.tmpl`).ParseFiles(`templates/base.tmpl`, `templates/navbar.tmpl`, `templates/chat_history.tmpl`)
+	}
+
+	if errParse != nil {
+		fmt.Printf("Error parse tpl: %s\n", errParse)
+		return
+	}
+
+	var vUpdates []interface{}
+	res := structs.ChatHistory{
+		T: "ChatHistory",
+		Chat: structs.ChatInfo{
+			ChatId:   chatId,
+			ChatName: GetChatName(chatId),
+		},
+	}
+
+	for i, rawJsonBytes := range updates {
+		switch updateTypes[i] {
+		case "updateNewMessage":
+			upd, _ := client.UnmarshalUpdateNewMessage(rawJsonBytes)
+			if verbose {
+				vUpdates = append(vUpdates, upd)
+			}
+			senderChatId := GetChatIdBySender(upd.Message.Sender)
+			content := GetContent(upd.Message.Content)
+			msg := structs.MessageInfo{
+				T:           "NewMessage",
+				MessageId:   upd.Message.Id,
+				Date:        upd.Message.Date,
+				DateStr:     FormatTime(upd.Message.Date),
+				ChatId:      upd.Message.ChatId,
+				ChatName:    GetChatName(upd.Message.ChatId),
+				SenderId:    senderChatId,
+				SenderName:  GetSenderName(upd.Message.Sender),
+				Content:     content,
+				Attachments: GetContentStructs(upd.Message.Content),
+				ContentRaw:  nil,
+			}
+			res.Messages = append(res.Messages, msg)
+
+			break
+		default:
+			fmt.Printf("Not supported chat history item %s\n", updateTypes[i])
+		}
+	}
+	if verbose {
+		t.Execute(w, structs.JSON{JSON: JsonMarshalStr(vUpdates)})
+
+		return
+	}
+
+	t.Execute(w, res)
+
+	return
 }
 
 func parseUpdateMessageEdited(upd *client.UpdateMessageEdited) structs.MessageEditedMeta {

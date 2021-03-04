@@ -12,3 +12,8 @@ type ChatFilter struct {
 	Title string
 	IncludedChats []int64
 }
+
+type ChatCounters struct {
+	ChatId int64
+	Counters map[string]int32
+}

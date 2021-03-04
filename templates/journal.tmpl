@@ -8,7 +8,7 @@
             {{if eq .T "updateMessageContent"}}
 
             <a href="{{.IntLink}}" class="link-info">Updated</a> {{if ne .Link ""}}<a href="{{.Link}}">message</a>{{else}}message{{end}} in
-            {{if .From.ChatId}} chat {{else}} channel {{end}} <a href="/c/{{.Chat.ChatId}}">{{.Chat.ChatName}}</a>
+            <a href="/h/{{.Chat.ChatId}}">{{if .From.ChatId}}chat{{else}}channel{{end}}</a> <a href="/c/{{.Chat.ChatId}}">{{.Chat.ChatName}}</a>
             {{if .From.ChatId}} by <a href="/c/{{.From.ChatId}}">{{.From.ChatName}}</a>{{end}}
 
             {{else if eq .T "updateDeleteMessages"}}

@@ -37,3 +37,9 @@ type Overview struct {
 type JSON struct {
 	JSON string
 }
+
+type ChatHistory struct {
+	T        string
+	Chat     ChatInfo
+	Messages []MessageInfo
+}
