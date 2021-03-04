@@ -62,6 +62,10 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	} else {
 		verbose = false
 	}
+	limit := int64(50)
+	if req.FormValue("limit") != "" {
+		limit, _ = strconv.ParseInt(req.FormValue("limit"), 10, 64)
+	}
 
 	switch action {
 	case "e":
@@ -91,17 +95,9 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		data = processTgDelete(chatId, ExplodeInt(messageIds))
 		break
 	case "j":
-		limit := int64(50)
-		if req.FormValue("limit") != "" {
-			limit, _ = strconv.ParseInt(req.FormValue("limit"), 10, 64)
-		}
 		processTgJournal(limit, res)
 		return
 	case "o":
-		limit := int64(50)
-		if req.FormValue("limit") != "" {
-			limit, _ = strconv.ParseInt(req.FormValue("limit"), 10, 64)
-		}
 		processTgOverview(limit, res)
 		return
 	case "c":
@@ -124,10 +120,6 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 			res.Write(data)
 
 			return
-		}
-		limit := int64(50)
-		if req.FormValue("limit") != "" {
-			limit, _ = strconv.ParseInt(req.FormValue("limit"), 10, 64)
 		}
 
 		chatId, _ := strconv.ParseInt(m[1], 10, 64)
@@ -435,15 +427,15 @@ func processTgChatHistory(chatId int64, limit int64, w http.ResponseWriter) {
 		return
 	}
 	var t *template.Template
-	var errParse error
+	var err error
 	if verbose {
-		t, errParse = template.New(`json.tmpl`).ParseFiles(`templates/json.tmpl`)
+		t, err = template.New(`json.tmpl`).ParseFiles(`templates/json.tmpl`)
 	} else {
-		t, errParse = template.New(`base.tmpl`).ParseFiles(`templates/base.tmpl`, `templates/navbar.tmpl`, `templates/chat_history.tmpl`)
+		t, err = template.New(`base.tmpl`).ParseFiles(`templates/base.tmpl`, `templates/navbar.tmpl`, `templates/chat_history.tmpl`)
 	}
 
-	if errParse != nil {
-		fmt.Printf("Error parse tpl: %s\n", errParse)
+	if err != nil {
+		fmt.Printf("Error parse tpl: %s\n", err)
 		return
 	}
 
@@ -486,12 +478,16 @@ func processTgChatHistory(chatId int64, limit int64, w http.ResponseWriter) {
 		}
 	}
 	if verbose {
-		t.Execute(w, structs.JSON{JSON: JsonMarshalStr(vUpdates)})
+		err = t.Execute(w, structs.JSON{JSON: JsonMarshalStr(vUpdates)})
 
 		return
+	} else {
+		err = t.Execute(w, res)
 	}
-
-	t.Execute(w, res)
+	if err != nil {
+		fmt.Printf("Error tpl: %s\n", err)
+		return
+	}
 
 	return
 }

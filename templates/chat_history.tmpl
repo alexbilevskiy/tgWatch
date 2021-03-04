@@ -7,6 +7,12 @@
         <li class="list-group-item">
             <a href="/e/{{$chatId}}/{{.MessageId}}">{{.DateStr}}</a><br>
             <a href="/c/{{.SenderId}}">{{.SenderName}}</a>: {{.Content}}
+            {{$l := .Attachments | len}}
+            {{if gt $l 0}}
+            {{range .Attachments}}
+            <a href="/f/{{.Id}}"><img src="data:image/png;base64, {{.Thumb}}" alt=""/></a>
+            {{end}}
+            {{end}}
         </li>
         {{end}}
     </ul>

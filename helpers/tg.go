@@ -395,7 +395,7 @@ func GetContentStructs(content client.MessageContent) []structs.MessageAttachmen
 		msg := content.(*client.MessagePhoto)
 		s := structs.MessageAttachment{
 			T: msg.Photo.Type,
-			Id: msg.Photo.Sizes[0].Photo.Remote.Id,
+			Id: msg.Photo.Sizes[len(msg.Photo.Sizes)-1].Photo.Remote.Id,
 			Thumb: base64.StdEncoding.EncodeToString(msg.Photo.Minithumbnail.Data),
 		}
 		for _, size := range msg.Photo.Sizes {
