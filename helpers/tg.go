@@ -328,6 +328,10 @@ func GetUser(userId int32) (*client.User, error) {
 }
 
 func GetContent(content client.MessageContent) string {
+	if content == nil {
+
+		return "UNSUPPORTED_CONTENT"
+	}
 	cType := content.MessageContentType()
 	switch cType {
 	case "messageText":
@@ -385,6 +389,10 @@ func DownloadFileByRemoteId(id string) (*client.File, error) {
 }
 
 func GetContentStructs(content client.MessageContent) []structs.MessageAttachment {
+	if content == nil {
+
+		return nil
+	}
 	cType := content.MessageContentType()
 	var cnt []structs.MessageAttachment
 	switch cType {
