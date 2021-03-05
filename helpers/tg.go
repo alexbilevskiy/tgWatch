@@ -74,9 +74,8 @@ func ListenUpdates()  {
 			case "updateUserFullInfo":
 			case "updateChatActionBar":
 			case "updateChatIsBlocked":
-			case "updateChatPosition":
-
 			case "updateOption":
+
 			case "updateChatDraftMessage":
 			case "updateUserStatus":
 			case "updateChatReadInbox":
@@ -94,8 +93,8 @@ func ListenUpdates()  {
 			case "updateConnectionState":
 			case "updateMessageIsPinned":
 			case "updateChatHasScheduledMessages":
-
 			case "updateNewChat":
+
 			case "updateHavePendingNotifications":
 			case "updateSupergroupFullInfo":
 			case "updateSupergroup":
@@ -105,8 +104,12 @@ func ListenUpdates()  {
 			case "updateUser":
 			case "updateChatTitle":
 				break
+			case "updateChatPosition":
+				upd := update.(*client.UpdateChatPosition)
+				saveChatPosition(upd.ChatId, upd.Position)
 
-			case "updateChatFilters":
+				break
+				case "updateChatFilters":
 				upd := update.(*client.UpdateChatFilters)
 				SaveChatFilters(upd)
 
@@ -482,6 +485,7 @@ func getChatsList() []*client.Chat {
 				continue
 			}
 			log.Printf("Got chatID %d, position %d, title `%s`", chatId, chat.Positions[0].Order, chat.Title)
+			saveChatPosition(chatId, chat.Positions[0])
 			offsetChatId = chat.Id
 			offsetOrder = chat.Positions[0].Order
 

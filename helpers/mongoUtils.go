@@ -92,6 +92,7 @@ func initMongo() {
 	}
 	updatesColl = mongoClient.Database(config.Config.Mongo["db"]).Collection("updates")
 	chatFiltersColl = mongoClient.Database(config.Config.Mongo["db"]).Collection("chatFilters")
+	chatListColl = mongoClient.Database(config.Config.Mongo["db"]).Collection("chatList")
 }
 
 func SaveUpdate(t string, upd interface{}, timestamp int32) string {
@@ -281,6 +282,19 @@ func SaveChatFilters(chatFilters *client.UpdateChatFilters) {
 		}
 	}
 	LoadChatFilters()
+}
+
+func saveChatPosition(chatId int64, chatPosition *client.ChatPosition) {
+	fmt.Printf("ChatPosition update: %d | %d\n", chatId, chatPosition.Order)
+	filStr := structs.ChatPosition{ChatId: chatId, Order: int64(chatPosition.Order), IsPinned: chatPosition.IsPinned}
+	crit := bson.D{{"chatid", chatId}}
+	update := bson.D{{"$set", filStr}}
+	t := true
+	opts := &options.UpdateOptions{Upsert: &t}
+	_, err := chatListColl.UpdateOne(mongoContext, crit, update, opts)
+	if err != nil {
+		fmt.Printf("Failed to save chatPosition: %d | %d: %s", chatId, chatPosition.Order, err)
+	}
 }
 
 func LoadChatFilters() {

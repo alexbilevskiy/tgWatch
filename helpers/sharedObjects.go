@@ -12,6 +12,7 @@ var mongoClient *mongo.Client
 var mongoContext context.Context
 var updatesColl *mongo.Collection
 var chatFiltersColl *mongo.Collection
+var chatListColl *mongo.Collection
 var tdlibClient *client.Client
 var chatFilters []structs.ChatFilter
 

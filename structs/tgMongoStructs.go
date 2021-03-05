@@ -13,6 +13,12 @@ type ChatFilter struct {
 	IncludedChats []int64
 }
 
+type ChatPosition struct {
+	ChatId int64
+	Order int64
+	IsPinned bool
+}
+
 type ChatCounters struct {
 	ChatId int64
 	Counters map[string]int32
