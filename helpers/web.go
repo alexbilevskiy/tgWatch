@@ -110,6 +110,9 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	case "j":
 		processTgJournal(limit, res)
 		return
+	case "l":
+		processTgChatList(res)
+		return
 	case "o":
 		processTgOverview(limit, res)
 		return
@@ -524,6 +527,42 @@ func processTgChatHistory(chatId int64, limit int64, w http.ResponseWriter) {
 	}
 	if verbose {
 		err = t.Execute(w, structs.JSON{JSON: JsonMarshalStr(res)})
+
+		return
+	} else {
+		err = t.Execute(w, res)
+	}
+	if err != nil {
+		fmt.Printf("Error tpl: %s\n", err)
+		return
+	}
+
+	return
+}
+
+func processTgChatList(w http.ResponseWriter) {
+	verbose = !verbose
+
+	var t *template.Template
+	var err error
+	if verbose {
+		t, err = template.New(`json.tmpl`).ParseFiles(`templates/json.tmpl`)
+	} else {
+		t, err = template.New(`base.tmpl`).ParseFiles(`templates/base.tmpl`, `templates/navbar.tmpl`, `templates/chatlist.tmpl`)
+	}
+
+	if err != nil {
+		fmt.Printf("Error parse tpl: %s\n", err)
+		return
+	}
+	chatList := getChatsList()
+	res := structs.ChatList{T: "Chat list"}
+	for _, chat := range chatList {
+		res.Chats = append(res.Chats, structs.ChatInfo{ChatId: chat.Id, ChatName: GetChatName(chat.Id)})
+	}
+
+	if verbose {
+		err = t.Execute(w, structs.JSON{JSON: JsonMarshalStr(chatList)})
 
 		return
 	} else {

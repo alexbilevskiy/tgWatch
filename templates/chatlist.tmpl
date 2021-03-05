@@ -1,0 +1,9 @@
+{{define "main"}}
+<div class="row">
+    <ul class="list-group list-group-flush">
+        {{range .Chats}}
+        <li class="list-group-item">{{.ChatName}}</li>
+        {{end}}
+    </ul>
+</div>
+{{end}}

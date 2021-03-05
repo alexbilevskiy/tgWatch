@@ -456,11 +456,12 @@ func GetContentStructs(content client.MessageContent) []structs.MessageAttachmen
 	}
 }
 
-func getChatsList() {
+func getChatsList() []*client.Chat {
 	maxChatId := client.JsonInt64(int64((^uint64(0)) >> 1))
 	offsetOrder := maxChatId
 	log.Printf("Requesting chats with max id: %d", maxChatId)
 
+	var chatList []*client.Chat
 	page := 0
 	offsetChatId := int64(0)
 	for {
@@ -483,6 +484,8 @@ func getChatsList() {
 			log.Printf("Got chatID %d, position %d, title `%s`", chatId, chat.Positions[0].Order, chat.Title)
 			offsetChatId = chat.Id
 			offsetOrder = chat.Positions[0].Order
+
+			chatList = append(chatList, chat)
 		}
 
 		if len(chats.ChatIds) == 0 {
@@ -494,6 +497,8 @@ func getChatsList() {
 		page++
 		log.Println()
 	}
+
+	return chatList
 }
 
 func checkSkippedChat(chatId string) bool {
