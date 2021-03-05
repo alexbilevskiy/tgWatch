@@ -14,7 +14,7 @@
             {{else if eq .T "updateDeleteMessages"}}
 
             {{$len := .MessageId | len}}
-            <a href="{{.IntLink}}" class="link-danger">Deleted</a> {{$len}} message{{if gt $len 1}}s{{end}} from chat <a href="/c/{{.Chat.ChatId}}">{{.Chat.ChatName}}</a>
+            <a href="{{.IntLink}}" class="link-danger">Deleted</a> {{$len}} message{{if gt $len 1}}s{{end}} from <a href="/h/{{.Chat.ChatId}}">chat</a> <a href="/c/{{.Chat.ChatId}}">{{.Chat.ChatName}}</a>
 
             {{else}}
 
