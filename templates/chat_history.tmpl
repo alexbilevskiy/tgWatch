@@ -3,15 +3,38 @@
     <h3><a href="/c/{{.Chat.ChatId}}">{{.Chat.ChatName}}</a></h3>
     {{$chatId := .Chat.ChatId}}
     <ul class="list-group list-group-flush">
+        {{$lastM := 0}}
         {{range .Messages}}
+        {{$needHeader := true}}
         <li class="list-group-item">
-            <a href="/e/{{$chatId}}/{{.MessageId}}">{{.DateStr}}</a><br>
-            <a href="/c/{{.SenderId}}">{{.SenderName}}</a>: {{.Content}}
+            {{if ne .MediaAlbumId 0}}
+                {{if eq $lastM 0}}
+<!--                    border start-->
+                    {{$needHeader = true}}
+                    {{$lastM = .MediaAlbumId}}
+                {{else if eq .MediaAlbumId $lastM}}
+<!--                    media continue-->
+                    {{$needHeader = false}}
+                    {{$lastM = .MediaAlbumId}}
+                {{end}}
+            {{else if ne $lastM 0}}
+    <!--            border end-->
+                {{$needHeader = true}}
+                {{$lastM = 0}}
+            {{end}}
+
+            {{if eq $needHeader true}}
+                <a href="/m/{{$chatId}}/{{.MessageId}}">{{.DateStr}}</a><br>
+                <a href="/c/{{.SenderId}}">{{.SenderName}}</a>:
+            {{else}}
+<!--            cont-->
+            {{end}}
+            {{.Content}}
             {{$l := .Attachments | len}}
             {{if gt $l 0}}
-            {{range .Attachments}}
-            <a href="/f/{{.Id}}"><img src="data:image/png;base64, {{.Thumb}}" alt=""/></a>
-            {{end}}
+                {{range .Attachments}}
+                    <a href="/f/{{.Id}}"><img src="data:image/png;base64, {{.Thumb}}" alt=""/></a>
+                {{end}}
             {{end}}
         </li>
         {{end}}

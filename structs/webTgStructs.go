@@ -1,17 +1,18 @@
 package structs
 
 type MessageInfo struct {
-	T           string
-	MessageId   int64
-	Date        int32
-	DateStr     string
-	ChatId      int64
-	ChatName    string
-	SenderId    int64
-	SenderName  string
-	Content     string
-	Attachments []MessageAttachment
-	ContentRaw  interface{}
+	T            string
+	MessageId    int64
+	Date         int32
+	DateStr      string
+	ChatId       int64
+	ChatName     string
+	SenderId     int64
+	SenderName   string
+	MediaAlbumId int64
+	Content      string
+	Attachments  []MessageAttachment
+	ContentRaw   interface{}
 }
 
 type MessageNewContent struct {

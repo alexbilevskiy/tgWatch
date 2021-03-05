@@ -81,6 +81,19 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		messageId, _ := strconv.ParseInt(m[2], 10, 64)
 		data = []byte(processTgEdit(chatId, messageId))
 		break
+	case "m":
+		r := regexp.MustCompile(`^/m/(-?\d+)/(\d+)$`)
+		m := r.FindStringSubmatch(req.URL.Path)
+		if m == nil {
+			data := []byte(fmt.Sprintf("Unknown path %s %s", action, req.URL.Path))
+			res.Write(data)
+
+			return
+		}
+		//chatId, _ := strconv.ParseInt(m[1], 10, 64)
+		messageId, _ := strconv.ParseInt(m[2], 10, 64)
+		processSingleMessage(messageId, res)
+		return
 	case "d":
 		r := regexp.MustCompile(`^/d/(-?\d+)/([\d,]+)$`)
 		m := r.FindStringSubmatch(req.URL.Path)
@@ -310,7 +323,7 @@ func processTgOverview(limit int64, w http.ResponseWriter) {
 		t, errParse = template.New(`base.tmpl`).ParseFiles(`templates/base.tmpl`, `templates/navbar.tmpl`, `templates/overview.tmpl`)
 	}
 	if errParse != nil {
-		fmt.Printf("Error tpl: %s\n", err)
+		fmt.Printf("Error tpl: %s\n", errParse)
 
 		return
 	}
@@ -337,6 +350,41 @@ func processTgOverview(limit int64, w http.ResponseWriter) {
 
 	if err != nil {
 		fmt.Printf("Error tpl: %s\n", err)
+		return
+	}
+}
+
+func processSingleMessage(messageId int64, w http.ResponseWriter) {
+	verbose = !verbose
+
+	var t *template.Template
+	var errParse error
+	if verbose {
+		t, errParse = template.New(`json.tmpl`).ParseFiles(`templates/json.tmpl`)
+	} else {
+		t, errParse = template.New(`base.tmpl`).ParseFiles(`templates/base.tmpl`, `templates/navbar.tmpl`, `templates/single_message.tmpl`)
+	}
+	if errParse != nil {
+		fmt.Printf("Error tpl: %s\n", errParse)
+
+		return
+	}
+
+	message, err := FindUpdateNewMessage(messageId)
+	if err != nil {
+		fmt.Printf("Not found message %s", err)
+
+		return
+	}
+	if verbose {
+		err = t.Execute(w, structs.JSON{JSON: JsonMarshalStr(message)})
+	} else {
+		err = t.Execute(w, parseUpdateNewMessage(message))
+	}
+
+	if err != nil {
+		fmt.Printf("Error tpl: %s\n", err)
+
 		return
 	}
 }
@@ -439,7 +487,6 @@ func processTgChatHistory(chatId int64, limit int64, w http.ResponseWriter) {
 		return
 	}
 
-	var vUpdates []interface{}
 	res := structs.ChatHistory{
 		T: "ChatHistory",
 		Chat: structs.ChatInfo{
@@ -452,23 +499,21 @@ func processTgChatHistory(chatId int64, limit int64, w http.ResponseWriter) {
 		switch updateTypes[i] {
 		case "updateNewMessage":
 			upd, _ := client.UnmarshalUpdateNewMessage(rawJsonBytes)
-			if verbose {
-				vUpdates = append(vUpdates, upd)
-			}
 			senderChatId := GetChatIdBySender(upd.Message.Sender)
 			content := GetContent(upd.Message.Content)
 			msg := structs.MessageInfo{
-				T:           "NewMessage",
-				MessageId:   upd.Message.Id,
-				Date:        upd.Message.Date,
-				DateStr:     FormatTime(upd.Message.Date),
-				ChatId:      upd.Message.ChatId,
-				ChatName:    GetChatName(upd.Message.ChatId),
-				SenderId:    senderChatId,
-				SenderName:  GetSenderName(upd.Message.Sender),
-				Content:     content,
-				Attachments: GetContentStructs(upd.Message.Content),
-				ContentRaw:  nil,
+				T:            "NewMessage",
+				MessageId:    upd.Message.Id,
+				Date:         upd.Message.Date,
+				DateStr:      FormatTime(upd.Message.Date),
+				ChatId:       upd.Message.ChatId,
+				ChatName:     GetChatName(upd.Message.ChatId),
+				SenderId:     senderChatId,
+				SenderName:   GetSenderName(upd.Message.Sender),
+				MediaAlbumId: int64(upd.Message.MediaAlbumId),
+				Content:      content,
+				Attachments:  GetContentStructs(upd.Message.Content),
+				ContentRaw:   nil,
 			}
 			res.Messages = append(res.Messages, msg)
 
@@ -478,7 +523,7 @@ func processTgChatHistory(chatId int64, limit int64, w http.ResponseWriter) {
 		}
 	}
 	if verbose {
-		err = t.Execute(w, structs.JSON{JSON: JsonMarshalStr(vUpdates)})
+		err = t.Execute(w, structs.JSON{JSON: JsonMarshalStr(res)})
 
 		return
 	} else {
@@ -509,17 +554,18 @@ func parseUpdateNewMessage(upd *client.UpdateNewMessage) structs.MessageInfo {
 	senderChatId := GetChatIdBySender(upd.Message.Sender)
 
 	result := structs.MessageInfo{
-		T:           "NewMessage",
-		MessageId:   upd.Message.Id,
-		Date:        upd.Message.Date,
-		DateStr:     FormatTime(upd.Message.Date),
-		ChatId:      upd.Message.ChatId,
-		ChatName:    GetChatName(upd.Message.ChatId),
-		SenderId:    senderChatId,
-		SenderName:  GetSenderName(upd.Message.Sender),
-		Content:     content,
-		Attachments: GetContentStructs(upd.Message.Content),
-		ContentRaw:  nil,
+		T:            "NewMessage",
+		MessageId:    upd.Message.Id,
+		Date:         upd.Message.Date,
+		DateStr:      FormatTime(upd.Message.Date),
+		ChatId:       upd.Message.ChatId,
+		ChatName:     GetChatName(upd.Message.ChatId),
+		SenderId:     senderChatId,
+		SenderName:   GetSenderName(upd.Message.Sender),
+		Content:      content,
+		Attachments:  GetContentStructs(upd.Message.Content),
+		ContentRaw:   nil,
+		MediaAlbumId: int64(upd.Message.MediaAlbumId),
 	}
 	if verbose {
 		result.ContentRaw = upd.Message.Content
