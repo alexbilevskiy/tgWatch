@@ -90,9 +90,9 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 			return
 		}
-		//chatId, _ := strconv.ParseInt(m[1], 10, 64)
+		chatId, _ := strconv.ParseInt(m[1], 10, 64)
 		messageId, _ := strconv.ParseInt(m[2], 10, 64)
-		processSingleMessage(messageId, res)
+		processSingleMessage(chatId, messageId, res)
 		return
 	case "d":
 		r := regexp.MustCompile(`^/d/(-?\d+)/([\d,]+)$`)
@@ -268,7 +268,7 @@ func processTgJournal(limit int64, w http.ResponseWriter)  {
 					ChatName: GetChatName(upd.ChatId),
 				},
 			}
-			m, err := FindUpdateNewMessage(upd.MessageId)
+			m, err := FindUpdateNewMessage(upd.ChatId, upd.MessageId)
 			if err != nil {
 				item.Error = fmt.Sprintf("Message not found: %s", err)
 				data.J = append(data.J, item)
@@ -361,7 +361,7 @@ func processTgOverview(limit int64, w http.ResponseWriter) {
 	}
 }
 
-func processSingleMessage(messageId int64, w http.ResponseWriter) {
+func processSingleMessage(chatId int64, messageId int64, w http.ResponseWriter) {
 	verbose = !verbose
 
 	var t *template.Template
@@ -377,7 +377,7 @@ func processSingleMessage(messageId int64, w http.ResponseWriter) {
 		return
 	}
 
-	message, err := FindUpdateNewMessage(messageId)
+	message, err := FindUpdateNewMessage(chatId, messageId)
 	if err != nil {
 		fmt.Printf("Not found message %s", err)
 
@@ -400,7 +400,7 @@ func processTgDelete(chatId int64, messageIds []int64) []byte {
 
 	var fullContentJ []interface{}
 	for _, messageId := range messageIds {
-		upd, err := FindUpdateNewMessage(messageId)
+		upd, err := FindUpdateNewMessage(chatId, messageId)
 		if err != nil {
 			m := structs.MessageError{T: "Error", MessageId: messageId, Error: fmt.Sprintf("Error: %s", err)}
 			fullContentJ = append(fullContentJ, m)
@@ -420,7 +420,7 @@ func processTgDelete(chatId int64, messageIds []int64) []byte {
 func processTgEdit(chatId int64, messageId int64) []byte {
 	var fullContentJ []interface{}
 
-	updates, updateTypes, dates, err := FindAllMessageChanges(messageId)
+	updates, updateTypes, dates, err := FindAllMessageChanges(chatId, messageId)
 	if err != nil {
 		m := structs.MessageError{T: "Error", MessageId: messageId, Error: fmt.Sprintf("Error: %s", err)}
 		fullContentJ = append(fullContentJ, m)
@@ -646,7 +646,7 @@ func parseUpdateDeleteMessages(upd *client.UpdateDeleteMessages, date int32) str
 		DateStr:    FormatTime(date),
 	}
 	for _, messageId := range upd.MessageIds {
-		m, err := FindUpdateNewMessage(messageId)
+		m, err := FindUpdateNewMessage(upd.ChatId, messageId)
 		if err != nil {
 			result.Messages = append(result.Messages, structs.MessageError{T: "Error", MessageId: messageId, Error: fmt.Sprintf("not found deleted message %s", err)})
 			continue

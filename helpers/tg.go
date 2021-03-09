@@ -128,7 +128,7 @@ func ListenUpdates()  {
 
 				skipUpdate := 0
 				for _, messageId := range upd.MessageIds {
-					savedMessage, err := FindUpdateNewMessage(messageId)
+					savedMessage, err := FindUpdateNewMessage(upd.ChatId, messageId)
 					if err != nil {
 
 						continue

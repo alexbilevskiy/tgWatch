@@ -116,8 +116,8 @@ func SaveUpdate(t string, upd interface{}, timestamp int32) string {
 	return res.InsertedID.(primitive.ObjectID).String()
 }
 
-func FindUpdateNewMessage(messageId int64) (*client.UpdateNewMessage, error) {
-	msg := updatesColl.FindOne(mongoContext, bson.D{{"t", "updateNewMessage"}, {"upd.message.id", messageId}})
+func FindUpdateNewMessage(chatId int64, messageId int64) (*client.UpdateNewMessage, error) {
+	msg := updatesColl.FindOne(mongoContext, bson.D{{"t", "updateNewMessage"}, {"upd.message.id", messageId}, {"upd.message.chatid", chatId}})
 	if msg == nil {
 
 		return nil, errors.New("message not found")
@@ -146,13 +146,13 @@ func FindUpdateNewMessage(messageId int64) (*client.UpdateNewMessage, error) {
 	return upd, nil
 }
 
-func FindAllMessageChanges(messageId int64) ([][]byte, []string, []int32, error) {
+func FindAllMessageChanges(chatId int64, messageId int64) ([][]byte, []string, []int32, error) {
 	crit := bson.D{
 		{"$or", []interface{}{
-			bson.D{{"t", "updateNewMessage"}, {"upd.message.id", messageId}},
-			bson.D{{"t", "updateMessageEdited"}, {"upd.messageid", messageId}},
-			bson.D{{"t", "updateMessageContent"}, {"upd.messageid", messageId}},
-			bson.D{{"t", "updateDeleteMessages"}, {"upd.messageids", messageId}},
+			bson.D{{"t", "updateNewMessage"}, {"upd.message.id", messageId}, {"upd.message.chatid", chatId}},
+			bson.D{{"t", "updateMessageEdited"}, {"upd.messageid", messageId}, {"upd.chatid", chatId}},
+			bson.D{{"t", "updateMessageContent"}, {"upd.messageid", messageId}, {"upd.chatid", chatId}},
+			bson.D{{"t", "updateDeleteMessages"}, {"upd.messageids", messageId}, {"upd.chatid", chatId}},
 		}},
 	}
 	cur, _ := updatesColl.Find(mongoContext, crit)
