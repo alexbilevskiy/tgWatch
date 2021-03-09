@@ -297,6 +297,36 @@ func saveChatPosition(chatId int64, chatPosition *client.ChatPosition) {
 	}
 }
 
+func getSavedChats() []structs.ChatPosition {
+	crit := bson.D{}
+	cur, err := chatListColl.Find(mongoContext, crit)
+	var list []structs.ChatPosition
+	if err != nil {
+		fmt.Printf("Chat list error: %s", err)
+
+		return list
+	}
+	var chatsMongo []bson.M
+	err = cur.All(mongoContext, &chatsMongo)
+	if err != nil {
+		errmsg := fmt.Sprintf("ERROR mongo select: %s", err)
+		fmt.Printf(errmsg)
+
+		return list
+	}
+	var chats []structs.ChatPosition
+	for _, chatObj := range chatsMongo {
+		chat := structs.ChatPosition{
+			IsPinned: chatObj["ispinned"].(bool),
+			Order:    chatObj["order"].(int64),
+			ChatId:   chatObj["chatid"].(int64),
+		}
+		chats = append(chats, chat)
+	}
+
+	return chats
+}
+
 func LoadChatFilters() {
 	cur, _ := chatFiltersColl.Find(mongoContext, bson.M{})
 	err := cur.All(mongoContext, &chatFilters);

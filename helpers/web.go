@@ -111,7 +111,11 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		processTgJournal(limit, res)
 		return
 	case "l":
-		processTgChatList(res)
+		refresh := false
+		if req.FormValue("refresh") == "1" {
+			refresh = true
+		}
+		processTgChatList(res, refresh)
 		return
 	case "o":
 		processTgOverview(limit, res)
@@ -540,7 +544,7 @@ func processTgChatHistory(chatId int64, limit int64, w http.ResponseWriter) {
 	return
 }
 
-func processTgChatList(w http.ResponseWriter) {
+func processTgChatList(w http.ResponseWriter, refresh bool) {
 	verbose = !verbose
 
 	var t *template.Template
@@ -555,14 +559,21 @@ func processTgChatList(w http.ResponseWriter) {
 		fmt.Printf("Error parse tpl: %s\n", err)
 		return
 	}
-	chatList := getChatsList()
 	res := structs.ChatList{T: "Chat list"}
-	for _, chat := range chatList {
-		res.Chats = append(res.Chats, structs.ChatInfo{ChatId: chat.Id, ChatName: GetChatName(chat.Id)})
+	if refresh {
+		chatList := getChatsList()
+		for _, chat := range chatList {
+			res.Chats = append(res.Chats, structs.ChatInfo{ChatId: chat.Id, ChatName: GetChatName(chat.Id)})
+		}
+	} else {
+		chatList := getSavedChats()
+		for _, chatPos := range chatList {
+			res.Chats = append(res.Chats, structs.ChatInfo{ChatId: chatPos.ChatId, ChatName: GetChatName(chatPos.ChatId)})
+		}
 	}
 
 	if verbose {
-		err = t.Execute(w, structs.JSON{JSON: JsonMarshalStr(chatList)})
+		err = t.Execute(w, structs.JSON{JSON: JsonMarshalStr(res)})
 
 		return
 	} else {
