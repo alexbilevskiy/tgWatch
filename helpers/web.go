@@ -545,8 +545,6 @@ func processTgChatHistory(chatId int64, limit int64, w http.ResponseWriter) {
 }
 
 func processTgChatList(w http.ResponseWriter, refresh bool) {
-	verbose = !verbose
-
 	var t *template.Template
 	var err error
 	if verbose {
