@@ -121,11 +121,10 @@ func ListenUpdates()  {
 				break
 			case "updateChatLastMessage":
 				upd := update.(*client.UpdateChatLastMessage)
-				if len(upd.Positions) > 0 {
-					saveChatPosition(upd.ChatId, upd.Positions[0])
-				} else {
-					log.Printf("Update chat last message without position: %d / `%s`", upd.ChatId, GetChatName(upd.ChatId))
+				if len(upd.Positions) == 0 {
+					break
 				}
+				saveChatPosition(upd.ChatId, upd.Positions[0])
 
 				break
 			case "updateOption":
