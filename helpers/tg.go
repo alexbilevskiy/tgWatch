@@ -71,45 +71,74 @@ func ListenUpdates()  {
 		if update.GetClass() == client.ClassUpdate {
 			t := update.GetType()
 			switch t {
-			case "updateUserFullInfo":
 			case "updateChatActionBar":
 			case "updateChatIsBlocked":
-			case "updateOption":
-
 			case "updateChatDraftMessage":
 			case "updateUserStatus":
 			case "updateChatReadInbox":
 			case "updateChatReadOutbox":
 			case "updateUnreadMessageCount":
 			case "updateUnreadChatCount":
-			case "updateChatLastMessage":
-			case "updateUserChatAction":
 			case "updateMessageInteractionInfo":
 			case "updateChatReplyMarkup":
 			case "updateChatPermissions":
 			case "updateChatNotificationSettings":
 			case "updateChatUnreadMentionCount":
 			case "updateMessageMentionRead":
-			case "updateConnectionState":
 			case "updateMessageIsPinned":
 			case "updateChatHasScheduledMessages":
-			case "updateNewChat":
-
 			case "updateHavePendingNotifications":
-			case "updateSupergroupFullInfo":
+
 			case "updateSupergroup":
+			case "updateSupergroupFullInfo":
 			case "updateBasicGroup":
 			case "updateBasicGroupFullInfo":
-			case "updateChatPhoto":
 			case "updateUser":
+			case "updateUserFullInfo":
+			case "updateChatPhoto":
+				break
+
 			case "updateChatTitle":
+				upd := update.(*client.UpdateChatTitle)
+				log.Printf("Renamed chat id:%d to `%s`", upd.ChatId, upd.Title)
+
+				break
+			case "updateNewChat":
+				upd := update.(*client.UpdateNewChat)
+				log.Printf("New chat added: %d / %s", upd.Chat.Id, upd.Chat.Title)
+				//@TODO: save position here
+
+				break
+			case "updateConnectionState":
+				upd := update.(*client.UpdateConnectionState)
+				log.Printf("Connection state changed: %s", upd.State.ConnectionStateType())
+
+				break
+			case "updateUserChatAction":
+				upd := update.(*client.UpdateUserChatAction)
+				log.Printf("User action in chat `%s`: id: %d, action: %s", GetChatName(upd.ChatId), upd.UserId, upd.Action.ChatActionType())
+
+				break
+			case "updateChatLastMessage":
+				upd := update.(*client.UpdateChatLastMessage)
+				if len(upd.Positions) > 0 {
+					saveChatPosition(upd.ChatId, upd.Positions[0])
+				} else {
+					log.Printf("Update chat last message without position: %d / `%s`", upd.ChatId, GetChatName(upd.ChatId))
+				}
+
+				break
+			case "updateOption":
+				upd := update.(*client.UpdateOption)
+				log.Printf("Update option %s: %s", upd.Name, JsonMarshalStr(upd.Value))
+
 				break
 			case "updateChatPosition":
 				upd := update.(*client.UpdateChatPosition)
 				saveChatPosition(upd.ChatId, upd.Position)
 
 				break
-				case "updateChatFilters":
+			case "updateChatFilters":
 				upd := update.(*client.UpdateChatFilters)
 				SaveChatFilters(upd)
 
@@ -134,13 +163,13 @@ func ListenUpdates()  {
 						continue
 					}
 					if checkSkippedChat(strconv.FormatInt(GetChatIdBySender(savedMessage.Message.Sender), 10)) {
-						log.Printf("Skip deleted message %d from sender %d, `%s`", messageId, GetChatIdBySender(savedMessage.Message.Sender), GetSenderName(savedMessage.Message.Sender))
+						DLog(fmt.Sprintf("Skip deleted message %d from sender %d, `%s`", messageId, GetChatIdBySender(savedMessage.Message.Sender), GetSenderName(savedMessage.Message.Sender)))
 						skipUpdate++
 
 						continue
 					}
 					if savedMessage.Message.Content.MessageContentType() == "messageChatAddMembers" {
-						log.Printf("Skip deleted message %d (chat join of user %d)", messageId, GetChatIdBySender(savedMessage.Message.Sender))
+						DLog(fmt.Sprintf("Skip deleted message %d (chat join of user %d)", messageId, GetChatIdBySender(savedMessage.Message.Sender)))
 						skipUpdate++
 
 						continue
@@ -155,7 +184,7 @@ func ListenUpdates()  {
 				chatName := GetChatName(upd.ChatId)
 				intLink := fmt.Sprintf("http://%s/d/%d/%s", config.Config.WebListen, upd.ChatId, ImplodeInt(upd.MessageIds))
 				count := len(upd.MessageIds)
-				log.Printf("[%s] DELETED %d Messages from chat: %d, `%s`, %s", mongoId, count, upd.ChatId, chatName, intLink)
+				DLog(fmt.Sprintf("[%s] DELETED %d Messages from chat: %d, `%s`, %s", mongoId, count, upd.ChatId, chatName, intLink))
 
 				break
 
@@ -209,16 +238,15 @@ func ListenUpdates()  {
 				link := GetLink(upd.ChatId, upd.MessageId)
 				chatName := GetChatName(upd.ChatId)
 				intLink := fmt.Sprintf("http://%s/e/%d/%d", config.Config.WebListen, upd.ChatId, upd.MessageId)
-				log.Printf("[%s] EDITED content! Chat: %d, msg %d, %s, %s, %s", mongoId, upd.ChatId, upd.MessageId, chatName, link, intLink)
-				//log.Printf("%s", GetContent(upd.NewContent))
+				DLog(fmt.Sprintf("[%s] EDITED content! Chat: %d, msg %d, %s, %s, %s", mongoId, upd.ChatId, upd.MessageId, chatName, link, intLink))
 
 				break
 			case "updateFile":
 				upd := update.(*client.UpdateFile)
 				if upd.File.Local.IsDownloadingActive {
-					log.Printf("File downloading: %d/%d bytes", upd.File.Local.DownloadedSize, upd.File.ExpectedSize)
+					DLog(fmt.Sprintf("File downloading: %d/%d bytes", upd.File.Local.DownloadedSize, upd.File.ExpectedSize))
 				} else {
-					log.Printf("File downloaded: %d bytes, path: %s", upd.File.Local.DownloadedSize, upd.File.Local.Path)
+					DLog(fmt.Sprintf("File downloaded: %d bytes, path: %s", upd.File.Local.DownloadedSize, upd.File.Local.Path))
 				}
 
 				break
@@ -248,7 +276,11 @@ func GetSenderName(sender client.MessageSender) string {
 		return err.Error()
 	}
 	if sender.MessageSenderType() == "messageSenderChat" {
-		return fmt.Sprintf("%s", chat.(*client.Chat).Title)
+		name := fmt.Sprintf("%s", chat.(*client.Chat).Title)
+		if name == "" {
+			name = fmt.Sprintf("no_name %d", chat.(*client.Chat).Id)
+		}
+		return name
 	} else if sender.MessageSenderType() == "messageSenderUser" {
 		user := chat.(*client.User)
 		name := ""
@@ -260,6 +292,9 @@ func GetSenderName(sender client.MessageSender) string {
 		}
 		if user.Username != "" {
 			name = fmt.Sprintf("%s (@%s)", name, user.Username)
+		}
+		if name == "" {
+			name = fmt.Sprintf("no_name %d", user.Id)
 		}
 		return name
 	}
@@ -314,8 +349,12 @@ func GetChatName(chatId int64) string {
 
 		return "no_title"
 	}
+	name := fmt.Sprintf("%s", fullChat.Title)
+	if name == "" {
+		name = fmt.Sprintf("no_name %d", chatId)
+	}
 
-	return fmt.Sprintf("%s", fullChat.Title)
+	return name
 }
 
 func GetChat(chatId int64) (*client.Chat, error) {

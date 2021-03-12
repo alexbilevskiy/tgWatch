@@ -3,8 +3,10 @@ package helpers
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
+	"tgWatch/config"
 	"time"
 )
 
@@ -37,4 +39,10 @@ func JsonMarshalStr(j interface{}) string {
 func FormatTime(timestamp int32) string {
 
 	return time.Unix(int64(timestamp), 0).Format("2006-01-02 15:04:05")
+}
+
+func DLog(format string) {
+	if config.Config.Debug {
+		log.Print(format)
+	}
 }

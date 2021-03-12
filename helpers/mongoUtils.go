@@ -284,6 +284,7 @@ func SaveChatFilters(chatFilters *client.UpdateChatFilters) {
 	LoadChatFilters()
 }
 
+//@TODO: add parameter specifying chat list for position
 func saveChatPosition(chatId int64, chatPosition *client.ChatPosition) {
 	fmt.Printf("ChatPosition update: %d | %d\n", chatId, chatPosition.Order)
 	filStr := structs.ChatPosition{ChatId: chatId, Order: int64(chatPosition.Order), IsPinned: chatPosition.IsPinned}

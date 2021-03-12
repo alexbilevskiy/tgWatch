@@ -8,4 +8,5 @@ type ConfigFileStruct struct {
 	IgnoreFolders map[string]bool `json:"IgnoreFolders"`
 	WebListen string `json:"WebListen"`
 	Mongo map[string]string `json:"Mongo"`
+	Debug bool `json:"Debug"`
 }
