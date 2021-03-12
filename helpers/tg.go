@@ -105,8 +105,11 @@ func ListenUpdates()  {
 				break
 			case "updateNewChat":
 				upd := update.(*client.UpdateNewChat)
-				log.Printf("New chat added: %d / %s", upd.Chat.Id, upd.Chat.Title)
-				//@TODO: save position here
+				//@TODO: store chat to local cache, avoid using getChat request
+				DLog(fmt.Sprintf("New chat added: %d / %s", upd.Chat.Id, upd.Chat.Title))
+				if len(upd.Chat.Positions) > 0 {
+					saveChatPosition(upd.Chat.Id, upd.Chat.Positions[0])
+				}
 
 				break
 			case "updateConnectionState":
@@ -116,7 +119,14 @@ func ListenUpdates()  {
 				break
 			case "updateUserChatAction":
 				upd := update.(*client.UpdateUserChatAction)
-				log.Printf("User action in chat `%s`: id: %d, action: %s", GetChatName(upd.ChatId), upd.UserId, upd.Action.ChatActionType())
+				user, err := GetUser(upd.UserId)
+				userName := "err_name"
+				if err != nil {
+					fmt.Printf("failed to get user %d: %s", upd.UserId, err)
+				} else {
+					userName = getUserFullname(user)
+				}
+				log.Printf("User action in chat `%s`: id: %d, name: `%s`, action: %s", GetChatName(upd.ChatId), upd.UserId, userName, upd.Action.ChatActionType())
 
 				break
 			case "updateChatLastMessage":
@@ -282,23 +292,27 @@ func GetSenderName(sender client.MessageSender) string {
 		return name
 	} else if sender.MessageSenderType() == "messageSenderUser" {
 		user := chat.(*client.User)
-		name := ""
-		if user.FirstName != "" {
-			name = user.FirstName
-		}
-		if user.LastName != "" {
-			name = fmt.Sprintf("%s %s", name, user.LastName)
-		}
-		if user.Username != "" {
-			name = fmt.Sprintf("%s (@%s)", name, user.Username)
-		}
-		if name == "" {
-			name = fmt.Sprintf("no_name %d", user.Id)
-		}
-		return name
+		return getUserFullname(user)
 	}
 
 	return "unkown_chattype"
+}
+
+func getUserFullname(user *client.User) string {
+	name := ""
+	if user.FirstName != "" {
+		name = user.FirstName
+	}
+	if user.LastName != "" {
+		name = fmt.Sprintf("%s %s", name, user.LastName)
+	}
+	if user.Username != "" {
+		name = fmt.Sprintf("%s (@%s)", name, user.Username)
+	}
+	if name == "" {
+		name = fmt.Sprintf("no_name %d", user.Id)
+	}
+	return name
 }
 
 func GetSenderObj(sender client.MessageSender) (interface{}, error) {
