@@ -463,7 +463,7 @@ func processTgChat(chatId int64) []byte {
 	if chatId > 0 {
 		chat, err = GetUser(int32(chatId))
 	} else{
-		chat, err = GetChat(chatId)
+		chat, err = GetChat(chatId, false)
 	}
 	if err != nil {
 

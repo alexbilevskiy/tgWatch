@@ -300,7 +300,8 @@ func saveChatPosition(chatId int64, chatPosition *client.ChatPosition) {
 
 func getSavedChats() []structs.ChatPosition {
 	crit := bson.D{}
-	cur, err := chatListColl.Find(mongoContext, crit)
+	opts := options.FindOptions{Sort: bson.M{"order": -1}}
+	cur, err := chatListColl.Find(mongoContext, crit, &opts)
 	var list []structs.ChatPosition
 	if err != nil {
 		fmt.Printf("Chat list error: %s", err)

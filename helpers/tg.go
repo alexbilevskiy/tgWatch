@@ -331,7 +331,7 @@ func getUserFullname(user *client.User) string {
 func GetSenderObj(sender client.MessageSender) (interface{}, error) {
 	if sender.MessageSenderType() == "messageSenderChat" {
 		chatId := sender.(*client.MessageSenderChat).ChatId
-		chat, err := GetChat(chatId)
+		chat, err := GetChat(chatId, false)
 		if err != nil {
 			log.Printf("Failed to request sender chat info by id %d: %s", chatId, err)
 
@@ -369,7 +369,7 @@ func GetLink(chatId int64, messageId int64) string {
 }
 
 func GetChatName(chatId int64) string {
-	fullChat, err := GetChat(chatId)
+	fullChat, err := GetChat(chatId, false)
 	if err != nil {
 		log.Printf("Failed to get chat name by id %d: %s", chatId, err)
 
@@ -383,9 +383,9 @@ func GetChatName(chatId int64) string {
 	return name
 }
 
-func GetChat(chatId int64) (*client.Chat, error) {
+func GetChat(chatId int64, force bool) (*client.Chat, error) {
 	fullChat, ok := localChats[chatId]
-	if ok {
+	if !force && ok {
 		//fmt.Printf("Found local chat %d\n", chatId)
 
 		return fullChat, nil
@@ -544,7 +544,7 @@ func getChatsList() []*client.Chat {
 	offsetChatId := int64(0)
 	for {
 		log.Printf("GetChats requesting page %d, offset %d", page, offsetChatId)
-		chatsRequest := &client.GetChatsRequest{OffsetOrder: offsetOrder, Limit: 10, OffsetChatId: offsetChatId}
+		chatsRequest := &client.GetChatsRequest{OffsetOrder: offsetOrder, Limit: 100, OffsetChatId: offsetChatId}
 		chats, err := tdlibClient.GetChats(chatsRequest)
 		if err != nil {
 			log.Fatalf("[ERROR] GetChats: %s", err)
@@ -552,15 +552,15 @@ func getChatsList() []*client.Chat {
 		log.Printf("GetChats got page %d with %d chats", page, chats.TotalCount)
 		for _, chatId := range chats.ChatIds {
 			log.Printf("New ChatID %d", chatId)
-			chatRequest := &client.GetChatRequest{ChatId: chatId}
-			chat, err := tdlibClient.GetChat(chatRequest)
+			chat, err := GetChat(chatId, true)
 			if err != nil {
 				log.Printf("[ERROR] GetChat id %d: %s", chatId, err)
 
 				continue
 			}
-			log.Printf("Got chatID %d, position %d, title `%s`", chatId, chat.Positions[0].Order, chat.Title)
-			saveChatPosition(chatId, chat.Positions[0])
+			if len(chat.Positions) == 0 {
+				log.Fatalf("Cannot load chats without position %d", chatId)
+			}
 			offsetChatId = chat.Id
 			offsetOrder = chat.Positions[0].Order
 
