@@ -15,6 +15,8 @@ import (
 )
 
 func initTdlib() {
+	LoadChatFilters()
+	localChats = make(map[int64]*client.Chat)
 	authorizer := client.ClientAuthorizer()
 	go client.CliInteractor(authorizer)
 
@@ -106,6 +108,7 @@ func ListenUpdates()  {
 				break
 			case "updateNewChat":
 				upd := update.(*client.UpdateNewChat)
+				localChats[upd.Chat.Id] = upd.Chat
 				//@TODO: store chat to local cache, avoid using getChat request
 				DLog(fmt.Sprintf("New chat added: %d / %s", upd.Chat.Id, upd.Chat.Title))
 				if len(upd.Chat.Positions) > 0 {
@@ -381,8 +384,18 @@ func GetChatName(chatId int64) string {
 }
 
 func GetChat(chatId int64) (*client.Chat, error) {
+	fullChat, ok := localChats[chatId]
+	if ok {
+		//fmt.Printf("Found local chat %d\n", chatId)
+
+		return fullChat, nil
+	}
 	req := &client.GetChatRequest{ChatId: chatId}
 	fullChat, err := tdlibClient.GetChat(req)
+	if err != nil {
+		fmt.Printf("Caching local chat %d\n", chatId)
+		localChats[chatId] = fullChat
+	}
 
 	return fullChat, err
 }

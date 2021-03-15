@@ -15,11 +15,11 @@ var chatFiltersColl *mongo.Collection
 var chatListColl *mongo.Collection
 var tdlibClient *client.Client
 var chatFilters []structs.ChatFilter
+var localChats map[int64]*client.Chat
 
 func Init() {
 	config.InitConfiguration()
 	initMongo()
-	LoadChatFilters()
 	initWeb()
 	initTdlib()
 }
