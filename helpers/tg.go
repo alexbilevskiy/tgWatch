@@ -88,6 +88,7 @@ func ListenUpdates()  {
 			case "updateMessageIsPinned":
 			case "updateChatHasScheduledMessages":
 			case "updateHavePendingNotifications":
+			case "updateRecentStickers":
 
 			case "updateSupergroup":
 			case "updateSupergroupFullInfo":
@@ -119,6 +120,10 @@ func ListenUpdates()  {
 				break
 			case "updateUserChatAction":
 				upd := update.(*client.UpdateUserChatAction)
+				if upd.ChatId < 0 {
+					DLog(fmt.Sprintf("Skipping action in non-user chat %d: %s", upd.ChatId, upd.Action.ChatActionType()))
+					break
+				}
 				user, err := GetUser(upd.UserId)
 				userName := "err_name"
 				if err != nil {
@@ -174,6 +179,11 @@ func ListenUpdates()  {
 					if checkSkippedChat(strconv.FormatInt(GetChatIdBySender(savedMessage.Message.Sender), 10)) {
 						DLog(fmt.Sprintf("Skip deleted message %d from sender %d, `%s`", messageId, GetChatIdBySender(savedMessage.Message.Sender), GetSenderName(savedMessage.Message.Sender)))
 						skipUpdate++
+
+						continue
+					}
+					if savedMessage.Message.Content == nil {
+						log.Printf("Skip deleted message %d with unknown content from %s", messageId, GetChatIdBySender(savedMessage.Message.Sender))
 
 						continue
 					}
