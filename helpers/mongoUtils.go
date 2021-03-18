@@ -286,7 +286,7 @@ func SaveChatFilters(chatFilters *client.UpdateChatFilters) {
 
 //@TODO: add parameter specifying chat list for position
 func saveChatPosition(chatId int64, chatPosition *client.ChatPosition) {
-	fmt.Printf("ChatPosition update: %d | %d\n", chatId, chatPosition.Order)
+	DLog(fmt.Sprintf("ChatPosition update: %d | %d\n", chatId, chatPosition.Order))
 	filStr := structs.ChatPosition{ChatId: chatId, Order: int64(chatPosition.Order), IsPinned: chatPosition.IsPinned}
 	crit := bson.D{{"chatid", chatId}}
 	update := bson.D{{"$set", filStr}}
