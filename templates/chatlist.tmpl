@@ -9,6 +9,7 @@
             {{end}}
             <a class="btn btn-sm {{$btnClass}}" href="/l?folder={{.Id}}">{{.Title}}</a>
         {{end}}
+        <a class="btn btn-sm btn-danger" href="/l?folder={{$sel}}&refresh=1">Refresh</a>
     </div>
 </div>
 <div class="row">
