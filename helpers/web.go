@@ -564,14 +564,14 @@ func processTgChatList(w http.ResponseWriter, refresh bool, folder int32) {
 	}
 	var folders []structs.ChatFolder
 	folders = make([]structs.ChatFolder, 0)
-	for _, filter := range chatFilters {
-		folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: filter.Id, Title: filter.Title})
-	}
 	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: 0, Title: "Default"})
 	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: -1, Title: "Main"})
 	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: -2, Title: "Archive"})
+	for _, filter := range chatFilters {
+		folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: filter.Id, Title: filter.Title})
+	}
 
-	res := structs.ChatList{T: "Chat list", ChatFolders: folders}
+	res := structs.ChatList{T: "Chat list", ChatFolders: folders, SelectedFolder: folder}
 	if refresh {
 		chatList := getChatsList()
 		for _, chat := range chatList {

@@ -1,12 +1,16 @@
 {{define "main"}}
 <div class="row">
-    <ul class="list-group list-group-flush">
+    <div class="d-grid gap-2 d-md-block">
+        {{$sel := .SelectedFolder}}
         {{range .ChatFolders}}
-        <li class="list-group-item"><a href="/l?folder={{.Id}}">{{.Title}}</a></li>
+            {{$btnClass := "btn-outline-primary"}}
+            {{if eq $sel .Id}}
+                {{$btnClass = "btn-primary"}}
+            {{end}}
+            <a class="btn btn-sm {{$btnClass}}" href="/l?folder={{.Id}}">{{.Title}}</a>
         {{end}}
-    </ul>
+    </div>
 </div>
-<hr>
 <div class="row">
     <ul class="list-group list-group-flush">
         {{range .Chats}}
