@@ -115,7 +115,7 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		if req.FormValue("refresh") == "1" {
 			refresh = true
 		}
-		var folder int32 = 0
+		var folder int32 = ClMain
 		if req.FormValue("folder") != "" {
 			folder64, _ := strconv.ParseInt(req.FormValue("folder"), 10, 32)
 			folder = int32(folder64)
@@ -564,16 +564,15 @@ func processTgChatList(w http.ResponseWriter, refresh bool, folder int32) {
 	}
 	var folders []structs.ChatFolder
 	folders = make([]structs.ChatFolder, 0)
-	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: 0, Title: "Default"})
-	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: -1, Title: "Main"})
-	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: -2, Title: "Archive"})
+	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: ClMain, Title: "Main"})
+	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: ClArchive, Title: "Archive"})
 	for _, filter := range chatFilters {
 		folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: filter.Id, Title: filter.Title})
 	}
 
 	res := structs.ChatList{T: "Chat list", ChatFolders: folders, SelectedFolder: folder}
 	if refresh {
-		chatList := getChatsList()
+		chatList := getChatsList(folder)
 		for _, chat := range chatList {
 			res.Chats = append(res.Chats, structs.ChatInfo{ChatId: chat.Id, ChatName: GetChatName(chat.Id)})
 		}

@@ -318,17 +318,28 @@ func GetContentStructs(content client.MessageContent) []structs.MessageAttachmen
 	}
 }
 
-func getChatsList() []*client.Chat {
+func getChatsList(listId int32) []*client.Chat {
 	maxChatId := client.JsonInt64(int64((^uint64(0)) >> 1))
 	offsetOrder := maxChatId
 	log.Printf("Requesting chats with max id: %d", maxChatId)
 
-	var chatList []*client.Chat
+	var fullList []*client.Chat
+
+	var chatList client.ChatList
+	switch listId {
+	case ClMain:
+		chatList = &client.ChatListMain{}
+	case ClArchive:
+		chatList = &client.ChatListArchive{}
+	default:
+		chatList = &client.ChatListFilter{ChatFilterId: listId}
+	}
+
 	page := 0
 	offsetChatId := int64(0)
 	for {
 		log.Printf("GetChats requesting page %d, offset %d", page, offsetChatId)
-		chatsRequest := &client.GetChatsRequest{OffsetOrder: offsetOrder, Limit: 100, OffsetChatId: offsetChatId}
+		chatsRequest := &client.GetChatsRequest{ChatList: chatList, OffsetOrder: offsetOrder, Limit: 100, OffsetChatId: offsetChatId}
 		chats, err := tdlibClient.GetChats(chatsRequest)
 		if err != nil {
 			log.Fatalf("[ERROR] GetChats: %s", err)
@@ -348,7 +359,7 @@ func getChatsList() []*client.Chat {
 			offsetChatId = chat.Id
 			offsetOrder = chat.Positions[0].Order
 
-			chatList = append(chatList, chat)
+			fullList = append(fullList, chat)
 		}
 
 		if len(chats.ChatIds) == 0 {
@@ -361,7 +372,7 @@ func getChatsList() []*client.Chat {
 		log.Println()
 	}
 
-	return chatList
+	return fullList
 }
 
 func checkSkippedChat(chatId string) bool {
