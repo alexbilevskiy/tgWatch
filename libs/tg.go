@@ -301,6 +301,10 @@ func GetContentStructs(content client.MessageContent) []structs.MessageAttachmen
 		//msg := content.(*client.MessagePoll)
 
 		return nil
+	case "messageLocation":
+	case "messageChatAddMembers":
+
+		return nil
 	case "messageSticker":
 		msg := content.(*client.MessageSticker)
 		s := structs.MessageAttachment{
@@ -316,6 +320,8 @@ func GetContentStructs(content client.MessageContent) []structs.MessageAttachmen
 
 		return nil
 	}
+
+	return nil
 }
 
 func getChatsList(listId int32) []*client.Chat {
