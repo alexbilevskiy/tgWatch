@@ -58,7 +58,14 @@ type MessageAttachmentError struct {
 	Error string
 }
 
-type ChatList struct {
+type ChatFolder struct {
 	T     string
-	Chats []ChatInfo
+	Id    int32
+	Title string
+}
+
+type ChatList struct {
+	T           string
+	ChatFolders []ChatFolder
+	Chats       []ChatInfo
 }

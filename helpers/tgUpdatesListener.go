@@ -54,9 +54,7 @@ func ListenUpdates()  {
 				upd := update.(*client.UpdateNewChat)
 				localChats[upd.Chat.Id] = upd.Chat
 				DLog(fmt.Sprintf("New chat added: %d / %s", upd.Chat.Id, upd.Chat.Title))
-				if len(upd.Chat.Positions) > 0 {
-					saveChatPosition(upd.Chat.Id, upd.Chat.Positions[0])
-				}
+				saveAllChatPositions(upd.Chat.Id, upd.Chat.Positions)
 
 				break
 			case "updateConnectionState":
@@ -85,7 +83,7 @@ func ListenUpdates()  {
 				if len(upd.Positions) == 0 {
 					break
 				}
-				saveChatPosition(upd.ChatId, upd.Positions[0])
+				saveAllChatPositions(upd.ChatId, upd.Positions)
 
 				break
 			case "updateOption":

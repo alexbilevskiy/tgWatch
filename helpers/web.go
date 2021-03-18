@@ -115,7 +115,12 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		if req.FormValue("refresh") == "1" {
 			refresh = true
 		}
-		processTgChatList(res, refresh)
+		var folder int32 = 0
+		if req.FormValue("folder") != "" {
+			folder64, _ := strconv.ParseInt(req.FormValue("folder"), 10, 32)
+			folder = int32(folder64)
+		}
+		processTgChatList(res, refresh, folder)
 		return
 	case "o":
 		processTgOverview(limit, res)
@@ -544,7 +549,7 @@ func processTgChatHistory(chatId int64, limit int64, w http.ResponseWriter) {
 	return
 }
 
-func processTgChatList(w http.ResponseWriter, refresh bool) {
+func processTgChatList(w http.ResponseWriter, refresh bool, folder int32) {
 	var t *template.Template
 	var err error
 	if verbose {
@@ -557,14 +562,23 @@ func processTgChatList(w http.ResponseWriter, refresh bool) {
 		fmt.Printf("Error parse tpl: %s\n", err)
 		return
 	}
-	res := structs.ChatList{T: "Chat list"}
+	var folders []structs.ChatFolder
+	folders = make([]structs.ChatFolder, 0)
+	for _, filter := range chatFilters {
+		folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: filter.Id, Title: filter.Title})
+	}
+	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: 0, Title: "Default"})
+	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: -1, Title: "Main"})
+	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: -2, Title: "Archive"})
+
+	res := structs.ChatList{T: "Chat list", ChatFolders: folders}
 	if refresh {
 		chatList := getChatsList()
 		for _, chat := range chatList {
 			res.Chats = append(res.Chats, structs.ChatInfo{ChatId: chat.Id, ChatName: GetChatName(chat.Id)})
 		}
 	} else {
-		chatList := getSavedChats()
+		chatList := getSavedChats(folder)
 		for _, chatPos := range chatList {
 			res.Chats = append(res.Chats, structs.ChatInfo{ChatId: chatPos.ChatId, ChatName: GetChatName(chatPos.ChatId)})
 		}

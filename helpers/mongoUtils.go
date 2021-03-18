@@ -284,11 +284,45 @@ func SaveChatFilters(chatFilters *client.UpdateChatFilters) {
 	LoadChatFilters()
 }
 
-//@TODO: add parameter specifying chat list for position
+const (
+	ClDefault int32 = 0
+	ClMain int32 = -1
+	ClArchive int32 = -2
+)
+
+func saveAllChatPositions(chatId int64, positions []*client.ChatPosition) {
+	if len(positions) == 0 {
+		return
+	}
+	for _, pos := range positions {
+		saveChatPosition(chatId, pos)
+	}
+}
+
 func saveChatPosition(chatId int64, chatPosition *client.ChatPosition) {
-	DLog(fmt.Sprintf("ChatPosition update: %d | %d\n", chatId, chatPosition.Order))
-	filStr := structs.ChatPosition{ChatId: chatId, Order: int64(chatPosition.Order), IsPinned: chatPosition.IsPinned}
-	crit := bson.D{{"chatid", chatId}}
+	var listId int32
+	clType := chatPosition.List.ChatListType()
+	switch clType {
+	case "chatListArchive":
+		//l := chatPosition.List.(*client.ChatListArchive)
+		listId = ClArchive
+		break
+	case "chatListMain":
+		//l := chatPosition.List.(*client.ChatListMain)
+		listId = ClMain
+		break
+	case "chatListFilter":
+		l := chatPosition.List.(*client.ChatListFilter)
+		listId = l.ChatFilterId
+		break
+	default:
+		listId = ClDefault
+		fmt.Printf("Invalid chat position type: %s", clType)
+	}
+	DLog(fmt.Sprintf("ChatPosition update: %d | %d | %d | %s\n", chatId, chatPosition.Order, listId, chatPosition.List.ChatListType()))
+
+	filStr := structs.ChatPosition{ChatId: chatId, Order: int64(chatPosition.Order), IsPinned: chatPosition.IsPinned, ListId: listId}
+	crit := bson.D{{"chatid", chatId}, {"listid", listId}}
 	update := bson.D{{"$set", filStr}}
 	t := true
 	opts := &options.UpdateOptions{Upsert: &t}
@@ -298,8 +332,8 @@ func saveChatPosition(chatId int64, chatPosition *client.ChatPosition) {
 	}
 }
 
-func getSavedChats() []structs.ChatPosition {
-	crit := bson.D{}
+func getSavedChats(listId int32) []structs.ChatPosition {
+	crit := bson.D{{"listid", listId}}
 	opts := options.FindOptions{Sort: bson.M{"order": -1}}
 	cur, err := chatListColl.Find(mongoContext, crit, &opts)
 	var list []structs.ChatPosition

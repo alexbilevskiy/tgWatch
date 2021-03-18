@@ -46,3 +46,6 @@ func DLog(format string) {
 		log.Print(format)
 	}
 }
+func NDLog(format string) {
+	log.Print(format)
+}

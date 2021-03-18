@@ -15,6 +15,7 @@ type ChatFilter struct {
 
 type ChatPosition struct {
 	ChatId   int64
+	ListId   int32
 	Order    int64
 	IsPinned bool
 }
