@@ -1,11 +1,11 @@
 package main
 
 import (
-	"tgWatch/helpers"
+	"tgWatch/libs"
 )
 
 func main() {
-	helpers.Init()
-	helpers.ListenUpdates()
+	libs.Init()
+	libs.ListenUpdates()
 }
 
