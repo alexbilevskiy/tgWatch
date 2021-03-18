@@ -283,21 +283,49 @@ func processTgEdit(chatId int64, messageId int64) []byte {
 	return j
 }
 
-func processTgChat(chatId int64) []byte {
-	var chat interface{}
+func processTgChatInfo(chatId int64, w http.ResponseWriter) {
 	var err error
+	var t *template.Template
+
+	if verbose {
+		t, err = template.New(`json.tmpl`).ParseFiles(`templates/json.tmpl`)
+	} else {
+		t, err = template.New(`base.tmpl`).ParseFiles(`templates/base.tmpl`, `templates/navbar.tmpl`, `templates/chat_info.tmpl`)
+	}
+
+	if err != nil {
+		fmt.Printf("Error parse tpl: %s\n", err)
+		return
+	}
+
+	var chat interface{}
 	if chatId > 0 {
 		chat, err = GetUser(int32(chatId))
 	} else{
 		chat, err = GetChat(chatId, false)
 	}
 	if err != nil {
-
-		return []byte("Error: " + err.Error())
+		fmt.Printf("Error get chat: %s\n", err)
+		return
 	}
-	j, _ := json.Marshal(chat)
 
-	return j
+	res := structs.ChatFullInfo{
+		T: "ChatFullInfo",
+		Chat: chat,
+		ChatRaw: jsonMarshalPretty(chat),
+	}
+	if verbose {
+		err = t.Execute(w, structs.JSON{JSON: JsonMarshalStr(res)})
+
+		return
+	} else {
+		err = t.Execute(w, res)
+	}
+	if err != nil {
+		fmt.Printf("Error tpl: %s\n", err)
+		return
+	}
+
 }
 
 func processTgChatHistory(chatId int64, limit int64, w http.ResponseWriter) {

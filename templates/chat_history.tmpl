@@ -9,7 +9,7 @@
         <li class="list-group-item">
             {{if ne .MediaAlbumId 0}}
                 {{if eq $lastM 0}}
-<!--                    border start-->
+                    MEDIA ALBUM START
                     {{$needHeader = true}}
                     {{$lastM = .MediaAlbumId}}
                 {{else if eq .MediaAlbumId $lastM}}

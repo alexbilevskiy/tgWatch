@@ -43,3 +43,9 @@ type ChatHistory struct {
 	Chat     ChatInfo
 	Messages []MessageInfo
 }
+
+type ChatFullInfo struct {
+	T       string
+	Chat    interface{}
+	ChatRaw string
+}

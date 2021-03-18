@@ -124,8 +124,9 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 			return
 		}
 		chatId, _ := strconv.ParseInt(m[1], 10, 64)
-		data = processTgChat(chatId)
-		break
+		processTgChatInfo(chatId, res)
+
+		return
 	case "h":
 		r := regexp.MustCompile(`^/h/(-?\d+)$`)
 		m := r.FindStringSubmatch(req.URL.Path)
