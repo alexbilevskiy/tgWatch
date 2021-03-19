@@ -6,6 +6,7 @@ import (
 	"go-tdlib/client"
 	"html/template"
 	"net/http"
+	"strings"
 	"tgWatch/config"
 	"tgWatch/structs"
 )
@@ -222,7 +223,7 @@ func processSingleMessage(chatId int64, messageId int64, w http.ResponseWriter) 
 	}
 }
 
-func processTgDelete(chatId int64, messageIds []int64) []byte {
+func processTgDeleted(chatId int64, messageIds []int64) []byte {
 
 	var fullContentJ []interface{}
 	for _, messageId := range messageIds {
@@ -445,6 +446,47 @@ func processTgChatList(w http.ResponseWriter, refresh bool, folder int32) {
 	}
 
 	return
+}
+
+func processTgDelete(chatId int64, pattern string, w http.ResponseWriter) {
+
+	req := &client.GetChatHistoryRequest{ChatId: chatId, Limit: 100, FromMessageId: 0, Offset: 0}
+	history, err := tdlibClient.GetChatHistory(req)
+	if err != nil {
+		data := []byte(fmt.Sprintf("Error get chat %d history: %s", chatId, err))
+		w.Write(data)
+		return
+	}
+	var messageIds []int64
+	messageIds = make([]int64, 0)
+	fmt.Printf("Received history of %d messages from chat %d\n", history.TotalCount, chatId)
+	for _, message := range history.Messages {
+		content := GetContent(message.Content)
+		if content == "" {
+			fmt.Printf("NO content: %d, `%s`\n", message.Id, content)
+			continue
+		}
+		if strings.Contains(content, pattern) {
+			fmt.Printf("Delete candidate: %d, `%s`\n", message.Id, content)
+			messageIds = append(messageIds, message.Id)
+		} else {
+			fmt.Printf("SKIP: %d, `%s`\n", message.Id, content)
+		}
+	}
+	reqDelete := &client.DeleteMessagesRequest{ChatId: chatId, MessageIds: messageIds}
+	ok, err := tdlibClient.DeleteMessages(reqDelete)
+	if err != nil {
+		fmt.Printf("Failed to delete: `%s`\n", err)
+		return
+	}
+	if ok != nil {
+		fmt.Printf("Deleted batch of: %d messages\n", len(messageIds))
+		data := []byte(fmt.Sprintf("Deleted from chat %d `%s`", chatId, pattern))
+		w.Write(data)
+		return
+	}
+	data := []byte(fmt.Sprintf("Deleted from chat %d `%s`", chatId, pattern))
+	w.Write(data)
 }
 
 func parseUpdateMessageEdited(upd *client.UpdateMessageEdited) structs.MessageEditedMeta {

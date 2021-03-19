@@ -94,7 +94,7 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		}
 		chatId, _ := strconv.ParseInt(m[1], 10, 64)
 		messageIds := m[2]
-		data = processTgDelete(chatId, ExplodeInt(messageIds))
+		data = processTgDeleted(chatId, ExplodeInt(messageIds))
 		break
 	case "j":
 		processTgJournal(limit, res)
@@ -179,6 +179,27 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		data = j
 
 		break
+	case "delete":
+		r := regexp.MustCompile(`^/delete/(-?\d+)$`)
+		m := r.FindStringSubmatch(req.URL.Path)
+		if m == nil {
+			data := []byte(fmt.Sprintf("Unknown path %s %s", action, req.URL.Path))
+			res.Write(data)
+
+			return
+		}
+
+		chatId, _ := strconv.ParseInt(m[1], 10, 64)
+		pattern := req.FormValue("pattern")
+		if pattern == "" || len(pattern) < 3 {
+			data := []byte(fmt.Sprintf("Unknown pattern `%s`", pattern))
+			res.Write(data)
+
+			return
+		}
+		processTgDelete(chatId, pattern, res)
+
+		return
 	default:
 		res.WriteHeader(404)
 		res.Write([]byte("not found " + req.URL.Path))
