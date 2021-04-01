@@ -35,6 +35,8 @@ func ListenUpdates()  {
 			case "updateChatHasScheduledMessages":
 			case "updateHavePendingNotifications":
 			case "updateRecentStickers":
+			case "updateCall":
+			case "updateMessageContentOpened":
 
 			case "updateSupergroup":
 			case "updateSupergroupFullInfo":
