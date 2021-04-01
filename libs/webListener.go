@@ -197,7 +197,13 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 			return
 		}
-		processTgDelete(chatId, pattern, res)
+		limit := 50
+		if req.FormValue("limit") != "" {
+			limit64, _ := strconv.ParseInt(req.FormValue("limit"), 10, 0)
+			limit = int(limit64)
+		}
+
+		processTgDelete(chatId, pattern, limit, res)
 
 		return
 	default:
