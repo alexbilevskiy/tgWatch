@@ -94,8 +94,8 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		}
 		chatId, _ := strconv.ParseInt(m[1], 10, 64)
 		messageIds := m[2]
-		data = processTgDeleted(chatId, ExplodeInt(messageIds))
-		break
+		processTgDeleted(chatId, ExplodeInt(messageIds), res)
+		return
 	case "j":
 		processTgJournal(limit, res)
 		return

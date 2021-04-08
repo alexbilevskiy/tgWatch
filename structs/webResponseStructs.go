@@ -49,3 +49,10 @@ type ChatFullInfo struct {
 	Chat    interface{}
 	ChatRaw string
 }
+
+type DeletedMessages struct {
+	T          string
+	Messages    interface{}
+	MessagesRaw string
+}
+

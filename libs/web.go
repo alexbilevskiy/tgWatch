@@ -223,7 +223,21 @@ func processSingleMessage(chatId int64, messageId int64, w http.ResponseWriter) 
 	}
 }
 
-func processTgDeleted(chatId int64, messageIds []int64) []byte {
+func processTgDeleted(chatId int64, messageIds []int64, w http.ResponseWriter) {
+
+	var err error
+	var t *template.Template
+
+	if verbose {
+		t, err = template.New(`json.tmpl`).ParseFiles(`templates/json.tmpl`)
+	} else {
+		t, err = template.New(`base.tmpl`).ParseFiles(`templates/base.tmpl`, `templates/navbar.tmpl`, `templates/deleted_message.tmpl`)
+	}
+
+	if err != nil {
+		fmt.Printf("Error parse tpl: %s\n", err)
+		return
+	}
 
 	var fullContentJ []interface{}
 	for _, messageId := range messageIds {
@@ -239,9 +253,25 @@ func processTgDeleted(chatId int64, messageIds []int64) []byte {
 		m.T = "Deleted Message"
 		fullContentJ = append(fullContentJ, parseUpdateNewMessage(upd))
 	}
-	j, _ := json.Marshal(fullContentJ)
 
-	return j
+	res := structs.DeletedMessages{
+		T: "DeletedMessages",
+		Messages: fullContentJ,
+	}
+	if verbose {
+		err = t.Execute(w, structs.JSON{JSON: JsonMarshalStr(fullContentJ)})
+
+		return
+	} else {
+		res.MessagesRaw = jsonMarshalPretty(fullContentJ)
+		err = t.Execute(w, res)
+	}
+	if err != nil {
+		fmt.Printf("Error tpl: %s\n", err)
+		return
+	}
+
+
 }
 
 func processTgEdit(chatId int64, messageId int64) []byte {
@@ -313,13 +343,13 @@ func processTgChatInfo(chatId int64, w http.ResponseWriter) {
 	res := structs.ChatFullInfo{
 		T: "ChatFullInfo",
 		Chat: chat,
-		ChatRaw: jsonMarshalPretty(chat),
 	}
 	if verbose {
 		err = t.Execute(w, structs.JSON{JSON: JsonMarshalStr(res)})
 
 		return
 	} else {
+		res.ChatRaw = jsonMarshalPretty(chat)
 		err = t.Execute(w, res)
 	}
 	if err != nil {
