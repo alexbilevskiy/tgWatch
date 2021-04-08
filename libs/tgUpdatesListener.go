@@ -18,6 +18,7 @@ func ListenUpdates()  {
 			t := update.GetType()
 			switch t {
 			case "updateChatActionBar":
+			case "updateFavoriteStickers":
 			case "updateChatIsBlocked":
 			case "updateChatDraftMessage":
 			case "updateUserStatus":
