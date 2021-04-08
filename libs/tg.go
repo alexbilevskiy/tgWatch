@@ -280,7 +280,11 @@ func GetContentStructs(content client.MessageContent) []structs.MessageAttachmen
 			T: msg.Video.Type,
 			Id: msg.Video.Video.Remote.Id,
 			Link: append(make([]string, 0), fmt.Sprintf("http://%s/f/%s", config.Config.WebListen, msg.Video.Video.Remote.Id)),
-			Thumb: base64.StdEncoding.EncodeToString(msg.Video.Minithumbnail.Data),
+		}
+		if msg.Video.Minithumbnail != nil {
+			s.Thumb = base64.StdEncoding.EncodeToString(msg.Video.Minithumbnail.Data)
+		} else {
+			log.Printf("No thumbnail in message content: %v", msg)
 		}
 		cnt = append(cnt, s)
 
@@ -303,6 +307,7 @@ func GetContentStructs(content client.MessageContent) []structs.MessageAttachmen
 		return nil
 	case "messageLocation":
 	case "messageChatAddMembers":
+	case "messagePinMessage":
 
 		return nil
 	case "messageSticker":
