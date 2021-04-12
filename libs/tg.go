@@ -61,6 +61,19 @@ func initTdlib() {
 	}
 
 	log.Printf("Me: %s %s [%s]", me.FirstName, me.LastName, me.Username)
+
+	go func() {
+		for true {
+			req := &client.SetOptionRequest{Name: "online", Value: &client.OptionValueBoolean{Value: true}}
+			ok, err := tdlibClient.SetOption(req)
+			if err != nil {
+				log.Printf("failed to set online option: %s", err)
+			} else {
+				DLog(fmt.Sprintf("Set online status: %s", JsonMarshalStr(ok)))
+			}
+			time.Sleep(10 * time.Second)
+		}
+	}()
 }
 
 func GetChatIdBySender(sender client.MessageSender) int64 {
