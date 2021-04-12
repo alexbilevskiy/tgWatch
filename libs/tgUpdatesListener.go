@@ -19,6 +19,9 @@ func ListenUpdates()  {
 			switch t {
 			case "updateChatActionBar":
 			case "updateFavoriteStickers":
+			case "updateInstalledStickerSets":
+			case "updateSavedAnimations":
+			case "updateTrendingStickerSets":
 			case "updateChatIsBlocked":
 			case "updateChatDraftMessage":
 			case "updateUserStatus":
