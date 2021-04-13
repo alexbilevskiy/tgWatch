@@ -14,7 +14,8 @@ func ListenUpdates()  {
 	defer listener.Close()
 
 	for update := range listener.Updates {
-		if update.GetClass() == client.ClassUpdate {
+		switch update.GetClass() {
+		case client.ClassUpdate:
 			t := update.GetType()
 			switch t {
 			case "updateChatActionBar":
@@ -223,6 +224,15 @@ func ListenUpdates()  {
 				j, _ := json.Marshal(update)
 				log.Printf("Unknown update %s : %s", t, string(j))
 			}
+			break
+		case client.ClassOk:
+		case client.ClassError:
+		case client.ClassUser:
+		case client.ClassChat:
+		case client.ClassMessageLink:
+			break
+		default:
+			log.Printf("WAAAT? update who??? %s, %v", update.GetClass(), update)
 		}
 	}
 }
