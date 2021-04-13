@@ -42,6 +42,7 @@ func ListenUpdates()  {
 			case "updateRecentStickers":
 			case "updateCall":
 			case "updateMessageContentOpened":
+			case "updateUserPrivacySettingRules":
 
 			case "updateSupergroup":
 			case "updateSupergroupFullInfo":
@@ -230,6 +231,7 @@ func ListenUpdates()  {
 		case client.ClassUser:
 		case client.ClassChat:
 		case client.ClassMessageLink:
+		case client.ClassFile:
 			break
 		default:
 			log.Printf("WAAAT? update who??? %s, %v", update.GetClass(), update)
