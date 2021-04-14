@@ -13,10 +13,8 @@
     </div>
 </div>
 <div class="row">
-    <ul class="list-group list-group-flush">
-        {{range .Chats}}
-        <li class="list-group-item"><a href="/h/{{.ChatId}}">{{.ChatName}}</a></li>
-        {{end}}
-    </ul>
+    <div class="col-8">
+        {{template "overview_table" .}}
+    </div>
 </div>
 {{end}}

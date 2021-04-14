@@ -1,8 +1,12 @@
 package structs
 
 type ChatInfo struct {
-	ChatId   int64
-	ChatName string
+	ChatId        int64
+	ChatName      string
+	CountTotal    int32
+	CountMessages int32
+	CountEdits    int32
+	CountDeletes  int32
 }
 type JournalItem struct {
 	T         string
@@ -23,16 +27,9 @@ type Journal struct {
 type Index struct {
 	T string
 }
-type OverviewItem struct {
-	Chat          ChatInfo
-	CountTotal    int32
-	CountMessages int32
-	CountEdits    int32
-	CountDeletes  int32
-}
 type Overview struct {
 	T string
-	O []OverviewItem
+	Chats []ChatInfo
 }
 type JSON struct {
 	JSON string

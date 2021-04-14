@@ -174,28 +174,61 @@ func FindRecentChanges(limit int64) ([][]byte, []string, []int32, error) {
 	return iterateCursor(cur)
 }
 
-func GetChatsStats() ([]structs.ChatCounters, error) {
-	agg := bson.A{
-		bson.D{
-			{"$match", bson.D{{"t", bson.D{{"$in", bson.A{
+func GetChatsStats(chats []int64) ([]structs.ChatCounters, error) {
+	basicCrit := bson.D{{
+		"t", bson.D{
+			{"$in", bson.A{
 				"updateNewMessage",
 				"updateMessageEdited",
 				"updateDeleteMessages",
-			}}}}}}},
-		bson.D{
-			{"$group", bson.D{
-				{"_id", bson.D{{"$cond", bson.A{"$upd.message.chatid", "$upd.message.chatid", bson.D{{"$cond", bson.A{"$upd.chatid", "$upd.chatid", 0}}}}}}},
-				{"countUpdateNewMessage", bson.D{{"$sum", bson.D{{"$cond", bson.A{bson.D{{"$eq", bson.A{"$t", "updateNewMessage"}}}, 1, 0}}}}}},
-				{"countUpdateMessageEdited", bson.D{{"$sum", bson.D{{"$cond", bson.A{bson.D{{"$eq", bson.A{"$t", "updateMessageEdited"}}}, 1, 0}}}}}},
-				{"countUpdateDeleteMessages", bson.D{{"$sum", bson.D{{"$cond", bson.A{bson.D{{"$eq", bson.A{"$t", "updateDeleteMessages"}}}, 1, 0}}}}}},
-				{"count", bson.D{{"$sum", 1}}},
-			},
-			},
+			}},
 		},
-		bson.D{
-			{"$sort", bson.D{{"count", -1}}},
+	}}
+	var matchRules bson.D
+	if len(chats) > 0 {
+		chatsCritList := bson.A{}
+		for _, chatId := range chats {
+			chatsCritList = append(chatsCritList, chatId)
+		}
+		chatsCrit := bson.D{
+			{"$in", chatsCritList},
+		}
+		chatRules := bson.D{
+			{"$or", []interface{}{
+				bson.D{{"t", "updateNewMessage"}, {"upd.message.chatid", chatsCrit}},
+				bson.D{{"t", "updateMessageEdited"}, {"upd.chatid", chatsCrit}},
+				bson.D{{"t", "updateDeleteMessages"}, {"upd.chatid", chatsCrit}},
+			}},
+		}
+		matchRules = bson.D{
+			{"$and", []interface{}{
+				basicCrit,
+				chatRules,
+			}},
+		}
+	} else {
+		matchRules = basicCrit
+	}
+
+	match := bson.D{
+		{"$match", matchRules},
+	}
+	group := bson.D{
+		{"$group", bson.D{
+			{"_id", bson.D{{"$cond", bson.A{"$upd.message.chatid", "$upd.message.chatid", bson.D{{"$cond", bson.A{"$upd.chatid", "$upd.chatid", 0}}}}}}},
+			{"countUpdateNewMessage", bson.D{{"$sum", bson.D{{"$cond", bson.A{bson.D{{"$eq", bson.A{"$t", "updateNewMessage"}}}, 1, 0}}}}}},
+			{"countUpdateMessageEdited", bson.D{{"$sum", bson.D{{"$cond", bson.A{bson.D{{"$eq", bson.A{"$t", "updateMessageEdited"}}}, 1, 0}}}}}},
+			{"countUpdateDeleteMessages", bson.D{{"$sum", bson.D{{"$cond", bson.A{bson.D{{"$eq", bson.A{"$t", "updateDeleteMessages"}}}, 1, 0}}}}}},
+			{"count", bson.D{{"$sum", 1}}},
+		},
 		},
 	}
+	sort := bson.D{
+		{"$sort", bson.D{{"count", -1}}},
+	}
+	DLog(fmt.Sprintf("ChatStats crit: %s", JsonMarshalStr(match)))
+	agg := bson.A{match, group, sort}
+
 	cur, err := updatesColl.Aggregate(mongoContext, agg)
 	if err != nil {
 		errmsg := fmt.Sprintf("ERROR mongo agg: %s\n", err)

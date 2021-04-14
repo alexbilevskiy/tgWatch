@@ -131,7 +131,7 @@ func processTgJournal(limit int64, w http.ResponseWriter)  {
 }
 
 func processTgOverview(limit int64, w http.ResponseWriter) {
-	s, err := GetChatsStats()
+	s, err := GetChatsStats(make([]int64, 0))
 	if err != nil {
 		fmt.Printf("Error tpl: %s\n", err)
 
@@ -142,7 +142,7 @@ func processTgOverview(limit int64, w http.ResponseWriter) {
 	if verbose {
 		t, errParse = template.New(`json.tmpl`).ParseFiles(`templates/json.tmpl`)
 	} else {
-		t, errParse = template.New(`base.tmpl`).ParseFiles(`templates/base.tmpl`, `templates/navbar.tmpl`, `templates/overview.tmpl`)
+		t, errParse = template.New(`base.tmpl`).ParseFiles(`templates/base.tmpl`, `templates/navbar.tmpl`, `templates/overview_table.tmpl`, `templates/overview.tmpl`)
 	}
 	if errParse != nil {
 		fmt.Printf("Error tpl: %s\n", errParse)
@@ -152,17 +152,15 @@ func processTgOverview(limit int64, w http.ResponseWriter) {
 
 	data := structs.Overview{T: "Overview"}
 	for _, ci := range s {
-		oi := structs.OverviewItem{
-			Chat: structs.ChatInfo{
-				ChatId: ci.ChatId,
-				ChatName: GetChatName(ci.ChatId),
-			},
+		oi := structs.ChatInfo{
+			ChatId: ci.ChatId,
+			ChatName: GetChatName(ci.ChatId),
 			CountTotal: ci.Counters["total"],
 			CountMessages: ci.Counters["updateNewMessage"],
 			CountDeletes: ci.Counters["updateDeleteMessages"],
 			CountEdits: ci.Counters["updateMessageEdited"],
 		}
-		data.O = append(data.O, oi)
+		data.Chats = append(data.Chats, oi)
 	}
 	if verbose {
 		err = t.Execute(w, structs.JSON{JSON: JsonMarshalStr(data)})
@@ -378,8 +376,8 @@ func processTgChatHistory(chatId int64, limit int64, offset int64, w http.Respon
 		NextOffset: offset + limit,
 		PrevOffset: offset - limit,
 	}
-	if res.NextOffset < 0 {
-		res.NextOffset = 0
+	if res.PrevOffset < 0 {
+		res.PrevOffset = 0
 	}
 
 	for i, rawJsonBytes := range updates {
@@ -430,7 +428,7 @@ func processTgChatList(refresh bool, folder int32, w http.ResponseWriter) {
 	if verbose {
 		t, err = template.New(`json.tmpl`).ParseFiles(`templates/json.tmpl`)
 	} else {
-		t, err = template.New(`base.tmpl`).ParseFiles(`templates/base.tmpl`, `templates/navbar.tmpl`, `templates/chatlist.tmpl`)
+		t, err = template.New(`base.tmpl`).ParseFiles(`templates/base.tmpl`, `templates/navbar.tmpl`, `templates/overview_table.tmpl`, `templates/chatlist.tmpl`)
 	}
 
 	if err != nil {
@@ -454,7 +452,18 @@ func processTgChatList(refresh bool, folder int32, w http.ResponseWriter) {
 	} else {
 		chatList := getSavedChats(folder)
 		for _, chatPos := range chatList {
-			res.Chats = append(res.Chats, structs.ChatInfo{ChatId: chatPos.ChatId, ChatName: GetChatName(chatPos.ChatId)})
+			chatInfo := structs.ChatInfo{ChatId: chatPos.ChatId, ChatName: GetChatName(chatPos.ChatId)}
+			chatStats, err := GetChatsStats(append(make([]int64, 0), chatPos.ChatId))
+			if err != nil {
+				fmt.Printf("Failed to get chat stats %d", chatPos.ChatId)
+			} else if len(chatStats) > 0 {
+				chatInfo.CountTotal = chatStats[0].Counters["total"]
+				chatInfo.CountDeletes = chatStats[0].Counters["updateDeleteMessages"]
+				chatInfo.CountEdits = chatStats[0].Counters["updateMessageEdited"]
+				chatInfo.CountMessages = chatStats[0].Counters["updateNewMessage"]
+			}
+
+			res.Chats = append(res.Chats, chatInfo)
 		}
 	}
 

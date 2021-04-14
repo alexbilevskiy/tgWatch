@@ -1,46 +1,5 @@
 {{define "main"}}
 <div class="col">
-    <table class="table table-hover table-sm ">
-        <thead class="">
-        <tr>
-            <th scope="col">
-                Chat
-            </th>
-            <th scope="col">
-                Total
-            </th>
-            <th scope="col">
-                Messages
-            </th>
-            <th scope="col">
-                Edits
-            </th>
-            <th scope="col">
-                Deletes
-            </th>
-        </tr>
-        </thead>
-        <tbody>
-        {{range .O}}
-        <tr>
-            <td>
-                <a href="/h/{{.Chat.ChatId}}">{{.Chat.ChatName}}</a>
-            </td>
-            <td>
-                <span class="badge bg-secondary">{{.CountTotal}}</span>
-            </td>
-            <td>
-                <span class="badge bg-success">{{.CountMessages}}</span>
-            </td>
-            <td>
-                <span class="badge bg-info">{{.CountEdits}}</span>
-            </td>
-            <td>
-                <span class="badge bg-danger">{{.CountDeletes}}</span>
-            </td>
-        </tr>
-        {{end}}
-        </tbody>
-    </table>
+    {{template "overview_table" .}}
 </div>
 {{end}}
