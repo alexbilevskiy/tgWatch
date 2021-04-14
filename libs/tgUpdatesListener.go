@@ -230,6 +230,7 @@ func ListenUpdates()  {
 		case client.ClassError:
 		case client.ClassUser:
 		case client.ClassChat:
+		case client.ClassChats:
 		case client.ClassMessageLink:
 		case client.ClassFile:
 			break

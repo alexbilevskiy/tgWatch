@@ -298,7 +298,7 @@ func GetContentStructs(content client.MessageContent) []structs.MessageAttachmen
 		if msg.Video.Minithumbnail != nil {
 			s.Thumb = base64.StdEncoding.EncodeToString(msg.Video.Minithumbnail.Data)
 		} else {
-			log.Printf("No thumbnail in message content: %v", msg)
+			log.Printf("No thumbnail in message video content: %v", msg)
 		}
 		cnt = append(cnt, s)
 
@@ -309,7 +309,11 @@ func GetContentStructs(content client.MessageContent) []structs.MessageAttachmen
 			T: msg.Animation.Type,
 			Id: msg.Animation.Animation.Remote.Id,
 			Link: append(make([]string, 0), fmt.Sprintf("http://%s/f/%s", config.Config.WebListen, msg.Animation.Animation.Remote.Id)),
-			Thumb: base64.StdEncoding.EncodeToString(msg.Animation.Minithumbnail.Data),
+		}
+		if msg.Animation.Minithumbnail != nil {
+			s.Thumb = base64.StdEncoding.EncodeToString(msg.Animation.Minithumbnail.Data)
+		} else {
+			log.Printf("No thumbnail in message gif content: %v", msg)
 		}
 
 		cnt = append(cnt, s)
@@ -322,6 +326,10 @@ func GetContentStructs(content client.MessageContent) []structs.MessageAttachmen
 	case "messageLocation":
 	case "messageChatAddMembers":
 	case "messagePinMessage":
+	case "messageVideoNote":
+	case "messageDocument":
+	case "messageVoiceNote":
+	case "messageAudio":
 
 		return nil
 	case "messageSticker":
