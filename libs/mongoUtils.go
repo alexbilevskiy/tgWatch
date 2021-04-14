@@ -226,10 +226,12 @@ func GetChatsStats() ([]structs.ChatCounters, error) {
 	return result, nil
 }
 
-func GetChatHistory(chatId int64, limit int64) ([][]byte, []string, []int32, error) {
+func GetChatHistory(chatId int64, limit int64, offset int64) ([][]byte, []string, []int32, error) {
 	crit := bson.D{{"t", "updateNewMessage"}, {"upd.message.chatid", chatId}}
 	lim := &limit
-	opts := options.FindOptions{Limit: lim, Sort: bson.M{"_id": -1}}
+	offs := &offset
+	opts := options.FindOptions{Limit: lim, Skip: offs, Sort: bson.M{"_id": -1}}
+	DLog(fmt.Sprintf("History opts: %s", JsonMarshalStr(opts)))
 	cur, _ := updatesColl.Find(mongoContext, crit, &opts)
 
 	return iterateCursor(cur)

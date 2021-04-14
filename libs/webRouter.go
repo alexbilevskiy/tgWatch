@@ -55,6 +55,10 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	if req.FormValue("limit") != "" {
 		limit, _ = strconv.ParseInt(req.FormValue("limit"), 10, 64)
 	}
+	offset := int64(0)
+	if req.FormValue("offset") != "" {
+		offset, _ = strconv.ParseInt(req.FormValue("offset"), 10, 64)
+	}
 
 	switch action {
 	case "e":
@@ -138,7 +142,7 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		}
 
 		chatId, _ := strconv.ParseInt(m[1], 10, 64)
-		processTgChatHistory(chatId, limit, res)
+		processTgChatHistory(chatId, limit, offset, res)
 
 		return
 	case "f":

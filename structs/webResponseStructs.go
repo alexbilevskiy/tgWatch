@@ -39,9 +39,13 @@ type JSON struct {
 }
 
 type ChatHistory struct {
-	T        string
-	Chat     ChatInfo
-	Messages []MessageInfo
+	T          string
+	Chat       ChatInfo
+	Limit      int64
+	Offset     int64
+	NextOffset int64
+	PrevOffset int64
+	Messages   []MessageInfo
 }
 
 type ChatFullInfo struct {

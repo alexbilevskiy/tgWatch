@@ -347,8 +347,8 @@ func processTgChatInfo(chatId int64, w http.ResponseWriter) {
 
 }
 
-func processTgChatHistory(chatId int64, limit int64, w http.ResponseWriter) {
-	updates, updateTypes, _, errSelect := GetChatHistory(chatId, limit)
+func processTgChatHistory(chatId int64, limit int64, offset int64, w http.ResponseWriter) {
+	updates, updateTypes, _, errSelect := GetChatHistory(chatId, limit, offset)
 	if errSelect != nil {
 		fmt.Printf("Error select updates: %s\n", errSelect)
 
@@ -373,6 +373,13 @@ func processTgChatHistory(chatId int64, limit int64, w http.ResponseWriter) {
 			ChatId:   chatId,
 			ChatName: GetChatName(chatId),
 		},
+		Limit:  limit,
+		Offset: offset,
+		NextOffset: offset + limit,
+		PrevOffset: offset - limit,
+	}
+	if res.NextOffset < 0 {
+		res.NextOffset = 0
 	}
 
 	for i, rawJsonBytes := range updates {
