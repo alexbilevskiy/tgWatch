@@ -109,7 +109,7 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 			folder64, _ := strconv.ParseInt(req.FormValue("folder"), 10, 32)
 			folder = int32(folder64)
 		}
-		processTgChatList(res, refresh, folder)
+		processTgChatList(refresh, folder, res)
 		return
 	case "o":
 		processTgOverview(limit, res)

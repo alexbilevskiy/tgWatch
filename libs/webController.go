@@ -417,7 +417,7 @@ func processTgChatHistory(chatId int64, limit int64, w http.ResponseWriter) {
 	return
 }
 
-func processTgChatList(w http.ResponseWriter, refresh bool, folder int32) {
+func processTgChatList(refresh bool, folder int32, w http.ResponseWriter) {
 	var t *template.Template
 	var err error
 	if verbose {
