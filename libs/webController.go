@@ -175,8 +175,6 @@ func processTgOverview(limit int64, w http.ResponseWriter) {
 }
 
 func processTdlibOptions(w http.ResponseWriter) {
-	verbose = !verbose
-
 	var t *template.Template
 	var errParse error
 	if verbose {
@@ -189,34 +187,37 @@ func processTdlibOptions(w http.ResponseWriter) {
 
 		return
 	}
-	actualOptions := make(map[string]interface{}, len(tdlibOptions))
-	for optionName, _ := range tdlibOptions {
+	actualOptions := make(map[string]structs.TdlibOption, len(tdlibOptions))
+	for optionName, optionValue := range tdlibOptions {
 		req := client.GetOptionRequest{Name: optionName}
 		res, err := tdlibClient.GetOption(&req)
 		if err != nil {
 			fmt.Printf("Failed to get option %s: %s", optionName, err)
 			continue
 		}
+
 		switch res.OptionValueType() {
 		case client.TypeOptionValueInteger:
 			actualOption := res.(*client.OptionValueInteger)
-			actualOptions[optionName] = actualOption.Value
+			optionValue.Value = int64(actualOption.Value)
 		case client.TypeOptionValueString:
 			actualOption := res.(*client.OptionValueString)
-			actualOptions[optionName] = actualOption.Value
+			optionValue.Value = string(actualOption.Value)
 		case client.TypeOptionValueBoolean:
 			actualOption := res.(*client.OptionValueBoolean)
-			actualOptions[optionName] = actualOption.Value
+			optionValue.Value = bool(actualOption.Value)
 		case client.TypeOptionValueEmpty:
-			actualOptions[optionName] = "__NOT_SET__"
+			optionValue.Value = nil
 		}
+		actualOptions[optionName] = optionValue
 	}
+	data := structs.OptionsList{T: "OptionsLists", Options: actualOptions}
 
 	var err error
 	if verbose {
-		err = t.Execute(w, structs.JSON{JSON: JsonMarshalStr(actualOptions)})
+		err = t.Execute(w, structs.JSON{JSON: JsonMarshalStr(data)})
 	} else {
-		err = t.Execute(w, actualOptions)
+		err = t.Execute(w, data)
 	}
 
 	if err != nil {

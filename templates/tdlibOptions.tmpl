@@ -1,0 +1,32 @@
+{{define "main"}}
+    <table class="table table-hover table-sm">
+        <thead class="">
+        <tr>
+            <th scope="col">
+                Name
+            </th>
+            <th scope="col">
+                Value
+            </th>
+            <th scope="col">
+                Description
+            </th>
+        </tr>
+        </thead>
+        <tbody>
+        {{range .Options}}
+        <tr class="{{if not .Writable}}table-light{{end}}">
+            <td>
+                <span title="{{.Type}}">{{.Name}}</span>
+            </td>
+            <td>
+                <code>{{.Value}}</code>
+            </td>
+            <td>
+                {{.Description}}
+            </td>
+        </tr>
+        {{end}}
+        </tbody>
+    </table>
+{{end}}

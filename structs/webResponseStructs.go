@@ -57,3 +57,8 @@ type DeletedMessages struct {
 	MessagesRaw string
 }
 
+type OptionsList struct {
+	T       string
+	Options map[string]TdlibOption
+}
+
