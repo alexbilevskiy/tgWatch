@@ -156,7 +156,21 @@ func processTdlibOptions(w http.ResponseWriter) {
 		actualOptions[optionName] = optionValue
 	}
 	data := structs.OptionsList{T: "OptionsLists", Options: actualOptions}
-	renderTemplates(w, data, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/tdlibOptions.tmpl`)
+	renderTemplates(w, data, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/tdlib_options.tmpl`)
+}
+
+func processActiveSessions(w http.ResponseWriter) {
+	sessions, err := tdlibClient.GetActiveSessions()
+	if err != nil {
+		fmt.Printf("Get sessions error: %s", err)
+		return
+	}
+	data := structs.SessionsList{T:"Sessions", Sessions: sessions}
+	if !verbose {
+		data.SessionsRaw = jsonMarshalPretty(sessions)
+	}
+
+	renderTemplates(w, data, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/sessions_list.tmpl`)
 }
 
 func processSingleMessage(chatId int64, messageId int64, w http.ResponseWriter) {

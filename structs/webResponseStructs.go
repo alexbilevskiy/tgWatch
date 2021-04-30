@@ -62,3 +62,9 @@ type OptionsList struct {
 	Options map[string]TdlibOption
 }
 
+type SessionsList struct {
+	T           string
+	Sessions    interface{}
+	SessionsRaw string
+}
+

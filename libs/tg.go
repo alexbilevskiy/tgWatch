@@ -63,8 +63,6 @@ func initTdlib() {
 
 	log.Printf("Me: %s %s [%s]", me.FirstName, me.LastName, me.Username)
 
-	getActiveSessions()
-
 	//@NOTE: https://github.com/tdlib/td/issues/1005#issuecomment-613839507
 	//go func() {
 	//	for true {
@@ -78,19 +76,6 @@ func initTdlib() {
 	//		time.Sleep(10 * time.Second)
 	//	}
 	//}()
-}
-
-func getActiveSessions() {
-	sessions, err := tdlibClient.GetActiveSessions()
-	if err != nil {
-		log.Fatalf("Get sessions error: %s", err)
-		return
-	}
-	fmt.Printf("Active sessions:\n")
-
-	for _, sess := range sessions.Sessions {
-		fmt.Printf("%s\n", JsonMarshalStr(sess))
-	}
 }
 
 func GetChatIdBySender(sender client.MessageSender) int64 {

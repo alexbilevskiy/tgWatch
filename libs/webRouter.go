@@ -118,8 +118,11 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	case "o":
 		processTgOverview(limit, res)
 		return
-	case "p":
+	case "to":
 		processTdlibOptions(res)
+		return
+	case "as":
+		processActiveSessions(res)
 		return
 	case "c":
 		r := regexp.MustCompile(`^/c/(-?\d+)$`)
