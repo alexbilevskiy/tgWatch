@@ -273,15 +273,17 @@ func GetContentStructs(content client.MessageContent) []structs.MessageAttachmen
 	cType := content.MessageContentType()
 	var cnt []structs.MessageAttachment
 	switch cType {
-	case "messageText":
+	case client.TypeMessageText:
 
 		return nil
-	case "messagePhoto":
+	case client.TypeMessagePhoto:
 		msg := content.(*client.MessagePhoto)
 		s := structs.MessageAttachment{
 			T: msg.Photo.Type,
 			Id: msg.Photo.Sizes[len(msg.Photo.Sizes)-1].Photo.Remote.Id,
-			Thumb: base64.StdEncoding.EncodeToString(msg.Photo.Minithumbnail.Data),
+		}
+		if msg.Photo.Minithumbnail != nil {
+			s.Thumb = base64.StdEncoding.EncodeToString(msg.Photo.Minithumbnail.Data)
 		}
 		for _, size := range msg.Photo.Sizes {
 			s.Link = append(s.Link, fmt.Sprintf("http://%s/f/%s", config.Config.WebListen, size.Photo.Remote.Id))
@@ -289,7 +291,7 @@ func GetContentStructs(content client.MessageContent) []structs.MessageAttachmen
 		cnt = append(cnt, s)
 
 		return cnt
-	case "messageVideo":
+	case client.TypeMessageVideo:
 		msg := content.(*client.MessageVideo)
 		s := structs.MessageAttachment{
 			T: msg.Video.Type,
@@ -298,13 +300,11 @@ func GetContentStructs(content client.MessageContent) []structs.MessageAttachmen
 		}
 		if msg.Video.Minithumbnail != nil {
 			s.Thumb = base64.StdEncoding.EncodeToString(msg.Video.Minithumbnail.Data)
-		} else {
-			log.Printf("No thumbnail in message video content: %v", msg)
 		}
 		cnt = append(cnt, s)
 
 		return cnt
-	case "messageAnimation":
+	case client.TypeMessageAnimation:
 		msg := content.(*client.MessageAnimation)
 		s := structs.MessageAttachment{
 			T: msg.Animation.Type,
@@ -313,27 +313,12 @@ func GetContentStructs(content client.MessageContent) []structs.MessageAttachmen
 		}
 		if msg.Animation.Minithumbnail != nil {
 			s.Thumb = base64.StdEncoding.EncodeToString(msg.Animation.Minithumbnail.Data)
-		} else {
-			log.Printf("No thumbnail in message gif content: %v", msg)
 		}
 
 		cnt = append(cnt, s)
 
 		return cnt
-	case "messagePoll":
-		//msg := content.(*client.MessagePoll)
-
-		return nil
-	case "messageLocation":
-	case "messageChatAddMembers":
-	case "messagePinMessage":
-	case "messageVideoNote":
-	case "messageDocument":
-	case "messageVoiceNote":
-	case "messageAudio":
-
-		return nil
-	case "messageSticker":
+	case client.TypeMessageSticker:
 		msg := content.(*client.MessageSticker)
 		s := structs.MessageAttachment{
 			T: msg.Sticker.Type,
@@ -343,6 +328,17 @@ func GetContentStructs(content client.MessageContent) []structs.MessageAttachmen
 		cnt = append(cnt, s)
 
 		return cnt
+	case client.TypeMessagePoll:
+	case client.TypeMessageLocation:
+	case client.TypeMessageChatAddMembers:
+	case client.TypeMessagePinMessage:
+	case client.TypeMessageVideoNote:
+	case client.TypeMessageDocument:
+	case client.TypeMessageVoiceNote:
+	case client.TypeMessageAudio:
+	case client.TypeMessageContact:
+	case client.TypeMessageInvoice:
+
 	default:
 		log.Printf("Unknown content type: %s", cType)
 
