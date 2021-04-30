@@ -26,16 +26,24 @@
             <a href="/h/{{.ChatId}}">{{.ChatName}}</a>
         </td>
         <td>
+            {{if gt .CountTotal 0}}
             <span class="badge bg-secondary">{{.CountTotal}}</span>
+            {{end}}
         </td>
         <td>
+            {{if gt .CountMessages 0}}
             <span class="badge bg-success">{{.CountMessages}}</span>
+            {{end}}
         </td>
         <td>
+            {{if gt .CountEdits 0}}
             <span class="badge bg-info">{{.CountEdits}}</span>
+            {{end}}
         </td>
         <td>
+            {{if gt .CountDeletes 0}}
             <span class="badge bg-danger">{{.CountDeletes}}</span>
+            {{end}}
         </td>
     </tr>
     {{end}}

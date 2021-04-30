@@ -17,6 +17,7 @@ var tdlibClient *client.Client
 var tdlibOptions map[string]structs.TdlibOption
 var chatFilters []structs.ChatFilter
 var localChats map[int64]*client.Chat
+var me *client.User
 
 func Init() {
 	config.InitConfiguration()

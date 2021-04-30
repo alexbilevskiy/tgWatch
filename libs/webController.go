@@ -495,12 +495,37 @@ func processTgChatList(refresh bool, folder int32, w http.ResponseWriter) {
 	folders = make([]structs.ChatFolder, 0)
 	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: ClMain, Title: "Main"})
 	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: ClArchive, Title: "Archive"})
+	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: ClDefault, Title: "Cached"})
+	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: ClMy, Title: "Owned chats"})
 	for _, filter := range chatFilters {
 		folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: filter.Id, Title: filter.Title})
 	}
 
 	res := structs.ChatList{T: "Chat list", ChatFolders: folders, SelectedFolder: folder}
-	if refresh {
+	if folder == ClDefault {
+		for _, chat := range localChats {
+			res.Chats = append(res.Chats, structs.ChatInfo{ChatId: chat.Id, ChatName: GetChatName(chat.Id)})
+		}
+	} else if folder == ClMy {
+		for _, chat := range localChats {
+			req := &client.GetChatMemberRequest{ChatId: chat.Id, UserId: me.Id}
+			cm, err := tdlibClient.GetChatMember(req)
+			if err != nil {
+				fmt.Printf("failed to get chat member status: %d, `%s`, %s\n", chat.Id, GetChatName(chat.Id), err)
+				continue
+			}
+			switch cm.Status.ChatMemberStatusType() {
+			case client.TypeChatMemberStatusCreator:
+				res.Chats = append(res.Chats, structs.ChatInfo{ChatId: chat.Id, ChatName: GetChatName(chat.Id)})
+			case client.TypeChatMemberStatusAdministrator:
+			case client.TypeChatMemberStatusMember:
+			case client.TypeChatMemberStatusLeft:
+			default:
+				fmt.Printf("Unusual chat memer status: %d, `%s`, %s\n", chat.Id, GetChatName(chat.Id), cm.Status.ChatMemberStatusType())
+
+			}
+		}
+	} else if refresh {
 		chatList := getChatsList(folder)
 		for _, chat := range chatList {
 			res.Chats = append(res.Chats, structs.ChatInfo{ChatId: chat.Id, ChatName: GetChatName(chat.Id)})

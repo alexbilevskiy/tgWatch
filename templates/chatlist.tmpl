@@ -4,8 +4,15 @@
         {{$sel := .SelectedFolder}}
         {{range .ChatFolders}}
             {{$btnClass := "btn-outline-primary"}}
+            {{if lt .Id 1}}
+                {{$btnClass = "btn-outline-secondary"}}
+            {{end}}
             {{if eq $sel .Id}}
-                {{$btnClass = "btn-primary"}}
+                {{if lt .Id 1}}
+                    {{$btnClass = "btn-secondary"}}
+                {{else}}
+                    {{$btnClass = "btn-primary"}}
+                {{end}}
             {{end}}
             <a class="btn btn-sm {{$btnClass}}" href="/l?folder={{.Id}}">{{.Title}}</a>
         {{end}}

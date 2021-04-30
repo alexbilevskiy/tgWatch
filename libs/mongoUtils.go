@@ -323,6 +323,7 @@ const (
 	ClDefault int32 = 0
 	ClMain int32 = -1
 	ClArchive int32 = -2
+	ClMy int32 = -3
 )
 
 func saveAllChatPositions(chatId int64, positions []*client.ChatPosition) {

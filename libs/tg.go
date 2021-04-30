@@ -56,7 +56,7 @@ func initTdlib() {
 
 	log.Printf("TDLib version: %s", optionValue.(*client.OptionValueString).Value)
 
-	me, err := tdlibClient.GetMe()
+	me, err = tdlibClient.GetMe()
 	if err != nil {
 		log.Fatalf("GetMe error: %s", err)
 	}

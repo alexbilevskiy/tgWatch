@@ -236,6 +236,7 @@ func ListenUpdates()  {
 		case client.ClassFile:
 		case client.ClassChatFilter:
 		case client.ClassOptionValue:
+		case client.ClassChatMember:
 			break
 		default:
 			log.Printf("WAAAT? update who??? %s, %v", update.GetClass(), update)
