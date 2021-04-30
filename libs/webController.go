@@ -17,18 +17,6 @@ func processTgJournal(limit int64, w http.ResponseWriter)  {
 
 		return
 	}
-	var t *template.Template
-	var errParse error
-	if verbose {
-		t, errParse = template.New(`json.tmpl`).ParseFiles(`templates/json.tmpl`)
-	} else {
-		t, errParse = template.New(`base.tmpl`).ParseFiles(`templates/base.tmpl`, `templates/navbar.tmpl`, `templates/journal.tmpl`)
-	}
-
-	if errParse != nil {
-		fmt.Printf("Error parse tpl: %s\n", errParse)
-		return
-	}
 	var data structs.Journal
 	data.T = "Journal"
 
@@ -117,17 +105,7 @@ func processTgJournal(limit int64, w http.ResponseWriter)  {
 			//fc += fmt.Sprintf("[%s] Unknown update type \"%s\"<br>", FormatTime(dates[i]), updateTypes[i])
 		}
 	}
-	var err error
-	if verbose {
-		err = t.Execute(w, structs.JSON{JSON: JsonMarshalStr(data)})
-	} else {
-		err = t.Execute(w, data)
-	}
-
-	if err != nil {
-		fmt.Printf("Error tpl: %s\n", err)
-		return
-	}
+	renderTemplates(w, data, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/journal.tmpl`)
 }
 
 func processTgOverview(limit int64, w http.ResponseWriter) {
@@ -137,19 +115,6 @@ func processTgOverview(limit int64, w http.ResponseWriter) {
 
 		return
 	}
-	var t *template.Template
-	var errParse error
-	if verbose {
-		t, errParse = template.New(`json.tmpl`).ParseFiles(`templates/json.tmpl`)
-	} else {
-		t, errParse = template.New(`base.tmpl`).ParseFiles(`templates/base.tmpl`, `templates/navbar.tmpl`, `templates/overview_table.tmpl`, `templates/overview.tmpl`)
-	}
-	if errParse != nil {
-		fmt.Printf("Error tpl: %s\n", errParse)
-
-		return
-	}
-
 	data := structs.Overview{T: "Overview"}
 	for _, ci := range s {
 		oi := structs.ChatInfo{
@@ -162,34 +127,10 @@ func processTgOverview(limit int64, w http.ResponseWriter) {
 		}
 		data.Chats = append(data.Chats, oi)
 	}
-	if verbose {
-		err = t.Execute(w, structs.JSON{JSON: JsonMarshalStr(data)})
-	} else {
-		err = t.Execute(w, data)
-	}
-
-	if err != nil {
-		fmt.Printf("Error tpl: %s\n", err)
-		return
-	}
+	renderTemplates(w, data, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/overview_table.tmpl`, `templates/overview.tmpl`)
 }
 
 func processTdlibOptions(w http.ResponseWriter) {
-	var t *template.Template
-	var errParse error
-	if verbose {
-		t, errParse = template.New(`json.tmpl`).ParseFiles(`templates/json.tmpl`)
-	} else {
-		t, errParse = template.New(`base.tmpl`).Funcs(template.FuncMap{
-			"safeHTML": func(b string) template.HTML {
-				return template.HTML(b)
-			}}).ParseFiles(`templates/base.tmpl`, `templates/navbar.tmpl`, `templates/tdlibOptions.tmpl`)
-	}
-	if errParse != nil {
-		fmt.Printf("Error tpl: %s\n", errParse)
-
-		return
-	}
 	actualOptions := make(map[string]structs.TdlibOption, len(tdlibOptions))
 	for optionName, optionValue := range tdlibOptions {
 		req := client.GetOptionRequest{Name: optionName}
@@ -215,72 +156,29 @@ func processTdlibOptions(w http.ResponseWriter) {
 		actualOptions[optionName] = optionValue
 	}
 	data := structs.OptionsList{T: "OptionsLists", Options: actualOptions}
-
-	var err error
-	if verbose {
-		err = t.Execute(w, structs.JSON{JSON: JsonMarshalStr(data)})
-	} else {
-		err = t.Execute(w, data)
-	}
-
-	if err != nil {
-		fmt.Printf("Error tpl: %s\n", err)
-
-		return
-	}
+	renderTemplates(w, data, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/tdlibOptions.tmpl`)
 }
 
 func processSingleMessage(chatId int64, messageId int64, w http.ResponseWriter) {
 	verbose = !verbose
-
-	var t *template.Template
-	var errParse error
-	if verbose {
-		t, errParse = template.New(`json.tmpl`).ParseFiles(`templates/json.tmpl`)
-	} else {
-		t, errParse = template.New(`base.tmpl`).ParseFiles(`templates/base.tmpl`, `templates/navbar.tmpl`, `templates/single_message.tmpl`)
-	}
-	if errParse != nil {
-		fmt.Printf("Error tpl: %s\n", errParse)
-
-		return
-	}
-
 	message, err := FindUpdateNewMessage(chatId, messageId)
 	if err != nil {
 		fmt.Printf("Not found message %s", err)
 
 		return
 	}
+
+	var data interface{}
 	if verbose {
-		err = t.Execute(w, structs.JSON{JSON: JsonMarshalStr(message)})
+		data = message
 	} else {
-		err = t.Execute(w, parseUpdateNewMessage(message))
+		data = parseUpdateNewMessage(message)
 	}
 
-	if err != nil {
-		fmt.Printf("Error tpl: %s\n", err)
-
-		return
-	}
+	renderTemplates(w, data, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/single_message.tmpl`)
 }
 
 func processTgDeleted(chatId int64, messageIds []int64, w http.ResponseWriter) {
-
-	var err error
-	var t *template.Template
-
-	if verbose {
-		t, err = template.New(`json.tmpl`).ParseFiles(`templates/json.tmpl`)
-	} else {
-		t, err = template.New(`base.tmpl`).ParseFiles(`templates/base.tmpl`, `templates/navbar.tmpl`, `templates/deleted_message.tmpl`)
-	}
-
-	if err != nil {
-		fmt.Printf("Error parse tpl: %s\n", err)
-		return
-	}
-
 	var fullContentJ []interface{}
 	for _, messageId := range messageIds {
 		upd, err := FindUpdateNewMessage(chatId, messageId)
@@ -300,20 +198,15 @@ func processTgDeleted(chatId int64, messageIds []int64, w http.ResponseWriter) {
 		T: "DeletedMessages",
 		Messages: fullContentJ,
 	}
+	var data interface{}
 	if verbose {
-		err = t.Execute(w, structs.JSON{JSON: JsonMarshalStr(fullContentJ)})
-
-		return
+		data = fullContentJ
 	} else {
 		res.MessagesRaw = jsonMarshalPretty(fullContentJ)
-		err = t.Execute(w, res)
-	}
-	if err != nil {
-		fmt.Printf("Error tpl: %s\n", err)
-		return
+		data = res
 	}
 
-
+	renderTemplates(w, data, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/deleted_message.tmpl`)
 }
 
 func processTgEdit(chatId int64, messageId int64) []byte {
@@ -357,21 +250,8 @@ func processTgEdit(chatId int64, messageId int64) []byte {
 }
 
 func processTgChatInfo(chatId int64, w http.ResponseWriter) {
-	var err error
-	var t *template.Template
-
-	if verbose {
-		t, err = template.New(`json.tmpl`).ParseFiles(`templates/json.tmpl`)
-	} else {
-		t, err = template.New(`base.tmpl`).ParseFiles(`templates/base.tmpl`, `templates/navbar.tmpl`, `templates/chat_info.tmpl`)
-	}
-
-	if err != nil {
-		fmt.Printf("Error parse tpl: %s\n", err)
-		return
-	}
-
 	var chat interface{}
+	var err error
 	if chatId > 0 {
 		chat, err = GetUser(int32(chatId))
 	} else{
@@ -386,19 +266,14 @@ func processTgChatInfo(chatId int64, w http.ResponseWriter) {
 		T: "ChatFullInfo",
 		Chat: chat,
 	}
+	var data interface{}
 	if verbose {
-		err = t.Execute(w, structs.JSON{JSON: JsonMarshalStr(res)})
-
-		return
+		data = res
 	} else {
 		res.ChatRaw = jsonMarshalPretty(chat)
-		err = t.Execute(w, res)
+		data = res
 	}
-	if err != nil {
-		fmt.Printf("Error tpl: %s\n", err)
-		return
-	}
-
+	renderTemplates(w, data, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/chat_info.tmpl`)
 }
 
 func processTgChatHistory(chatId int64, limit int64, offset int64, w http.ResponseWriter) {
@@ -408,19 +283,6 @@ func processTgChatHistory(chatId int64, limit int64, offset int64, w http.Respon
 
 		return
 	}
-	var t *template.Template
-	var err error
-	if verbose {
-		t, err = template.New(`json.tmpl`).ParseFiles(`templates/json.tmpl`)
-	} else {
-		t, err = template.New(`base.tmpl`).ParseFiles(`templates/base.tmpl`, `templates/navbar.tmpl`, `templates/chat_history.tmpl`)
-	}
-
-	if err != nil {
-		fmt.Printf("Error parse tpl: %s\n", err)
-		return
-	}
-
 	res := structs.ChatHistory{
 		T: "ChatHistory",
 		Chat: structs.ChatInfo{
@@ -463,34 +325,11 @@ func processTgChatHistory(chatId int64, limit int64, offset int64, w http.Respon
 			fmt.Printf("Not supported chat history item %s\n", updateTypes[i])
 		}
 	}
-	if verbose {
-		err = t.Execute(w, structs.JSON{JSON: JsonMarshalStr(res)})
 
-		return
-	} else {
-		err = t.Execute(w, res)
-	}
-	if err != nil {
-		fmt.Printf("Error tpl: %s\n", err)
-		return
-	}
-
-	return
+	renderTemplates(w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/chat_history.tmpl`)
 }
 
 func processTgChatList(refresh bool, folder int32, w http.ResponseWriter) {
-	var t *template.Template
-	var err error
-	if verbose {
-		t, err = template.New(`json.tmpl`).ParseFiles(`templates/json.tmpl`)
-	} else {
-		t, err = template.New(`base.tmpl`).ParseFiles(`templates/base.tmpl`, `templates/navbar.tmpl`, `templates/overview_table.tmpl`, `templates/chatlist.tmpl`)
-	}
-
-	if err != nil {
-		fmt.Printf("Error parse tpl: %s\n", err)
-		return
-	}
 	var folders []structs.ChatFolder
 	folders = make([]structs.ChatFolder, 0)
 	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: ClMain, Title: "Main"})
@@ -547,20 +386,7 @@ func processTgChatList(refresh bool, folder int32, w http.ResponseWriter) {
 			res.Chats = append(res.Chats, chatInfo)
 		}
 	}
-
-	if verbose {
-		err = t.Execute(w, structs.JSON{JSON: JsonMarshalStr(res)})
-
-		return
-	} else {
-		err = t.Execute(w, res)
-	}
-	if err != nil {
-		fmt.Printf("Error tpl: %s\n", err)
-		return
-	}
-
-	return
+	renderTemplates(w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/overview_table.tmpl`, `templates/chatlist.tmpl`)
 }
 
 func processTgDelete(chatId int64, pattern string, limit int, w http.ResponseWriter) {
@@ -612,4 +438,36 @@ func processTgDelete(chatId int64, pattern string, limit int, w http.ResponseWri
 	}
 	data := []byte(fmt.Sprintf("Deleted from chat %d `%s`", chatId, pattern))
 	w.Write(data)
+}
+
+func renderTemplates(w http.ResponseWriter, templateData interface{}, templates... string) {
+	var t *template.Template
+	var errParse error
+	if verbose {
+		t, errParse = template.New(`json.tmpl`).ParseFiles(`templates/json.tmpl`)
+	} else {
+		t, errParse = template.New(`base.tmpl`).Funcs(template.FuncMap{
+			"safeHTML": func(b string) template.HTML {
+				return template.HTML(b)
+			}}).ParseFiles(templates...)
+	}
+	if errParse != nil {
+		fmt.Printf("Error tpl: %s\n", errParse)
+
+		return
+	}
+
+	var err error
+	if verbose {
+		err = t.Execute(w, structs.JSON{JSON: JsonMarshalStr(templateData)})
+	} else {
+		err = t.Execute(w, templateData)
+	}
+
+	if err != nil {
+		fmt.Printf("Error tpl: %s\n", err)
+
+		return
+	}
+
 }
