@@ -201,6 +201,14 @@ func processTdlibOptions(w http.ResponseWriter) {
 		case client.TypeOptionValueInteger:
 			actualOption := res.(*client.OptionValueInteger)
 			actualOptions[optionName] = actualOption.Value
+		case client.TypeOptionValueString:
+			actualOption := res.(*client.OptionValueString)
+			actualOptions[optionName] = actualOption.Value
+		case client.TypeOptionValueBoolean:
+			actualOption := res.(*client.OptionValueBoolean)
+			actualOptions[optionName] = actualOption.Value
+		case client.TypeOptionValueEmpty:
+			actualOptions[optionName] = "__NOT_SET__"
 		}
 	}
 
