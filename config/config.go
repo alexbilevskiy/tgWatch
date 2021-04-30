@@ -10,30 +10,31 @@ import (
 var Config = ConfigFileStruct{}
 
 func InitConfiguration() {
-	var path string
+	UnmarshalJsonFile("config.json", &Config)
+}
 
-	path = "config.json"
+func UnmarshalJsonFile(path string, dest interface{}) {
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		log.Fatal("config file does not exist: " + err.Error())
+		log.Fatalf("json file (%s) does not exist: %s", path, err.Error())
 
 		return
 	}
 
 	if jsonFile, err := os.Open(path); err != nil {
-		log.Fatal("failed to open config file: " + err.Error())
+		log.Fatal("failed to open json file: " + err.Error())
 
 		return
 	} else {
 		defer jsonFile.Close()
 
 		if byteValue, err := ioutil.ReadAll(jsonFile); err != nil {
-			log.Fatal("failed to read config file: " + err.Error())
+			log.Fatal("failed to read json file: " + err.Error())
 
 			return
 		} else {
-			if err := json.Unmarshal(byteValue, &Config); err != nil {
-				log.Fatal("failed to parse config file: " + err.Error())
+			if err := json.Unmarshal(byteValue, &dest); err != nil {
+				log.Fatal("failed to parse json file: " + err.Error())
 
 				return
 			}

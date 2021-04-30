@@ -51,7 +51,8 @@ func ListenUpdates()  {
 			case "updateUser":
 			case "updateUserFullInfo":
 			case "updateChatPhoto":
-				break
+				//break
+				//golang WTF? U dont need break??
 
 			case "updateChatTitle":
 				upd := update.(*client.UpdateChatTitle)
@@ -83,7 +84,7 @@ func ListenUpdates()  {
 				} else {
 					userName = getUserFullname(user)
 				}
-				log.Printf("User action in chat `%s`: id: %d, name: `%s`, action: %s", GetChatName(upd.ChatId), upd.UserId, userName, upd.Action.ChatActionType())
+				log.Printf("User action `%s`: %s", userName, upd.Action.ChatActionType())
 
 				break
 			case "updateChatLastMessage":
@@ -233,6 +234,7 @@ func ListenUpdates()  {
 		case client.ClassChats:
 		case client.ClassMessageLink:
 		case client.ClassFile:
+		case client.ClassChatFilter:
 			break
 		default:
 			log.Printf("WAAAT? update who??? %s, %v", update.GetClass(), update)

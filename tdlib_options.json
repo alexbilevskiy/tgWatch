@@ -1,0 +1,314 @@
+{
+  "always_parse_markdown": {
+    "Name": "always_parse_markdown",
+    "Type": "Boolean",
+    "Writable": true,
+    "Description": "If true, text entities will be automatically parsed in all inputMessageText objects"
+  },
+  "archive_and_mute_new_chats_from_unknown_users": {
+    "Name": "archive_and_mute_new_chats_from_unknown_users",
+    "Type": "Boolean",
+    "Writable": true,
+    "Description": "If true, new chats from non-contacts will be automatically archived and muted. The option can be set only if the option “can_archive_and_mute_new_chats_from_unknown_users” is true. getOption needs to be called explicitly to fetch the latest value of the option, changed from another device"
+  },
+  "disable_contact_registered_notifications": {
+    "Name": "disable_contact_registered_notifications",
+    "Type": "Boolean",
+    "Writable": true,
+    "Description": "If true, notifications about the user's contacts who have joined Telegram will be disabled. User will still receive the corresponding message in the private chat. getOption needs to be called explicitly to fetch the latest value of the option, changed from another device"
+  },
+  "disable_persistent_network_statistics": {
+    "Name": "disable_persistent_network_statistics",
+    "Type": "Boolean",
+    "Writable": true,
+    "Description": "If true, persistent network statistics will be disabled, which significantly reduces disk usage"
+  },
+  "disable_sent_scheduled_message_notifications": {
+    "Name": "disable_sent_scheduled_message_notifications",
+    "Type": "Boolean",
+    "Writable": true,
+    "Description": "If true, notifications about outgoing scheduled messages that were sent will be disabled"
+  },
+  "disable_time_adjustment_protection": {
+    "Name": "disable_time_adjustment_protection",
+    "Type": "Boolean",
+    "Writable": true,
+    "Description": "If true, protection from external time adjustment will be disabled, which significantly reduces disk usage"
+  },
+  "disable_top_chats": {
+    "Name": "disable_top_chats",
+    "Type": "Boolean",
+    "Writable": true,
+    "Description": "If true, support for top chats and statistics collection is disabled"
+  },
+  "ignore_background_updates": {
+    "Name": "ignore_background_updates",
+    "Type": "Boolean",
+    "Writable": true,
+    "Description": "If true, allows to skip all updates received while the TDLib instance was not running. The option does nothing if the database or secret chats are used"
+  },
+  "ignore_default_disable_notification": {
+    "Name": "ignore_default_disable_notification",
+    "Type": "Boolean",
+    "Writable": true,
+    "Description": "If true, the disable_notification value specified in the request will be always used instead of the default value"
+  },
+  "ignore_inline_thumbnails": {
+    "Name": "ignore_inline_thumbnails",
+    "Type": "Boolean",
+    "Writable": true,
+    "Description": "If true, prevents file thumbnails sent by the server along with messages from being saved on the disk"
+  },
+  "ignore_platform_restrictions": {
+    "Name": "ignore_platform_restrictions",
+    "Type": "Boolean",
+    "Writable": true,
+    "Description": "If true, chat and message restrictions specific to the currently used operating system will be ignored"
+  },
+  "ignore_sensitive_content_restrictions": {
+    "Name": "ignore_sensitive_content_restrictions",
+    "Type": "Boolean",
+    "Writable": true,
+    "Description": "If true, sensitive content will be shown on all user devices. getOption needs to be called explicitly to fetch the latest value of the option, changed from another device"
+  },
+  "is_location_visible": {
+    "Name": "is_location_visible",
+    "Type": "Boolean",
+    "Writable": true,
+    "Description": "If true, other users will be allowed to see the current user's location"
+  },
+  "language_pack_database_path": {
+    "Name": "language_pack_database_path",
+    "Type": "String",
+    "Writable": true,
+    "Description": "Path to a database for storing language pack strings, so that this database can be shared between different accounts. By default, language pack strings are stored only in memory"
+  },
+  "language_pack_id": {
+    "Name": "language_pack_id",
+    "Type": "String",
+    "Writable": true,
+    "Description": "Identifier of the currently used language pack from the current localization target"
+  },
+  "localization_target": {
+    "Name": "localization_target",
+    "Type": "String",
+    "Writable": true,
+    "Description": "Name for the current localization target (currently supported: “android”, “android_x”, “ios”, “macos” and “tdesktop”)"
+  },
+  "message_unload_delay": {
+    "Name": "message_unload_delay",
+    "Type": "Integer",
+    "Writable": true,
+    "Description": "The maximum time messages are stored in memory before they are unloaded, 60-86400; in seconds. Defaults to 60 for users and 1800 for bots"
+  },
+  "notification_group_count_max": {
+    "Name": "notification_group_count_max",
+    "Type": "Integer",
+    "Writable": true,
+    "Description": "Maximum number of notification groups to be shown simultaneously, 0-25"
+  },
+  "notification_group_size_max": {
+    "Name": "notification_group_size_max",
+    "Type": "Integer",
+    "Writable": true,
+    "Description": "Maximum number of simultaneously shown notifications in a group, 1-25. Defaults to 10"
+  },
+  "online": {
+    "Name": "online",
+    "Type": "Boolean",
+    "Writable": true,
+    "Description": "Online status of the current user"
+  },
+  "prefer_ipv6": {
+    "Name": "prefer_ipv6",
+    "Type": "Boolean",
+    "Writable": true,
+    "Description": "If true, IPv6 addresses will be preferred over IPv4 addresses"
+  },
+  "use_pfs": {
+    "Name": "use_pfs",
+    "Type": "Boolean",
+    "Writable": true,
+    "Description": "If true, Perfect Forward Secrecy will be enabled for interaction with the Telegram servers for cloud chats"
+  },
+  "use_quick_ack": {
+    "Name": "use_quick_ack",
+    "Type": "Boolean",
+    "Writable": true,
+    "Description": "If true, quick acknowledgement will be enabled for outgoing messages"
+  },
+  "use_storage_optimizer": {
+    "Name": "use_storage_optimizer",
+    "Type": "Boolean",
+    "Writable": true,
+    "Description": "If true, the background storage optimizer will be enabled"
+  },
+  "animated_emoji_sticker_set_name": {
+    "Name": "animated_emoji_sticker_set_name",
+    "Type": "String",
+    "Writable": false,
+    "Description": "Name of a sticker set with animated emojis"
+  },
+  "animation_search_bot_username": {
+    "Name": "animation_search_bot_username",
+    "Type": "String",
+    "Writable": false,
+    "Description": "Username of a bot which can be used in inline mode for animations search"
+  },
+  "authorization_date": {
+    "Name": "authorization_date",
+    "Type": "Integer",
+    "Writable": false,
+    "Description": "Point in time (Unix timestamp) when authorization was received"
+  },
+  "basic_group_size_max": {
+    "Name": "basic_group_size_max",
+    "Type": "Integer",
+    "Writable": false,
+    "Description": "Maximum number of members in a basic group"
+  },
+  "call_connect_timeout_ms": {
+    "Name": "call_connect_timeout_ms",
+    "Type": "Integer",
+    "Writable": false,
+    "Description": "Maximum time to wait for call connection creation to be passed to libtgvoip"
+  },
+  "call_packet_timeout_ms": {
+    "Name": "call_packet_timeout_ms",
+    "Type": "Integer",
+    "Writable": false,
+    "Description": "Maximum time to wait for call packet delivery to be passed to libtgvoip"
+  },
+  "can_archive_and_mute_new_chats_from_unknown_users": {
+    "Name": "can_archive_and_mute_new_chats_from_unknown_users",
+    "Type": "Boolean",
+    "Writable": false,
+    "Description": "If true, the option “archive_and_mute_new_chats_from_unknown_users” can be changed"
+  },
+  "can_ignore_sensitive_content_restrictions": {
+    "Name": "can_ignore_sensitive_content_restrictions",
+    "Type": "Boolean",
+    "Writable": false,
+    "Description": "If true, the option “ignore_sensitive_content_restrictions” can be changed"
+  },
+  "enabled_proxy_id": {
+    "Name": "enabled_proxy_id",
+    "Type": "Integer",
+    "Writable": false,
+    "Description": "Identifier of the enabled proxy"
+  },
+  "expect_blocking": {
+    "Name": "expect_blocking",
+    "Type": "Boolean",
+    "Writable": false,
+    "Description": "If true, access to Telegram is likely blocked for the user"
+  },
+  "favorite_stickers_limit": {
+    "Name": "favorite_stickers_limit",
+    "Type": "Integer",
+    "Writable": false,
+    "Description": "Maximum number of favorite stickers"
+  },
+  "forwarded_message_count_max": {
+    "Name": "forwarded_message_count_max",
+    "Type": "Integer",
+    "Writable": false,
+    "Description": "Maximum number of forwarded messages per one request"
+  },
+  "group_anonymous_bot_user_id": {
+    "Name": "group_anonymous_bot_user_id",
+    "Type": "Integer",
+    "Writable": false,
+    "Description": "Identifier of the bot which is shown as the sender of anonymous messages in groups when viewed from an outdated client"
+  },
+  "message_caption_length_max": {
+    "Name": "message_caption_length_max",
+    "Type": "Integer",
+    "Writable": false,
+    "Description": "Maximum length of a message caption"
+  },
+  "message_text_length_max": {
+    "Name": "message_text_length_max",
+    "Type": "Integer",
+    "Writable": false,
+    "Description": "Maximum length of a message text"
+  },
+  "my_id": {
+    "Name": "my_id",
+    "Type": "Integer",
+    "Writable": false,
+    "Description": "Identifier of the current user"
+  },
+  "pinned_archived_chat_count_max": {
+    "Name": "pinned_archived_chat_count_max",
+    "Type": "Integer",
+    "Writable": false,
+    "Description": "Maximum number of pinned cloud chats in the Archive chat list. The same amount of secret chats can be pinned locally"
+  },
+  "pinned_chat_count_max": {
+    "Name": "pinned_chat_count_max",
+    "Type": "Integer",
+    "Writable": false,
+    "Description": "Maximum number of pinned cloud chats in the Main chat list. The same amount of secret chats can be pinned locally"
+  },
+  "photo_search_bot_username": {
+    "Name": "photo_search_bot_username",
+    "Type": "String",
+    "Writable": false,
+    "Description": "Username of a bot which can be used in inline mode for photos search"
+  },
+  "replies_bot_chat_id": {
+    "Name": "replies_bot_chat_id",
+    "Type": "Integer",
+    "Writable": false,
+    "Description": "Identifier of the @replies bot"
+  },
+  "suggested_language_pack_id": {
+    "Name": "suggested_language_pack_id",
+    "Type": "String",
+    "Writable": false,
+    "Description": "Identifier of the language pack, suggested for the user by the server"
+  },
+  "supergroup_size_max": {
+    "Name": "supergroup_size_max",
+    "Type": "Integer",
+    "Writable": false,
+    "Description": "Maximum number of members in a supergroup"
+  },
+  "t_me_url": {
+    "Name": "t_me_url",
+    "Type": "String",
+    "Writable": false,
+    "Description": "Current value of t.me URL, i.e. https://t.me/"
+  },
+  "telegram_service_notifications_chat_id": {
+    "Name": "telegram_service_notifications_chat_id",
+    "Type": "Integer",
+    "Writable": false,
+    "Description": "Identifier of the Telegram Service Notifications chat"
+  },
+  "test_mode": {
+    "Name": "test_mode",
+    "Type": "Boolean",
+    "Writable": false,
+    "Description": "If true, the test environment is being used instead of the production environment"
+  },
+  "unix_time": {
+    "Name": "unix_time",
+    "Type": "Integer",
+    "Writable": false,
+    "Description": "An estimation of the current Unix timestamp. The option will not be updated automatically unless the difference between the previous estimation and the locally available monotonic clocks changes significantly"
+  },
+  "venue_search_bot_username": {
+    "Name": "venue_search_bot_username",
+    "Type": "String",
+    "Writable": false,
+    "Description": "Username of a bot which can be used in inline mode for venues search"
+  },
+  "version": {
+    "Name": "version",
+    "Type": "String",
+    "Writable": false,
+    "Description": "TDLib version. This options is guaranteed to come before all other updates since TDLib 1.4.0"
+  }
+}

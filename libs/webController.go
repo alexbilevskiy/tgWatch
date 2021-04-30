@@ -174,6 +174,50 @@ func processTgOverview(limit int64, w http.ResponseWriter) {
 	}
 }
 
+func processTdlibOptions(w http.ResponseWriter) {
+	verbose = !verbose
+
+	var t *template.Template
+	var errParse error
+	if verbose {
+		t, errParse = template.New(`json.tmpl`).ParseFiles(`templates/json.tmpl`)
+	} else {
+		t, errParse = template.New(`base.tmpl`).ParseFiles(`templates/base.tmpl`, `templates/navbar.tmpl`, `templates/tdlibOptions.tmpl`)
+	}
+	if errParse != nil {
+		fmt.Printf("Error tpl: %s\n", errParse)
+
+		return
+	}
+	actualOptions := make(map[string]interface{}, len(tdlibOptions))
+	for optionName, _ := range tdlibOptions {
+		req := client.GetOptionRequest{Name: optionName}
+		res, err := tdlibClient.GetOption(&req)
+		if err != nil {
+			fmt.Printf("Failed to get option %s: %s", optionName, err)
+			continue
+		}
+		switch res.OptionValueType() {
+		case "TypeOptionValueInteger":
+			actualOption := res.(*client.OptionValueInteger)
+			actualOptions[optionName] = actualOption.Value
+		}
+	}
+
+	var err error
+	if verbose {
+		err = t.Execute(w, structs.JSON{JSON: JsonMarshalStr(actualOptions)})
+	} else {
+		err = t.Execute(w, actualOptions)
+	}
+
+	if err != nil {
+		fmt.Printf("Error tpl: %s\n", err)
+
+		return
+	}
+}
+
 func processSingleMessage(chatId int64, messageId int64, w http.ResponseWriter) {
 	verbose = !verbose
 

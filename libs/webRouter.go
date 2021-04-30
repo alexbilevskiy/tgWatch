@@ -118,6 +118,9 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	case "o":
 		processTgOverview(limit, res)
 		return
+	case "p":
+		processTdlibOptions(res)
+		return
 	case "c":
 		r := regexp.MustCompile(`^/c/(-?\d+)$`)
 		m := r.FindStringSubmatch(req.URL.Path)
