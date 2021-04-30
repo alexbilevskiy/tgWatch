@@ -23,7 +23,7 @@
                 <code>{{.Value}}</code>
             </td>
             <td>
-                {{.Description}}
+                {{.Description | safeHTML}}
             </td>
         </tr>
         {{end}}

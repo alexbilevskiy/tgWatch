@@ -9,7 +9,7 @@
     "Name": "archive_and_mute_new_chats_from_unknown_users",
     "Type": "Boolean",
     "Writable": true,
-    "Description": "If true, new chats from non-contacts will be automatically archived and muted. The option can be set only if the option “can_archive_and_mute_new_chats_from_unknown_users” is true. getOption needs to be called explicitly to fetch the latest value of the option, changed from another device"
+    "Description": "If true, new chats from non-contacts will be automatically archived and muted. The option can be set only if the option <code>can_archive_and_mute_new_chats_from_unknown_users</code> is true. getOption needs to be called explicitly to fetch the latest value of the option, changed from another device"
   },
   "disable_contact_registered_notifications": {
     "Name": "disable_contact_registered_notifications",
@@ -93,7 +93,7 @@
     "Name": "localization_target",
     "Type": "String",
     "Writable": true,
-    "Description": "Name for the current localization target (currently supported: “android”, “android_x”, “ios”, “macos” and “tdesktop”)"
+    "Description": "Name for the current localization target (currently supported: <code>android</code>, <code>android_x</code>, <code>ios</code>, <code>macos</code> and <code>tdesktop</code>)"
   },
   "message_unload_delay": {
     "Name": "message_unload_delay",
@@ -183,13 +183,13 @@
     "Name": "can_archive_and_mute_new_chats_from_unknown_users",
     "Type": "Boolean",
     "Writable": false,
-    "Description": "If true, the option “archive_and_mute_new_chats_from_unknown_users” can be changed"
+    "Description": "If true, the option <code>archive_and_mute_new_chats_from_unknown_users</code> can be changed"
   },
   "can_ignore_sensitive_content_restrictions": {
     "Name": "can_ignore_sensitive_content_restrictions",
     "Type": "Boolean",
     "Writable": false,
-    "Description": "If true, the option “ignore_sensitive_content_restrictions” can be changed"
+    "Description": "If true, the option <code>ignore_sensitive_content_restrictions</code> can be changed"
   },
   "enabled_proxy_id": {
     "Name": "enabled_proxy_id",

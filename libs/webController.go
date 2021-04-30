@@ -180,7 +180,10 @@ func processTdlibOptions(w http.ResponseWriter) {
 	if verbose {
 		t, errParse = template.New(`json.tmpl`).ParseFiles(`templates/json.tmpl`)
 	} else {
-		t, errParse = template.New(`base.tmpl`).ParseFiles(`templates/base.tmpl`, `templates/navbar.tmpl`, `templates/tdlibOptions.tmpl`)
+		t, errParse = template.New(`base.tmpl`).Funcs(template.FuncMap{
+			"safeHTML": func(b string) template.HTML {
+				return template.HTML(b)
+			}}).ParseFiles(`templates/base.tmpl`, `templates/navbar.tmpl`, `templates/tdlibOptions.tmpl`)
 	}
 	if errParse != nil {
 		fmt.Printf("Error tpl: %s\n", errParse)
