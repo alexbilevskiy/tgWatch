@@ -18,60 +18,60 @@ func ListenUpdates()  {
 		case client.ClassUpdate:
 			t := update.GetType()
 			switch t {
-			case "updateChatActionBar":
-			case "updateFavoriteStickers":
-			case "updateInstalledStickerSets":
-			case "updateSavedAnimations":
-			case "updateTrendingStickerSets":
-			case "updateChatIsBlocked":
-			case "updateChatDraftMessage":
-			case "updateUserStatus":
-			case "updateChatReadInbox":
-			case "updateChatReadOutbox":
-			case "updateUnreadMessageCount":
-			case "updateUnreadChatCount":
-			case "updateMessageInteractionInfo":
-			case "updateChatReplyMarkup":
-			case "updateChatPermissions":
-			case "updateChatNotificationSettings":
-			case "updateChatUnreadMentionCount":
-			case "updateMessageMentionRead":
-			case "updateMessageIsPinned":
-			case "updateChatHasScheduledMessages":
-			case "updateHavePendingNotifications":
-			case "updateRecentStickers":
-			case "updateCall":
-			case "updateMessageContentOpened":
-			case "updateUserPrivacySettingRules":
+			case client.TypeUpdateChatActionBar:
+			case client.TypeUpdateFavoriteStickers:
+			case client.TypeUpdateInstalledStickerSets:
+			case client.TypeUpdateRecentStickers:
+			case client.TypeUpdateSavedAnimations:
+			case client.TypeUpdateTrendingStickerSets:
+			case client.TypeUpdateChatIsBlocked:
+			case client.TypeUpdateChatDraftMessage:
+			case client.TypeUpdateUserStatus:
+			case client.TypeUpdateChatReadInbox:
+			case client.TypeUpdateChatReadOutbox:
+			case client.TypeUpdateUnreadMessageCount:
+			case client.TypeUpdateUnreadChatCount:
+			case client.TypeUpdateChatUnreadMentionCount:
+			case client.TypeUpdateMessageInteractionInfo:
+			case client.TypeUpdateChatReplyMarkup:
+			case client.TypeUpdateChatPermissions:
+			case client.TypeUpdateChatNotificationSettings:
+			case client.TypeUpdateMessageMentionRead:
+			case client.TypeUpdateMessageIsPinned:
+			case client.TypeUpdateChatHasScheduledMessages:
+			case client.TypeUpdateHavePendingNotifications:
+			case client.TypeUpdateCall:
+			case client.TypeUpdateMessageContentOpened:
+			case client.TypeUserPrivacySettingRules:
 
-			case "updateSupergroup":
-			case "updateSupergroupFullInfo":
-			case "updateBasicGroup":
-			case "updateBasicGroupFullInfo":
-			case "updateUser":
-			case "updateUserFullInfo":
-			case "updateChatPhoto":
+			case client.TypeUpdateSupergroup:
+			case client.TypeUpdateSupergroupFullInfo:
+			case client.TypeUpdateBasicGroup:
+			case client.TypeUpdateBasicGroupFullInfo:
+			case client.TypeUpdateUser:
+			case client.TypeUpdateUserFullInfo:
+			case client.TypeUpdateChatPhoto:
 				//break
 				//golang WTF? U dont need break??
 
-			case "updateChatTitle":
+			case client.TypeUpdateChatTitle:
 				upd := update.(*client.UpdateChatTitle)
 				log.Printf("Renamed chat id:%d to `%s`", upd.ChatId, upd.Title)
 
 				break
-			case "updateNewChat":
+			case client.TypeUpdateNewChat:
 				upd := update.(*client.UpdateNewChat)
 				localChats[upd.Chat.Id] = upd.Chat
 				DLog(fmt.Sprintf("New chat added: %d / %s", upd.Chat.Id, upd.Chat.Title))
 				saveAllChatPositions(upd.Chat.Id, upd.Chat.Positions)
 
 				break
-			case "updateConnectionState":
+			case client.TypeUpdateConnectionState:
 				upd := update.(*client.UpdateConnectionState)
 				log.Printf("Connection state changed: %s", upd.State.ConnectionStateType())
 
 				break
-			case "updateUserChatAction":
+			case client.TypeUpdateUserChatAction:
 				upd := update.(*client.UpdateUserChatAction)
 				if upd.ChatId < 0 {
 					DLog(fmt.Sprintf("Skipping action in non-user chat %d: %s", upd.ChatId, upd.Action.ChatActionType()))
@@ -87,7 +87,7 @@ func ListenUpdates()  {
 				log.Printf("User action `%s`: %s", userName, upd.Action.ChatActionType())
 
 				break
-			case "updateChatLastMessage":
+			case client.TypeUpdateChatLastMessage:
 				upd := update.(*client.UpdateChatLastMessage)
 				if len(upd.Positions) == 0 {
 					break
@@ -95,23 +95,23 @@ func ListenUpdates()  {
 				saveAllChatPositions(upd.ChatId, upd.Positions)
 
 				break
-			case "updateOption":
+			case client.TypeUpdateOption:
 				upd := update.(*client.UpdateOption)
 				log.Printf("Update option %s: %s", upd.Name, JsonMarshalStr(upd.Value))
 
 				break
-			case "updateChatPosition":
+			case client.TypeUpdateChatPosition:
 				upd := update.(*client.UpdateChatPosition)
 				saveChatPosition(upd.ChatId, upd.Position)
 
 				break
-			case "updateChatFilters":
+			case client.TypeUpdateChatFilters:
 				upd := update.(*client.UpdateChatFilters)
 				SaveChatFilters(upd)
 
 				break
 
-			case "updateDeleteMessages":
+			case client.TypeUpdateDeleteMessages:
 				upd := update.(*client.UpdateDeleteMessages)
 				if !upd.IsPermanent || upd.FromCache {
 
@@ -160,7 +160,7 @@ func ListenUpdates()  {
 
 				break
 
-			case "updateNewMessage":
+			case client.TypeUpdateNewMessage:
 				upd := update.(*client.UpdateNewMessage)
 				if checkSkippedChat(strconv.FormatInt(upd.Message.ChatId, 10)) || checkChatFilter(upd.Message.ChatId) {
 
@@ -175,7 +175,7 @@ func ListenUpdates()  {
 				//log.Printf("[%s] New Message from chat: %d, `%s`, %s, %s", mongoId, upd.Message.ChatId, chatName, link, intLink)
 
 				break
-			case "updateMessageEdited":
+			case client.TypeUpdateMessageEdited:
 				upd := update.(*client.UpdateMessageEdited)
 				if checkSkippedChat(strconv.FormatInt(upd.ChatId, 10)) || checkChatFilter(upd.ChatId) {
 
@@ -195,7 +195,7 @@ func ListenUpdates()  {
 				//log.Printf("[%s] EDITED msg! Chat: %d, msg %d, `%s`, %s, %s", mongoId, upd.ChatId, upd.MessageId, chatName, link, intLink)
 
 				break
-			case "updateMessageContent":
+			case client.TypeUpdateMessageContent:
 				upd := update.(*client.UpdateMessageContent)
 				if checkSkippedChat(strconv.FormatInt(upd.ChatId, 10)) || checkChatFilter(upd.ChatId) {
 
@@ -213,7 +213,7 @@ func ListenUpdates()  {
 				DLog(fmt.Sprintf("[%s] EDITED content! Chat: %d, msg %d, %s, %s, %s", mongoId, upd.ChatId, upd.MessageId, chatName, link, intLink))
 
 				break
-			case "updateFile":
+			case client.TypeUpdateFile:
 				upd := update.(*client.UpdateFile)
 				if upd.File.Local.IsDownloadingActive {
 					DLog(fmt.Sprintf("File downloading: %d/%d bytes", upd.File.Local.DownloadedSize, upd.File.ExpectedSize))
@@ -235,6 +235,7 @@ func ListenUpdates()  {
 		case client.ClassMessageLink:
 		case client.ClassFile:
 		case client.ClassChatFilter:
+		case client.ClassOptionValue:
 			break
 		default:
 			log.Printf("WAAAT? update who??? %s, %v", update.GetClass(), update)

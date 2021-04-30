@@ -198,7 +198,7 @@ func processTdlibOptions(w http.ResponseWriter) {
 			continue
 		}
 		switch res.OptionValueType() {
-		case "TypeOptionValueInteger":
+		case client.TypeOptionValueInteger:
 			actualOption := res.(*client.OptionValueInteger)
 			actualOptions[optionName] = actualOption.Value
 		}
@@ -318,19 +318,19 @@ func processTgEdit(chatId int64, messageId int64) []byte {
 
 	for i, rawJsonBytes := range updates {
 		switch updateTypes[i] {
-		case "updateNewMessage":
+		case client.TypeUpdateNewMessage:
 			upd, _ := client.UnmarshalUpdateNewMessage(rawJsonBytes)
 			fullContentJ = append(fullContentJ, parseUpdateNewMessage(upd))
 			break
-		case "updateMessageEdited":
+		case client.TypeUpdateMessageEdited:
 			upd, _ := client.UnmarshalUpdateMessageEdited(rawJsonBytes)
 			fullContentJ = append(fullContentJ, parseUpdateMessageEdited(upd))
 			break
-		case "updateMessageContent":
+		case client.TypeUpdateMessageContent:
 			upd, _ := client.UnmarshalUpdateMessageContent(rawJsonBytes)
 			fullContentJ = append(fullContentJ, parseUpdateMessageContent(upd))
 			break
-		case "updateDeleteMessages":
+		case client.TypeUpdateDeleteMessages:
 			upd, _ := client.UnmarshalUpdateDeleteMessages(rawJsonBytes)
 			fullContentJ = append(fullContentJ, parseUpdateDeleteMessages(upd, dates[i]))
 			break
@@ -426,7 +426,7 @@ func processTgChatHistory(chatId int64, limit int64, offset int64, w http.Respon
 
 	for i, rawJsonBytes := range updates {
 		switch updateTypes[i] {
-		case "updateNewMessage":
+		case client.TypeUpdateNewMessage:
 			upd, _ := client.UnmarshalUpdateNewMessage(rawJsonBytes)
 			senderChatId := GetChatIdBySender(upd.Message.Sender)
 			content := GetContent(upd.Message.Content)
