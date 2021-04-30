@@ -14,6 +14,7 @@ import (
 
 func initTdlib() {
 	LoadChatFilters()
+	loadOptionsList()
 	localChats = make(map[int64]*client.Chat)
 	authorizer := client.ClientAuthorizer()
 	go client.CliInteractor(authorizer)
