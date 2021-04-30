@@ -51,7 +51,7 @@ type ChatFullInfo struct {
 	ChatRaw string
 }
 
-type DeletedMessages struct {
+type Messages struct {
 	T          string
 	Messages    interface{}
 	MessagesRaw string

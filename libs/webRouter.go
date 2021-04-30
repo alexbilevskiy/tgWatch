@@ -72,8 +72,8 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		}
 		chatId, _ := strconv.ParseInt(m[1], 10, 64)
 		messageId, _ := strconv.ParseInt(m[2], 10, 64)
-		data = []byte(processTgEdit(chatId, messageId))
-		break
+		processTgEdit(chatId, messageId, res)
+		return
 	case "m":
 		r := regexp.MustCompile(`^/m/(-?\d+)/(\d+)$`)
 		m := r.FindStringSubmatch(req.URL.Path)

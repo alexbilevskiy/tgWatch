@@ -1,7 +1,6 @@
 package libs
 
 import (
-	"encoding/json"
 	"fmt"
 	"go-tdlib/client"
 	"html/template"
@@ -208,31 +207,25 @@ func processTgDeleted(chatId int64, messageIds []int64, w http.ResponseWriter) {
 		fullContentJ = append(fullContentJ, parseUpdateNewMessage(upd))
 	}
 
-	res := structs.DeletedMessages{
+	res := structs.Messages{
 		T: "DeletedMessages",
 		Messages: fullContentJ,
 	}
-	var data interface{}
-	if verbose {
-		data = fullContentJ
-	} else {
+	if !verbose {
 		res.MessagesRaw = jsonMarshalPretty(fullContentJ)
-		data = res
 	}
 
-	renderTemplates(w, data, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/deleted_message.tmpl`)
+	renderTemplates(w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/deleted_message.tmpl`)
 }
 
-func processTgEdit(chatId int64, messageId int64) []byte {
+func processTgEdit(chatId int64, messageId int64, w http.ResponseWriter) {
 	var fullContentJ []interface{}
 
 	updates, updateTypes, dates, err := FindAllMessageChanges(chatId, messageId)
 	if err != nil {
 		m := structs.MessageError{T: "Error", MessageId: messageId, Error: fmt.Sprintf("Error: %s", err)}
-		fullContentJ = append(fullContentJ, m)
-		j, _ := json.Marshal(fullContentJ)
-
-		return j
+		renderTemplates(w, m, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/error.tmpl`)
+		return
 	}
 
 	for i, rawJsonBytes := range updates {
@@ -258,9 +251,16 @@ func processTgEdit(chatId int64, messageId int64) []byte {
 			fullContentJ = append(fullContentJ, m)
 		}
 	}
-	j, _ := json.Marshal(fullContentJ)
 
-	return j
+	res := structs.Messages{
+		T: "EditedMessages",
+		Messages: fullContentJ,
+	}
+	if !verbose {
+		res.MessagesRaw = jsonMarshalPretty(fullContentJ)
+	}
+
+	renderTemplates(w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/edited_message.tmpl`)
 }
 
 func processTgChatInfo(chatId int64, w http.ResponseWriter) {
