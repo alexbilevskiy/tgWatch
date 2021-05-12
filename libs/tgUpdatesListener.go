@@ -31,6 +31,7 @@ func ListenUpdates()  {
 			case client.TypeUpdateChatReadOutbox:
 			case client.TypeUpdateUnreadMessageCount:
 			case client.TypeUpdateUnreadChatCount:
+			case client.TypeUpdateChatIsMarkedAsUnread:
 			case client.TypeUpdateChatUnreadMentionCount:
 			case client.TypeUpdateMessageInteractionInfo:
 			case client.TypeUpdateChatReplyMarkup:
@@ -42,7 +43,7 @@ func ListenUpdates()  {
 			case client.TypeUpdateHavePendingNotifications:
 			case client.TypeUpdateCall:
 			case client.TypeUpdateMessageContentOpened:
-			case client.TypeUserPrivacySettingRules:
+			case client.TypeUpdateUserPrivacySettingRules:
 
 			case client.TypeUpdateSupergroup:
 			case client.TypeUpdateSupergroupFullInfo:
