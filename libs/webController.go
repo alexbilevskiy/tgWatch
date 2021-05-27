@@ -350,6 +350,7 @@ func processTgChatList(refresh bool, folder int32, w http.ResponseWriter) {
 	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: ClArchive, Title: "Archive"})
 	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: ClDefault, Title: "Cached"})
 	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: ClMy, Title: "Owned chats"})
+	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: ClNotSubscribed, Title: "Not subscribed chats"})
 	for _, filter := range chatFilters {
 		folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: filter.Id, Title: filter.Title})
 	}
@@ -375,6 +376,26 @@ func processTgChatList(refresh bool, folder int32, w http.ResponseWriter) {
 			case client.TypeChatMemberStatusLeft:
 			default:
 				fmt.Printf("Unusual chat memer status: %d, `%s`, %s\n", chat.Id, GetChatName(chat.Id), cm.Status.ChatMemberStatusType())
+
+			}
+		}
+	} else if folder == ClNotSubscribed {
+		for _, chat := range localChats {
+			if chat.LastMessage == nil && chat.LastReadInboxMessageId == 0 {
+				name := GetChatName(chat.Id)
+				switch chat.Type.ChatTypeType() {
+					case client.TypeChatTypeSupergroup:
+						t := chat.Type.(*client.ChatTypeSupergroup)
+						sg, err := GetSuperGroup(t.SupergroupId)
+						if err != nil {
+							name = fmt.Sprintf("%s: ERROR %s", name, err)
+						} else {
+							name = fmt.Sprintf("%s, @%s, %v", name, sg.Username, sg.IsChannel)
+						}
+				default:
+					name = fmt.Sprintf("%s: %s", name, chat.Type.ChatTypeType())
+				}
+				res.Chats = append(res.Chats, structs.ChatInfo{ChatId: chat.Id, ChatName: name})
 
 			}
 		}

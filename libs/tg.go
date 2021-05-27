@@ -204,6 +204,12 @@ func GetUser(userId int32) (*client.User, error) {
 	return tdlibClient.GetUser(userReq)
 }
 
+func GetSuperGroup(sgId int32) (*client.Supergroup, error) {
+	sgReq := &client.GetSupergroupRequest{SupergroupId: sgId}
+
+	return tdlibClient.GetSupergroup(sgReq)
+}
+
 func GetContent(content client.MessageContent) string {
 	if content == nil {
 
