@@ -78,3 +78,52 @@ func parseUpdateDeleteMessages(upd *client.UpdateDeleteMessages, date int32) str
 	return result
 }
 
+func buildChatInfoByLocalChat(chat *client.Chat, buildCounters bool) structs.ChatInfo {
+	info := structs.ChatInfo{ChatId: chat.Id, ChatName: GetChatName(chat.Id)}
+	switch chat.Type.ChatTypeType() {
+	case client.TypeChatTypeSupergroup:
+		t := chat.Type.(*client.ChatTypeSupergroup)
+		sg, err := GetSuperGroup(t.SupergroupId)
+		if err != nil {
+			info.Username = "Error " + err.Error()
+		} else {
+			if sg.IsChannel {
+				info.Type = "Channel"
+			} else {
+				info.Type = "Supergroup"
+			}
+			if sg.Username != "" {
+				info.Username = sg.Username
+			}
+		}
+	case client.TypeChatTypePrivate:
+		t := chat.Type.(*client.ChatTypePrivate)
+		info.Type = "User"
+		user, err := GetUser(t.UserId)
+		if err != nil {
+			info.Username = "Error " + err.Error()
+		} else {
+			if user.Username != "" {
+				info.Username = user.Username
+			}
+		}
+	case client.TypeChatTypeBasicGroup:
+		//t := chat.Type.(*client.ChatTypeBasicGroup)
+		info.Type = "Group"
+	default:
+		info.Type = chat.Type.ChatTypeType()
+	}
+	if buildCounters {
+		chatStats, err := GetChatsStats(append(make([]int64, 0), chat.Id))
+		if err != nil {
+			fmt.Printf("Failed to get chat stats %d", chat.Id)
+		} else if len(chatStats) > 0 {
+			info.CountTotal = chatStats[0].Counters["total"]
+			info.CountDeletes = chatStats[0].Counters["updateDeleteMessages"]
+			info.CountEdits = chatStats[0].Counters["updateMessageEdited"]
+			info.CountMessages = chatStats[0].Counters["updateNewMessage"]
+		}
+	}
+
+	return info
+}

@@ -320,10 +320,10 @@ func SaveChatFilters(chatFilters *client.UpdateChatFilters) {
 }
 
 const (
-	ClDefault int32 = 0
-	ClMain int32 = -1
-	ClArchive int32 = -2
-	ClMy int32 = -3
+	ClCached        int32 = 0
+	ClMain          int32 = -1
+	ClArchive       int32 = -2
+	ClMy            int32 = -3
 	ClNotSubscribed int32 = -4
 )
 
@@ -353,7 +353,7 @@ func saveChatPosition(chatId int64, chatPosition *client.ChatPosition) {
 		listId = l.ChatFilterId
 		break
 	default:
-		listId = ClDefault
+		listId = ClCached
 		fmt.Printf("Invalid chat position type: %s", clType)
 	}
 	DLog(fmt.Sprintf("ChatPosition update: %d | %d | %d | %s\n", chatId, chatPosition.Order, listId, chatPosition.List.ChatListType()))

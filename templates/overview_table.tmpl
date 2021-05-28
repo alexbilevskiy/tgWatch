@@ -3,7 +3,13 @@
     <thead class="">
     <tr>
         <th scope="col">
-            Chat
+            Type
+        </th>
+        <th scope="col">
+            Username
+        </th>
+        <th scope="col">
+            Name
         </th>
         <th scope="col">
             Total
@@ -22,6 +28,15 @@
     <tbody>
     {{range .Chats}}
     <tr>
+        <td>
+            {{.Type}}
+        </td>
+        <td>
+            {{if ne .Username ""}}
+                <a href="https://t.me/{{.Username}}">@{{.Username}}</a>
+            {{end}}
+
+        </td>
         <td>
             <a href="/h/{{.ChatId}}">{{.ChatName}}</a>
         </td>

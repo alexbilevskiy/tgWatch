@@ -348,7 +348,7 @@ func processTgChatList(refresh bool, folder int32, w http.ResponseWriter) {
 	folders = make([]structs.ChatFolder, 0)
 	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: ClMain, Title: "Main"})
 	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: ClArchive, Title: "Archive"})
-	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: ClDefault, Title: "Cached"})
+	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: ClCached, Title: "Cached"})
 	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: ClMy, Title: "Owned chats"})
 	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: ClNotSubscribed, Title: "Not subscribed chats"})
 	for _, filter := range chatFilters {
@@ -356,9 +356,10 @@ func processTgChatList(refresh bool, folder int32, w http.ResponseWriter) {
 	}
 
 	res := structs.ChatList{T: "Chat list", ChatFolders: folders, SelectedFolder: folder}
-	if folder == ClDefault {
+	if folder == ClCached {
 		for _, chat := range localChats {
-			res.Chats = append(res.Chats, structs.ChatInfo{ChatId: chat.Id, ChatName: GetChatName(chat.Id)})
+			info := buildChatInfoByLocalChat(chat, true)
+			res.Chats = append(res.Chats, info)
 		}
 	} else if folder == ClMy {
 		for _, chat := range localChats {
@@ -382,40 +383,24 @@ func processTgChatList(refresh bool, folder int32, w http.ResponseWriter) {
 	} else if folder == ClNotSubscribed {
 		for _, chat := range localChats {
 			if chat.LastMessage == nil && chat.LastReadInboxMessageId == 0 {
-				name := GetChatName(chat.Id)
-				switch chat.Type.ChatTypeType() {
-					case client.TypeChatTypeSupergroup:
-						t := chat.Type.(*client.ChatTypeSupergroup)
-						sg, err := GetSuperGroup(t.SupergroupId)
-						if err != nil {
-							name = fmt.Sprintf("%s: ERROR %s", name, err)
-						} else {
-							name = fmt.Sprintf("%s, @%s, %v", name, sg.Username, sg.IsChannel)
-						}
-				default:
-					name = fmt.Sprintf("%s: %s", name, chat.Type.ChatTypeType())
-				}
-				res.Chats = append(res.Chats, structs.ChatInfo{ChatId: chat.Id, ChatName: name})
-
+				info := buildChatInfoByLocalChat(chat, true)
+				res.Chats = append(res.Chats, info)
 			}
 		}
 	} else if refresh {
 		chatList := getChatsList(folder)
 		for _, chat := range chatList {
-			res.Chats = append(res.Chats, structs.ChatInfo{ChatId: chat.Id, ChatName: GetChatName(chat.Id)})
+			res.Chats = append(res.Chats, buildChatInfoByLocalChat(chat, false))
 		}
 	} else {
 		chatList := getSavedChats(folder)
 		for _, chatPos := range chatList {
-			chatInfo := structs.ChatInfo{ChatId: chatPos.ChatId, ChatName: GetChatName(chatPos.ChatId)}
-			chatStats, err := GetChatsStats(append(make([]int64, 0), chatPos.ChatId))
+			chat, err := GetChat(chatPos.ChatId, false)
+			var chatInfo structs.ChatInfo
 			if err != nil {
-				fmt.Printf("Failed to get chat stats %d", chatPos.ChatId)
-			} else if len(chatStats) > 0 {
-				chatInfo.CountTotal = chatStats[0].Counters["total"]
-				chatInfo.CountDeletes = chatStats[0].Counters["updateDeleteMessages"]
-				chatInfo.CountEdits = chatStats[0].Counters["updateMessageEdited"]
-				chatInfo.CountMessages = chatStats[0].Counters["updateNewMessage"]
+				chatInfo = structs.ChatInfo{ChatId: chatPos.ChatId, ChatName: GetChatName(chatPos.ChatId), Username: "ERROR " + err.Error()}
+			} else {
+				chatInfo = buildChatInfoByLocalChat(chat, true)
 			}
 
 			res.Chats = append(res.Chats, chatInfo)

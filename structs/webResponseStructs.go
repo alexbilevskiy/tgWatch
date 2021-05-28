@@ -3,6 +3,8 @@ package structs
 type ChatInfo struct {
 	ChatId        int64
 	ChatName      string
+	Username      string
+	Type          string
 	CountTotal    int32
 	CountMessages int32
 	CountEdits    int32
