@@ -4,7 +4,9 @@ type MessageInfo struct {
 	T            string
 	MessageId    int64
 	Date         int32
+	DateTimeStr  string
 	DateStr      string
+	TimeStr      string
 	ChatId       int64
 	ChatName     string
 	SenderId     int64

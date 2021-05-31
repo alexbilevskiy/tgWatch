@@ -24,10 +24,10 @@ func processTgJournal(limit int64, w http.ResponseWriter)  {
 		case "updateNewMessage":
 			upd, _ := client.UnmarshalUpdateNewMessage(rawJsonBytes)
 			item := structs.JournalItem{
-				T: updateTypes[i],
-				Time: dates[i],
-				Date: FormatTime(dates[i]),
-				Link: GetLink(upd.Message.ChatId, upd.Message.Id),
+				T:       updateTypes[i],
+				Time:    dates[i],
+				Date:    FormatDateTime(dates[i]),
+				Link:    GetLink(upd.Message.ChatId, upd.Message.Id),
 				IntLink: fmt.Sprintf("/e/%d/%d", upd.Message.ChatId, upd.Message.Id), //@TODO: link shoud be /m
 				Chat: structs.ChatInfo{
 					ChatId: upd.Message.ChatId,
@@ -44,10 +44,10 @@ func processTgJournal(limit int64, w http.ResponseWriter)  {
 		case "updateMessageEdited":
 			upd, _ := client.UnmarshalUpdateMessageEdited(rawJsonBytes)
 			item := structs.JournalItem{
-				T: updateTypes[i],
-				Time: dates[i],
-				Date: FormatTime(dates[i]),
-				Link: GetLink(upd.ChatId, upd.MessageId),
+				T:       updateTypes[i],
+				Time:    dates[i],
+				Date:    FormatDateTime(dates[i]),
+				Link:    GetLink(upd.ChatId, upd.MessageId),
 				IntLink: fmt.Sprintf("/e/%d/%d", upd.ChatId, upd.MessageId),
 				Chat: structs.ChatInfo{
 					ChatId: upd.ChatId,
@@ -60,10 +60,10 @@ func processTgJournal(limit int64, w http.ResponseWriter)  {
 		case "updateMessageContent":
 			upd, _ := client.UnmarshalUpdateMessageContent(rawJsonBytes)
 			item := structs.JournalItem{
-				T: updateTypes[i],
-				Time: dates[i],
-				Date: FormatTime(dates[i]),
-				Link: GetLink(upd.ChatId, upd.MessageId),
+				T:       updateTypes[i],
+				Time:    dates[i],
+				Date:    FormatDateTime(dates[i]),
+				Link:    GetLink(upd.ChatId, upd.MessageId),
 				IntLink: fmt.Sprintf("/e/%d/%d", upd.ChatId, upd.MessageId),
 				Chat: structs.ChatInfo{
 					ChatId: upd.ChatId,
@@ -88,9 +88,9 @@ func processTgJournal(limit int64, w http.ResponseWriter)  {
 		case "updateDeleteMessages":
 			upd, _ := client.UnmarshalUpdateDeleteMessages(rawJsonBytes)
 			item := structs.JournalItem{
-				T: updateTypes[i],
-				Time: dates[i],
-				Date: FormatTime(dates[i]),
+				T:       updateTypes[i],
+				Time:    dates[i],
+				Date:    FormatDateTime(dates[i]),
 				IntLink: fmt.Sprintf("/d/%d/%s", upd.ChatId, ImplodeInt(upd.MessageIds)),
 				Chat: structs.ChatInfo{
 					ChatId: upd.ChatId,
@@ -101,7 +101,7 @@ func processTgJournal(limit int64, w http.ResponseWriter)  {
 			data.J = append(data.J, item)
 			break
 		default:
-			//fc += fmt.Sprintf("[%s] Unknown update type \"%s\"<br>", FormatTime(dates[i]), updateTypes[i])
+			//fc += fmt.Sprintf("[%s] Unknown update type \"%s\"<br>", FormatDateTime(dates[i]), updateTypes[i])
 		}
 	}
 	renderTemplates(w, data, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/journal.tmpl`)
@@ -297,12 +297,10 @@ func processTgChatHistory(chatId int64, limit int64, offset int64, w http.Respon
 
 		return
 	}
+	chat, _ := GetChat(chatId, false)
 	res := structs.ChatHistory{
 		T: "ChatHistory",
-		Chat: structs.ChatInfo{
-			ChatId:   chatId,
-			ChatName: GetChatName(chatId),
-		},
+		Chat: buildChatInfoByLocalChat(chat, false),
 		Limit:  limit,
 		Offset: offset,
 		NextOffset: offset + limit,
@@ -322,7 +320,9 @@ func processTgChatHistory(chatId int64, limit int64, offset int64, w http.Respon
 				T:            "NewMessage",
 				MessageId:    upd.Message.Id,
 				Date:         upd.Message.Date,
-				DateStr:      FormatTime(upd.Message.Date),
+				DateTimeStr:  FormatDateTime(upd.Message.Date),
+				DateStr:      FormatDate(upd.Message.Date),
+				TimeStr:      FormatTime(upd.Message.Date),
 				ChatId:       upd.Message.ChatId,
 				ChatName:     GetChatName(upd.Message.ChatId),
 				SenderId:     senderChatId,
@@ -332,7 +332,8 @@ func processTgChatHistory(chatId int64, limit int64, offset int64, w http.Respon
 				Attachments:  GetContentStructs(upd.Message.Content),
 				ContentRaw:   nil,
 			}
-			res.Messages = append(res.Messages, msg)
+			//hack to reverse, orig was: res.Messages = append(res.Messages, msg)
+			res.Messages = append([]structs.MessageInfo{msg}, res.Messages...)
 
 			break
 		default:
@@ -469,7 +470,17 @@ func renderTemplates(w http.ResponseWriter, templateData interface{}, templates.
 		t, errParse = template.New(`base.tmpl`).Funcs(template.FuncMap{
 			"safeHTML": func(b string) template.HTML {
 				return template.HTML(b)
-			}}).ParseFiles(templates...)
+			},
+			"isMe": func(chatId int64) bool {
+				if chatId == int64(me.Id) {
+
+					return true
+				}
+
+				return false
+			},
+		},
+		).ParseFiles(templates...)
 	}
 	if errParse != nil {
 		fmt.Printf("Error tpl: %s\n", errParse)

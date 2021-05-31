@@ -11,7 +11,7 @@ func parseUpdateMessageEdited(upd *client.UpdateMessageEdited) structs.MessageEd
 		T:         "EditedMeta",
 		MessageId: upd.MessageId,
 		Date:      upd.EditDate,
-		DateStr:   FormatTime(upd.EditDate),
+		DateStr:   FormatDateTime(upd.EditDate),
 	}
 
 	return m
@@ -26,7 +26,7 @@ func parseUpdateNewMessage(upd *client.UpdateNewMessage) structs.MessageInfo {
 		T:            "NewMessage",
 		MessageId:    upd.Message.Id,
 		Date:         upd.Message.Date,
-		DateStr:      FormatTime(upd.Message.Date),
+		DateStr:      FormatDateTime(upd.Message.Date),
 		ChatId:       upd.Message.ChatId,
 		ChatName:     GetChatName(upd.Message.ChatId),
 		SenderId:     senderChatId,
@@ -64,7 +64,7 @@ func parseUpdateDeleteMessages(upd *client.UpdateDeleteMessages, date int32) str
 		ChatId:     upd.ChatId,
 		ChatName:   GetChatName(upd.ChatId),
 		Date:       date,
-		DateStr:    FormatTime(date),
+		DateStr:    FormatDateTime(date),
 	}
 	for _, messageId := range upd.MessageIds {
 		m, err := FindUpdateNewMessage(upd.ChatId, messageId)

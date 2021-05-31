@@ -210,6 +210,12 @@ func GetSuperGroup(sgId int32) (*client.Supergroup, error) {
 	return tdlibClient.GetSupergroup(sgReq)
 }
 
+func GetBasicGroup(groupId int32) (*client.BasicGroup, error) {
+	bgReq := &client.GetBasicGroupRequest{BasicGroupId: groupId}
+
+	return tdlibClient.GetBasicGroup(bgReq)
+}
+
 func GetContent(content client.MessageContent) string {
 	if content == nil {
 

@@ -1,45 +1,87 @@
 {{define "main"}}
-<div class="col">
+<div class="col col-6">
     <h3><a href="/c/{{.Chat.ChatId}}">{{.Chat.ChatName}}</a></h3>
     <a class="btn btn-sm btn-light" href="/h/{{.Chat.ChatId}}?limit={{.Limit}}&offset={{.PrevOffset}}">Prev page</a>
     <a class="btn btn-sm btn-light" href="/h/{{.Chat.ChatId}}?limit={{.Limit}}&offset={{.NextOffset}}">Next page</a>
     {{$chatId := .Chat.ChatId}}
+    {{$chat := .Chat}}
     <ul class="list-group list-group-flush">
         {{$lastM := 0}}
+        {{$lastDate := ""}}
+        {{$lastSender := 0}}
+
         {{range .Messages}}
-        {{$needHeader := true}}
-        <li class="list-group-item">
+
+            <!-- CONDITION RULES FOR CONTENT -->
+            {{$needHeader := true}}
+            {{$needFooter := true}}
+            {{$needDate := false}}
+            {{$needSender := false}}
+            {{$attachmentsCount := .Attachments | len}}
+
             {{if ne .MediaAlbumId 0}}
                 {{if eq $lastM 0}}
-                    MEDIA ALBUM START
+                    <!--media album start-->
                     {{$needHeader = true}}
+                    {{$needFooter = false}}
                     {{$lastM = .MediaAlbumId}}
                 {{else if eq .MediaAlbumId $lastM}}
-<!--                    media continue-->
+                    <!--media continue-->
                     {{$needHeader = false}}
+                    {{$needFooter = false}}
+                    {{$lastM = .MediaAlbumId}}
+                {{else if ne .MediaAlbumId $lastM}}
+                    <!--another album start-->
+                    {{$needHeader = true}}
+                    {{$needFooter = false}}
                     {{$lastM = .MediaAlbumId}}
                 {{end}}
             {{else if ne $lastM 0}}
-    <!--            border end-->
+                <!--media album end-->
                 {{$needHeader = true}}
+                {{$needFooter = true}}
                 {{$lastM = 0}}
+            {{end}}
+            {{if ne $lastDate .DateStr}}
+                {{$needDate = true}}
+                {{$lastDate = .DateStr}}
+            {{end}}
+            {{if ne $lastSender .SenderId}}
+                {{$needSender = true}}
+                {{$lastSender = .SenderId}}
+            {{end}}
+
+            <!-- CONTENT -->
+            {{if eq $needDate true}}
+                <p class="text-center">{{.DateStr}}</p>
             {{end}}
 
             {{if eq $needHeader true}}
-                <a href="/m/{{$chatId}}/{{.MessageId}}">{{.DateStr}}</a><br>
-                <a href="/c/{{.SenderId}}">{{.SenderName}}</a>:
-            {{else}}
-<!--            cont-->
+                <li class="list-group-item">
+                {{if eq $needSender true}}
+                    {{if isMe .SenderId}}🔵{{else}}🔴{{end}}
+                    {{if ne $chat.Type "User"}}<a href="/c/{{.SenderId}}">{{.SenderName}}</a><br>{{end}}
+                {{end}}
             {{end}}
+
             {{.Content}}
-            {{$l := .Attachments | len}}
-            {{if gt $l 0}}
+
+            {{if gt $attachmentsCount 0}}
                 {{range .Attachments}}
                     <a href="/f/{{.Id}}"><img src="data:image/png;base64, {{.Thumb}}" alt=""/></a>
                 {{end}}
             {{end}}
-        </li>
+            {{if eq $needHeader true}}
+                <small><span class="float-end" title="{{.DateTimeStr}}"><a class="link-secondary" href="/m/{{$chatId}}/{{.MessageId}}">{{.TimeStr}}</a></span></small>
+            {{end}}
+
+            {{if eq $needFooter true}}
+                </li>
+            {{end}}
         {{end}}
     </ul>
+    <a class="btn btn-sm btn-light" href="/h/{{.Chat.ChatId}}?limit={{.Limit}}&offset={{.PrevOffset}}">Prev page</a>
+    <a class="btn btn-sm btn-light" href="/h/{{.Chat.ChatId}}?limit={{.Limit}}&offset={{.NextOffset}}">Next page</a>
+
 </div>
 {{end}}

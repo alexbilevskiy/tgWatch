@@ -46,9 +46,19 @@ func jsonMarshalPretty(j interface{}) string {
 	return string(m)
 }
 
-func FormatTime(timestamp int32) string {
+func FormatDateTime(timestamp int32) string {
 
 	return time.Unix(int64(timestamp), 0).Format("2006-01-02 15:04:05")
+}
+
+func FormatTime(timestamp int32) string {
+
+	return time.Unix(int64(timestamp), 0).Format("15:04")
+}
+
+func FormatDate(timestamp int32) string {
+
+	return time.Unix(int64(timestamp), 0).Format("2006-01-02")
 }
 
 func DLog(format string) {
