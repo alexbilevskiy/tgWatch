@@ -1,6 +1,7 @@
 package libs
 
 import (
+	"errors"
 	"fmt"
 	"go-tdlib/client"
 	"html/template"
@@ -199,8 +200,14 @@ func processSingleMessage(chatId int64, messageId int64, w http.ResponseWriter) 
 		Attachments:   GetContentAttachments(upd.Message.Content),
 		ContentRaw:    nil,
 	}
+	chat, _ := GetChat(upd.Message.ChatId, false)
+	res := structs.SingleMessage{
+		T: "Message",
+		Message: msg,
+		Chat: buildChatInfoByLocalChat(chat, false),
+	}
 
-	renderTemplates(w, msg, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/single_message.tmpl`)
+	renderTemplates(w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/single_message.tmpl`, `templates/message.tmpl`)
 }
 
 func processTgDeleted(chatId int64, messageIds []int64, w http.ResponseWriter) {
@@ -354,7 +361,7 @@ func processTgChatHistory(chatId int64, limit int64, offset int64, w http.Respon
 		}
 	}
 
-	renderTemplates(w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/chat_history.tmpl`)
+	renderTemplates(w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/chat_history.tmpl`, `templates/message.tmpl`)
 }
 
 func processTgChatList(refresh bool, folder int32, w http.ResponseWriter) {
@@ -494,6 +501,20 @@ func renderTemplates(w http.ResponseWriter, templateData interface{}, templates.
 				}
 
 				return false
+			},
+			"dict": func(values ...interface{}) (map[string]interface{}, error) {
+				if len(values)%2 != 0 {
+					return nil, errors.New("invalid dict call")
+				}
+				dict := make(map[string]interface{}, len(values)/2)
+				for i := 0; i < len(values); i+=2 {
+					key, ok := values[i].(string)
+					if !ok {
+						return nil, errors.New("dict keys must be strings")
+					}
+					dict[key] = values[i+1]
+				}
+				return dict, nil
 			},
 		},
 		).ParseFiles(templates...)

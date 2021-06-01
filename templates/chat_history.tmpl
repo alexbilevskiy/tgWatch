@@ -3,9 +3,8 @@
     <h3><a href="/c/{{.Chat.ChatId}}">{{.Chat.ChatName}}</a></h3>
     <a class="btn btn-sm btn-light" href="/h/{{.Chat.ChatId}}?limit={{.Limit}}&offset={{.PrevOffset}}">Prev page</a>
     <a class="btn btn-sm btn-light" href="/h/{{.Chat.ChatId}}?limit={{.Limit}}&offset={{.NextOffset}}">Next page</a>
-    {{$chatId := .Chat.ChatId}}
     {{$chat := .Chat}}
-    <ul class="list-group list-group-flush">
+    <ul class="list-group">
         {{$lastM := 0}}
         {{$lastDate := ""}}
         {{$lastSender := 0}}
@@ -17,7 +16,6 @@
             {{$needFooter := true}}
             {{$needDate := false}}
             {{$needSender := false}}
-            {{$attachmentsCount := .Attachments | len}}
 
             {{if ne .MediaAlbumId 0}}
                 {{if eq $lastM 0}}
@@ -54,37 +52,10 @@
             <!-- CONTENT -->
             {{if eq $needDate true}}
                 <p class="text-center">{{.DateStr}}</p>
+                {{$needSender = true}}
             {{end}}
 
-            {{if eq $needHeader true}}
-                <li class="list-group-item">
-                {{if eq $needSender true}}
-                    {{if isMe .SenderId}}🔵{{else}}🔴{{end}}
-                    {{if ne $chat.Type "User"}}<a href="/c/{{.SenderId}}">{{.SenderName}}</a><br>{{end}}
-                {{end}}
-            {{end}}
-
-            {{if .FormattedText}}
-                {{.FormattedText | renderText}}
-            {{end}}
-            {{if .SimpleText}}
-                {{.SimpleText}}
-            {{end}}
-
-
-            {{if gt $attachmentsCount 0}}
-                {{if eq $needHeader true}}<br>{{end}}
-                {{range .Attachments}}
-                    <a href="/f/{{.Id}}"><img src="data:image/png;base64, {{.Thumb}}" title="{{.T}}" alt=""/></a>
-                {{end}}
-            {{end}}
-            {{if eq $needHeader true}}
-                <small><span class="float-end" title="{{.DateTimeStr}}"><a class="link-secondary" href="/m/{{$chatId}}/{{.MessageId}}">{{.TimeStr}}</a></span></small>
-            {{end}}
-
-            {{if eq $needFooter true}}
-                </li>
-            {{end}}
+            {{template "message" dict "parent" . "chat" $chat "needHeader" $needHeader "needSender" $needSender  "needFooter" $needFooter}}
         {{end}}
     </ul>
     <a class="btn btn-sm btn-light" href="/h/{{.Chat.ChatId}}?limit={{.Limit}}&offset={{.PrevOffset}}">Prev page</a>

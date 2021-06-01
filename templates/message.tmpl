@@ -1,0 +1,40 @@
+{{define "message"}}
+<ul class="list-group">
+    {{if eq .needHeader true}}
+        <li class="list-group-item">
+        {{if eq .needSender true}}
+            {{if isMe .parent.SenderId}}🔵{{else}}🔴{{end}}
+            {{if ne .chat.Type "User"}}
+                <a href="/c/{{.parent.SenderId}}">{{.parent.SenderName}}</a><br>
+            {{end}}
+        {{end}}
+    {{end}}
+
+    {{if .parent.FormattedText}}
+        {{.parent.FormattedText | renderText}}
+    {{end}}
+    {{if .parent.SimpleText}}
+        {{.parent.SimpleText}}
+    {{end}}
+
+    {{$attachmentsCount := .parent.Attachments | len}}
+    {{if gt $attachmentsCount 0}}
+        {{if eq .needHeader true}}<br>{{end}}
+        {{range .parent.Attachments}}
+            <a href="/f/{{.Id}}"><img src="data:image/png;base64, {{.Thumb}}" title="{{.T}}" alt=""/></a>
+        {{end}}
+    {{end}}
+
+    {{if eq .needHeader true}}
+        <small>
+            <span class="float-end" title="{{.parent.DateTimeStr}}">
+                <a class="link-secondary" href="/m/{{.chat.ChatId}}/{{.parent.MessageId}}">{{.parent.TimeStr}}</a>
+            </span>
+        </small>
+    {{end}}
+
+    {{if eq .needFooter true}}
+        </li>
+    {{end}}
+</ul>
+{{end}}

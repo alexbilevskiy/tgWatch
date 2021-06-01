@@ -47,6 +47,12 @@ type ChatHistory struct {
 	Messages   []MessageInfo
 }
 
+type SingleMessage struct {
+	T       string
+	Chat    ChatInfo
+	Message MessageInfo
+}
+
 type ChatFullInfo struct {
 	T       string
 	Chat    interface{}
