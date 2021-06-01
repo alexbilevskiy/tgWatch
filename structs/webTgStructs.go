@@ -55,6 +55,7 @@ type MessageAttachment struct {
 	Id    string
 	Link  []string
 	Thumb string
+	Name  string
 }
 
 type MessageAttachmentError struct {

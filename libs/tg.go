@@ -260,7 +260,7 @@ func GetContentWithText(content client.MessageContent) structs.MessageTextConten
 	case client.TypeMessageDocument:
 		msg := content.(*client.MessageDocument)
 
-		return structs.MessageTextContent{FormattedText: msg.Caption, Text: fmt.Sprintf("%s (%d b)", msg.Document.FileName, msg.Document.Document.Size)}
+		return structs.MessageTextContent{FormattedText: msg.Caption}
 	default:
 
 		return structs.MessageTextContent{Text: JsonMarshalStr(content)}
@@ -369,6 +369,7 @@ func GetContentAttachments(content client.MessageContent) []structs.MessageAttac
 		s := structs.MessageAttachment{
 			T: msg.Document.Type,
 			Id: msg.Document.Document.Remote.Id,
+			Name: msg.Document.FileName,
 			Link: append(make([]string, 0), fmt.Sprintf("http://%s/f/%s", config.Config.WebListen, msg.Document.Document.Remote.Id)),
 		}
 		cnt = append(cnt, s)
