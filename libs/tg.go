@@ -253,6 +253,10 @@ func GetContentWithText(content client.MessageContent) structs.MessageTextConten
 		msg := content.(*client.MessageSticker)
 
 		return structs.MessageTextContent{Text: fmt.Sprintf("Sticker, %s", msg.Sticker.Emoji)}
+	case client.TypeMessageVoiceNote:
+		msg := content.(*client.MessageVoiceNote)
+
+		return structs.MessageTextContent{FormattedText: msg.Caption, Text: fmt.Sprintf("Voice (%d s.)", msg.VoiceNote.Duration)}
 	default:
 
 		return structs.MessageTextContent{Text: JsonMarshalStr(content)}
@@ -346,13 +350,22 @@ func GetContentAttachments(content client.MessageContent) []structs.MessageAttac
 		cnt = append(cnt, s)
 
 		return cnt
+	case client.TypeMessageVoiceNote:
+		msg := content.(*client.MessageVoiceNote)
+		s := structs.MessageAttachment{
+			T: msg.VoiceNote.Type,
+			Id: msg.VoiceNote.Voice.Remote.Id,
+			Link: append(make([]string, 0), fmt.Sprintf("http://%s/f/%s", config.Config.WebListen, msg.VoiceNote.Voice.Remote.Id)),
+		}
+		cnt = append(cnt, s)
+
+		return cnt
 	case client.TypeMessagePoll:
 	case client.TypeMessageLocation:
 	case client.TypeMessageChatAddMembers:
 	case client.TypeMessagePinMessage:
 	case client.TypeMessageVideoNote:
 	case client.TypeMessageDocument:
-	case client.TypeMessageVoiceNote:
 	case client.TypeMessageAudio:
 	case client.TypeMessageContact:
 	case client.TypeMessageInvoice:
