@@ -257,6 +257,10 @@ func GetContentWithText(content client.MessageContent) structs.MessageTextConten
 		msg := content.(*client.MessageVoiceNote)
 
 		return structs.MessageTextContent{FormattedText: msg.Caption, Text: fmt.Sprintf("Voice (%d s.)", msg.VoiceNote.Duration)}
+	case client.TypeMessageDocument:
+		msg := content.(*client.MessageDocument)
+
+		return structs.MessageTextContent{FormattedText: msg.Caption, Text: fmt.Sprintf("%s (%d b)", msg.Document.FileName, msg.Document.Document.Size)}
 	default:
 
 		return structs.MessageTextContent{Text: JsonMarshalStr(content)}
@@ -360,12 +364,21 @@ func GetContentAttachments(content client.MessageContent) []structs.MessageAttac
 		cnt = append(cnt, s)
 
 		return cnt
+	case client.TypeMessageDocument:
+		msg := content.(*client.MessageDocument)
+		s := structs.MessageAttachment{
+			T: msg.Document.Type,
+			Id: msg.Document.Document.Remote.Id,
+			Link: append(make([]string, 0), fmt.Sprintf("http://%s/f/%s", config.Config.WebListen, msg.Document.Document.Remote.Id)),
+		}
+		cnt = append(cnt, s)
+
+		return cnt
 	case client.TypeMessagePoll:
 	case client.TypeMessageLocation:
 	case client.TypeMessageChatAddMembers:
 	case client.TypeMessagePinMessage:
 	case client.TypeMessageVideoNote:
-	case client.TypeMessageDocument:
 	case client.TypeMessageAudio:
 	case client.TypeMessageContact:
 	case client.TypeMessageInvoice:
