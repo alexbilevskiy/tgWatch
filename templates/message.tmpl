@@ -1,9 +1,10 @@
 {{define "message"}}
     {{if eq .needHeader true}}
-        <li class="list-group-item">
-        {{if eq .needSender true}}
-            {{if isMe .parent.SenderId}}🔵{{else}}🔴{{end}}
-            {{if ne .chat.Type "User"}}
+        {{if eq .chat.Type "User"}}
+            <li class="list-group-item {{if isMe .parent.SenderId}}list-group-item-secondary{{else}}{{end}}">
+        {{else}}
+            <li class="list-group-item">
+            {{if eq .needSender true}}
                 <a href="/c/{{.parent.SenderId}}">{{.parent.SenderName}}</a><br>
             {{end}}
         {{end}}
