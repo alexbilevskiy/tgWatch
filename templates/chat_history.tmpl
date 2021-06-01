@@ -55,7 +55,7 @@
                 {{$needSender = true}}
             {{end}}
 
-            {{template "message" dict "parent" . "chat" $chat "needHeader" $needHeader "needSender" $needSender  "needFooter" $needFooter}}
+            {{template "message" dict "parent" . "chat" $chat "needHeader" $needHeader "needSender" $needSender "needFooter" $needFooter}}
         {{end}}
     </ul>
     <a class="btn btn-sm btn-light" href="/h/{{.Chat.ChatId}}?limit={{.Limit}}&offset={{.PrevOffset}}">Prev page</a>

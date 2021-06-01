@@ -1,5 +1,7 @@
 {{define "main"}}
 <div class="col col-6">
-    {{template "message" dict "parent" .Message "chat" .Chat "needHeader" true "needSender" true  "needFooter" true}}
+   <ul class="list-group">
+       {{template "message" dict "parent" .Message "chat" .Chat "needHeader" true "needSender" true  "needFooter" true}}
+   </ul>
 </div>
 {{end}}
