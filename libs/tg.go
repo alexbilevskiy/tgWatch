@@ -221,35 +221,41 @@ func GetContent(content client.MessageContent) string {
 
 		return "UNSUPPORTED_CONTENT"
 	}
+
+	return GetContentWithText(content).Text
+}
+
+
+func GetContentWithText(content client.MessageContent) structs.MessageTextContent {
 	cType := content.MessageContentType()
 	switch cType {
-	case "messageText":
+	case client.TypeMessageText:
 		msg := content.(*client.MessageText)
 
-		return fmt.Sprintf("%s", msg.Text.Text)
-	case "messagePhoto":
+		return structs.MessageTextContent{FormattedText: msg.Text, Text: fmt.Sprintf("%s", msg.Text.Text)}
+	case client.TypeMessagePhoto:
 		msg := content.(*client.MessagePhoto)
 
-		return fmt.Sprintf("Photo, %s", msg.Caption.Text)
-	case "messageVideo":
+		return structs.MessageTextContent{FormattedText: msg.Caption, Text: fmt.Sprintf("Photo, %s", msg.Caption.Text)}
+	case client.TypeMessageVideo:
 		msg := content.(*client.MessageVideo)
 
-		return fmt.Sprintf("Video, %s", msg.Caption.Text)
-	case "messageAnimation":
+		return structs.MessageTextContent{FormattedText: msg.Caption, Text: fmt.Sprintf("Video, %s", msg.Caption.Text)}
+	case client.TypeMessageAnimation:
 		msg := content.(*client.MessageAnimation)
 
-		return fmt.Sprintf("GIF, %s", msg.Caption.Text)
-	case "messagePoll":
+		return structs.MessageTextContent{FormattedText: msg.Caption, Text: fmt.Sprintf("GIF, %s", msg.Caption.Text)}
+	case client.TypeMessagePoll:
 		msg := content.(*client.MessagePoll)
 
-		return fmt.Sprintf("Poll, %s", msg.Poll.Question)
-	case "messageSticker":
+		return structs.MessageTextContent{Text: fmt.Sprintf("Poll, %s", msg.Poll.Question)}
+	case client.TypeMessageSticker:
 		msg := content.(*client.MessageSticker)
 
-		return fmt.Sprintf("Sticker, %s", msg.Sticker.Emoji)
+		return structs.MessageTextContent{Text: fmt.Sprintf("Sticker, %s", msg.Sticker.Emoji)}
 	default:
 
-		return JsonMarshalStr(content)
+		return structs.MessageTextContent{Text: JsonMarshalStr(content)}
 	}
 }
 

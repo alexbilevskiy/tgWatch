@@ -173,22 +173,34 @@ func processActiveSessions(w http.ResponseWriter) {
 }
 
 func processSingleMessage(chatId int64, messageId int64, w http.ResponseWriter) {
-	verbose = !verbose
-	message, err := FindUpdateNewMessage(chatId, messageId)
+	upd, err := FindUpdateNewMessage(chatId, messageId)
 	if err != nil {
 		fmt.Printf("Not found message %s", err)
 
 		return
 	}
 
-	var data interface{}
-	if verbose {
-		data = message
-	} else {
-		data = parseUpdateNewMessage(message)
+	senderChatId := GetChatIdBySender(upd.Message.Sender)
+	content := GetContent(upd.Message.Content)
+	msg := structs.MessageInfo{
+		T:            "NewMessage",
+		MessageId:    upd.Message.Id,
+		Date:         upd.Message.Date,
+		DateTimeStr:  FormatDateTime(upd.Message.Date),
+		DateStr:      FormatDate(upd.Message.Date),
+		TimeStr:      FormatTime(upd.Message.Date),
+		ChatId:       upd.Message.ChatId,
+		ChatName:     GetChatName(upd.Message.ChatId),
+		SenderId:     senderChatId,
+		SenderName:   GetSenderName(upd.Message.Sender),
+		MediaAlbumId: int64(upd.Message.MediaAlbumId),
+		Content:      content,
+		Text:         GetContentWithText(upd.Message.Content).FormattedText,
+		Attachments:  GetContentStructs(upd.Message.Content),
+		ContentRaw:   nil,
 	}
 
-	renderTemplates(w, data, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/single_message.tmpl`)
+	renderTemplates(w, msg, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/single_message.tmpl`)
 }
 
 func processTgDeleted(chatId int64, messageIds []int64, w http.ResponseWriter) {
@@ -329,6 +341,7 @@ func processTgChatHistory(chatId int64, limit int64, offset int64, w http.Respon
 				SenderName:   GetSenderName(upd.Message.Sender),
 				MediaAlbumId: int64(upd.Message.MediaAlbumId),
 				Content:      content,
+				Text:         GetContentWithText(upd.Message.Content).FormattedText,
 				Attachments:  GetContentStructs(upd.Message.Content),
 				ContentRaw:   nil,
 			}
@@ -470,6 +483,9 @@ func renderTemplates(w http.ResponseWriter, templateData interface{}, templates.
 		t, errParse = template.New(`base.tmpl`).Funcs(template.FuncMap{
 			"safeHTML": func(b string) template.HTML {
 				return template.HTML(b)
+			},
+			"renderContent": func(content *client.FormattedText) template.HTML {
+				return template.HTML(renderCaption(content))
 			},
 			"isMe": func(chatId int64) bool {
 				if chatId == int64(me.Id) {

@@ -3,7 +3,9 @@ package libs
 import (
 	"fmt"
 	"go-tdlib/client"
+	"strings"
 	"tgWatch/structs"
+	"unicode/utf16"
 )
 
 func parseUpdateMessageEdited(upd *client.UpdateMessageEdited) structs.MessageEditedMeta {
@@ -126,4 +128,56 @@ func buildChatInfoByLocalChat(chat *client.Chat, buildCounters bool) structs.Cha
 	}
 
 	return info
+}
+
+func renderCaption(text *client.FormattedText) string {
+	runes := utf16.Encode([]rune(text.Text))
+	res := ""
+	var prevOffset int32 = 0
+
+	for _, entity := range text.Entities {
+		if (entity.Offset - prevOffset > 0) || entity.Offset == 0 {
+			res += string(utf16.Decode(runes[prevOffset:entity.Offset]))
+		}
+		prevOffset = entity.Offset + entity.Length
+		if int32(len(runes)) < entity.Offset + entity.Length {
+			res += "ERROR!"
+			break
+		}
+		repl := runes[entity.Offset:entity.Offset + entity.Length]
+		switch entity.Type.TextEntityTypeType() {
+		case client.TypeTextEntityTypeBold:
+			res += "<b>" + string(utf16.Decode(repl)) + "</b>"
+		case client.TypeTextEntityTypeItalic:
+			res += "<i>" + string(utf16.Decode(repl)) + "</i>"
+		case client.TypeTextEntityTypeUnderline:
+			res += "<u>" + string(utf16.Decode(repl)) + "</u>"
+		case client.TypeTextEntityTypeMention:
+			res += fmt.Sprintf(`<a href="https://t.me/%s">%s</a>`, string(utf16.Decode(repl[1:])), string(utf16.Decode(repl)))
+		case client.TypeTextEntityTypeMentionName:
+			t := entity.Type.(*client.TextEntityTypeMentionName)
+			res += fmt.Sprintf(`<a href="/h/%d">%s</a>`, t.UserId, string(utf16.Decode(repl)))
+		case client.TypeTextEntityTypeCode:
+			res += "<code>" + string(utf16.Decode(repl)) + "</code>"
+		case client.TypeTextEntityTypeUrl:
+			res += fmt.Sprintf(`<a href="%s">%s</a>`, string(utf16.Decode(repl)), string(utf16.Decode(repl)))
+		case client.TypeTextEntityTypeTextUrl:
+			t := entity.Type.(*client.TextEntityTypeTextUrl)
+			res += fmt.Sprintf(`<a href="%s">%s</a>`, t.Url, string(utf16.Decode(repl)))
+		case client.TypeTextEntityTypePre:
+			res += "<pre>" + string(utf16.Decode(repl)) + "</pre>"
+		default:
+			res += fmt.Sprintf(`<span title="%s" class="badge bg-danger">%s</span>`, entity.Type.TextEntityTypeType(), string(utf16.Decode(repl)))
+		}
+	}
+	if int32(len(runes)) > prevOffset {
+		res += string(utf16.Decode(runes[prevOffset:]))
+	}
+	res = strings.Replace(res, "\n", "<br>", -1)
+
+	return res
+}
+
+func attachRuneToStringByPos(s string, r []rune, p1 int32, p2 int32) string{
+	return s
 }

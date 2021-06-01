@@ -1,5 +1,7 @@
 package structs
 
+import "go-tdlib/client"
+
 type MessageInfo struct {
 	T            string
 	MessageId    int64
@@ -13,6 +15,7 @@ type MessageInfo struct {
 	SenderName   string
 	MediaAlbumId int64
 	Content      string
+	Text	     interface{}
 	Attachments  []MessageAttachment
 	ContentRaw   interface{}
 }
@@ -71,4 +74,8 @@ type ChatList struct {
 	SelectedFolder int32
 	ChatFolders    []ChatFolder
 	Chats          []ChatInfo
+}
+type MessageTextContent struct {
+	FormattedText *client.FormattedText
+	Text string
 }
