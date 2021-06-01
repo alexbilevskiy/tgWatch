@@ -3,21 +3,21 @@ package structs
 import "go-tdlib/client"
 
 type MessageInfo struct {
-	T            string
-	MessageId    int64
-	Date         int32
-	DateTimeStr  string
-	DateStr      string
-	TimeStr      string
-	ChatId       int64
-	ChatName     string
-	SenderId     int64
-	SenderName   string
-	MediaAlbumId int64
-	Content      string
-	Text	     interface{}
-	Attachments  []MessageAttachment
-	ContentRaw   interface{}
+	T             string
+	MessageId     int64
+	Date          int32
+	DateTimeStr   string
+	DateStr       string
+	TimeStr       string
+	ChatId        int64
+	ChatName      string
+	SenderId      int64
+	SenderName    string
+	MediaAlbumId  int64
+	FormattedText interface{}
+	SimpleText    interface{}
+	Attachments   []MessageAttachment
+	ContentRaw    interface{}
 }
 
 type MessageNewContent struct {

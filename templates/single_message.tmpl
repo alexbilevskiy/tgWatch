@@ -1,9 +1,10 @@
 {{define "main"}}
 <div class="col">
-    {{if .Text}}
-        {{.Text | renderText}}
-    {{else}}
-        {{.Content}}
+    {{if .FormattedText}}
+        {{.FormattedText | renderText}}
+    {{end}}
+    {{if .SimpleText}}
+        {{.SimpleText}}
     {{end}}
 
 

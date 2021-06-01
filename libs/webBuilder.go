@@ -20,23 +20,23 @@ func parseUpdateMessageEdited(upd *client.UpdateMessageEdited) structs.MessageEd
 }
 
 func parseUpdateNewMessage(upd *client.UpdateNewMessage) structs.MessageInfo {
-	content := GetContent(upd.Message.Content)
-
 	senderChatId := GetChatIdBySender(upd.Message.Sender)
+	ct := GetContentWithText(upd.Message.Content)
 
 	result := structs.MessageInfo{
-		T:            "NewMessage",
-		MessageId:    upd.Message.Id,
-		Date:         upd.Message.Date,
-		DateStr:      FormatDateTime(upd.Message.Date),
-		ChatId:       upd.Message.ChatId,
-		ChatName:     GetChatName(upd.Message.ChatId),
-		SenderId:     senderChatId,
-		SenderName:   GetSenderName(upd.Message.Sender),
-		Content:      content,
-		Attachments:  GetContentStructs(upd.Message.Content),
-		ContentRaw:   nil,
-		MediaAlbumId: int64(upd.Message.MediaAlbumId),
+		T:             "NewMessage",
+		MessageId:     upd.Message.Id,
+		Date:          upd.Message.Date,
+		DateStr:       FormatDateTime(upd.Message.Date),
+		ChatId:        upd.Message.ChatId,
+		ChatName:      GetChatName(upd.Message.ChatId),
+		SenderId:      senderChatId,
+		SenderName:    GetSenderName(upd.Message.Sender),
+		SimpleText:    ct.Text,
+		FormattedText: ct.FormattedText,
+		Attachments:   GetContentAttachments(upd.Message.Content),
+		ContentRaw:    nil,
+		MediaAlbumId:  int64(upd.Message.MediaAlbumId),
 	}
 	if verbose {
 		result.ContentRaw = upd.Message.Content

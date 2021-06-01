@@ -232,19 +232,19 @@ func GetContentWithText(content client.MessageContent) structs.MessageTextConten
 	case client.TypeMessageText:
 		msg := content.(*client.MessageText)
 
-		return structs.MessageTextContent{FormattedText: msg.Text, Text: fmt.Sprintf("%s", msg.Text.Text)}
+		return structs.MessageTextContent{FormattedText: msg.Text}
 	case client.TypeMessagePhoto:
 		msg := content.(*client.MessagePhoto)
 
-		return structs.MessageTextContent{FormattedText: msg.Caption, Text: fmt.Sprintf("Photo, %s", msg.Caption.Text)}
+		return structs.MessageTextContent{FormattedText: msg.Caption}
 	case client.TypeMessageVideo:
 		msg := content.(*client.MessageVideo)
 
-		return structs.MessageTextContent{FormattedText: msg.Caption, Text: fmt.Sprintf("Video, %s", msg.Caption.Text)}
+		return structs.MessageTextContent{FormattedText: msg.Caption}
 	case client.TypeMessageAnimation:
 		msg := content.(*client.MessageAnimation)
 
-		return structs.MessageTextContent{FormattedText: msg.Caption, Text: fmt.Sprintf("GIF, %s", msg.Caption.Text)}
+		return structs.MessageTextContent{FormattedText: msg.Caption}
 	case client.TypeMessagePoll:
 		msg := content.(*client.MessagePoll)
 
@@ -283,7 +283,7 @@ func DownloadFileByRemoteId(id string) (*client.File, error) {
 	return DownloadFile(remoteFile.Id)
 }
 
-func GetContentStructs(content client.MessageContent) []structs.MessageAttachment {
+func GetContentAttachments(content client.MessageContent) []structs.MessageAttachment {
 	if content == nil {
 
 		return nil
