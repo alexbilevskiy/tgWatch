@@ -64,10 +64,15 @@
                 {{end}}
             {{end}}
 
-            {{if .Text}}{{.Text | renderContent}}{{end}}
+            {{if .Text}}
+                {{.Text | renderText}}
+            {{else}}
+                {{.Content}}
+            {{end}}
 
 
             {{if gt $attachmentsCount 0}}
+                {{if eq $needHeader true}}<br>{{end}}
                 {{range .Attachments}}
                     <a href="/f/{{.Id}}"><img src="data:image/png;base64, {{.Thumb}}" alt=""/></a>
                 {{end}}

@@ -1,5 +1,17 @@
 {{define "main"}}
 <div class="col">
-    {{.Text | renderContent}}
+    {{if .Text}}
+        {{.Text | renderText}}
+    {{else}}
+        {{.Content}}
+    {{end}}
+
+
+    {{$attachmentsCount := .Attachments | len}}
+    {{if gt $attachmentsCount 0}}
+        {{range .Attachments}}
+            <a href="/f/{{.Id}}"><img src="data:image/png;base64, {{.Thumb}}" alt=""/></a>
+        {{end}}
+    {{end}}
 </div>
 {{end}}

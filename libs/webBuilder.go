@@ -130,7 +130,7 @@ func buildChatInfoByLocalChat(chat *client.Chat, buildCounters bool) structs.Cha
 	return info
 }
 
-func renderCaption(text *client.FormattedText) string {
+func renderText(text *client.FormattedText) string {
 	runes := utf16.Encode([]rune(text.Text))
 	res := ""
 	var prevOffset int32 = 0

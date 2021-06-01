@@ -484,8 +484,8 @@ func renderTemplates(w http.ResponseWriter, templateData interface{}, templates.
 			"safeHTML": func(b string) template.HTML {
 				return template.HTML(b)
 			},
-			"renderContent": func(content *client.FormattedText) template.HTML {
-				return template.HTML(renderCaption(content))
+			"renderText": func(text *client.FormattedText) template.HTML {
+				return template.HTML(renderText(text))
 			},
 			"isMe": func(chatId int64) bool {
 				if chatId == int64(me.Id) {
