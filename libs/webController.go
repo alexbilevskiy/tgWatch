@@ -225,7 +225,7 @@ func processTgSingleMessage(chatId int64, messageId int64, w http.ResponseWriter
 	renderTemplates(w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/single_message.tmpl`, `templates/message.tmpl`)
 }
 
-func processTgDeletedMessage(chatId int64, messageIds []int64, w http.ResponseWriter) {
+func processTgDeletedMessages(chatId int64, messageIds []int64, w http.ResponseWriter) {
 	var fullContentJ []interface{}
 	for _, messageId := range messageIds {
 		upd, err := FindUpdateNewMessage(chatId, messageId)
