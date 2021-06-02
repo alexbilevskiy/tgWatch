@@ -34,27 +34,6 @@ func parseUpdateNewMessage(upd *client.UpdateNewMessage) structs.MessageInfo {
 	return result
 }
 
-func parseUpdateDeleteMessages(upd *client.UpdateDeleteMessages, date int32) structs.DeleteMessages {
-	result := structs.DeleteMessages{
-		T:          "DeleteMessages",
-		MessageIds: upd.MessageIds,
-		ChatId:     upd.ChatId,
-		ChatName:   GetChatName(upd.ChatId),
-		Date:       date,
-		DateStr:    FormatDateTime(date),
-	}
-	for _, messageId := range upd.MessageIds {
-		m, err := FindUpdateNewMessage(upd.ChatId, messageId)
-		if err != nil {
-			result.Messages = append(result.Messages, structs.MessageError{T: "Error", MessageId: messageId, Error: fmt.Sprintf("not found deleted message %s", err)})
-			continue
-		}
-		result.Messages = append(result.Messages, parseUpdateNewMessage(m))
-	}
-
-	return result
-}
-
 func buildChatInfoByLocalChat(chat *client.Chat, buildCounters bool) structs.ChatInfo {
 	info := structs.ChatInfo{ChatId: chat.Id, ChatName: GetChatName(chat.Id)}
 	switch chat.Type.ChatTypeType() {
@@ -153,8 +132,4 @@ func renderText(text *client.FormattedText) string {
 	res = strings.Replace(res, "\n", "<br>", -1)
 
 	return res
-}
-
-func attachRuneToStringByPos(s string, r []rune, p1 int32, p2 int32) string{
-	return s
 }

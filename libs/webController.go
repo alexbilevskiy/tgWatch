@@ -1,10 +1,8 @@
 package libs
 
 import (
-	"errors"
 	"fmt"
 	"go-tdlib/client"
-	"html/template"
 	"net/http"
 	"strings"
 	"tgWatch/structs"
@@ -159,7 +157,7 @@ func processTdlibOptions(w http.ResponseWriter) {
 	renderTemplates(w, data, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/tdlib_options.tmpl`)
 }
 
-func processActiveSessions(w http.ResponseWriter) {
+func processTgActiveSessions(w http.ResponseWriter) {
 	sessions, err := tdlibClient.GetActiveSessions()
 	if err != nil {
 		fmt.Printf("Get sessions error: %s", err)
@@ -173,7 +171,7 @@ func processActiveSessions(w http.ResponseWriter) {
 	renderTemplates(w, data, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/sessions_list.tmpl`)
 }
 
-func processSingleMessage(chatId int64, messageId int64, w http.ResponseWriter) {
+func processTgSingleMessage(chatId int64, messageId int64, w http.ResponseWriter) {
 	upd, err := FindUpdateNewMessage(chatId, messageId)
 	if err != nil {
 		fmt.Printf("Not found message %s", err)
@@ -249,7 +247,7 @@ func processSingleMessage(chatId int64, messageId int64, w http.ResponseWriter) 
 	renderTemplates(w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/single_message.tmpl`, `templates/message.tmpl`)
 }
 
-func processTgDeleted(chatId int64, messageIds []int64, w http.ResponseWriter) {
+func processTgDeletedMessage(chatId int64, messageIds []int64, w http.ResponseWriter) {
 	var fullContentJ []interface{}
 	for _, messageId := range messageIds {
 		upd, err := FindUpdateNewMessage(chatId, messageId)
@@ -475,79 +473,4 @@ func processTgDelete(chatId int64, pattern string, limit int, w http.ResponseWri
 	}
 	data := []byte(fmt.Sprintf("Deleted from chat %d `%s`", chatId, pattern))
 	w.Write(data)
-}
-
-func renderTemplates(w http.ResponseWriter, templateData interface{}, templates... string) {
-	var t *template.Template
-	var errParse error
-	if verbose {
-		t, errParse = template.New(`json.tmpl`).ParseFiles(`templates/json.tmpl`)
-	} else {
-		t, errParse = template.New(`base.tmpl`).Funcs(template.FuncMap{
-			"safeHTML": func(b string) template.HTML {
-				return template.HTML(b)
-			},
-			"renderText": func(text *client.FormattedText) template.HTML {
-				return template.HTML(renderText(text))
-			},
-			"isMe": func(chatId int64) bool {
-				if chatId == int64(me.Id) {
-
-					return true
-				}
-
-				return false
-			},
-			"DateTime": func(date int32) string {
-				return FormatDateTime(date)
-			},
-			"Date": func(date int32) string {
-				return FormatDate(date)
-			},
-			"Time": func(date int32) string {
-				return FormatTime(date)
-			},
-			"SetNestedMsg": func(info structs.MessageInfo, text *client.FormattedText, simple string, attachments []structs.MessageAttachment) structs.MessageInfo {
-				info.FormattedText = text
-				info.SimpleText = simple
-				info.Attachments = attachments
-
-				return info
-			},
-			"dict": func(values ...interface{}) (map[string]interface{}, error) {
-				if len(values)%2 != 0 {
-					return nil, errors.New("invalid dict call")
-				}
-				dict := make(map[string]interface{}, len(values)/2)
-				for i := 0; i < len(values); i+=2 {
-					key, ok := values[i].(string)
-					if !ok {
-						return nil, errors.New("dict keys must be strings")
-					}
-					dict[key] = values[i+1]
-				}
-				return dict, nil
-			},
-		},
-		).ParseFiles(templates...)
-	}
-	if errParse != nil {
-		fmt.Printf("Error tpl: %s\n", errParse)
-
-		return
-	}
-
-	var err error
-	if verbose {
-		err = t.Execute(w, structs.JSON{JSON: JsonMarshalStr(templateData)})
-	} else {
-		err = t.Execute(w, templateData)
-	}
-
-	if err != nil {
-		fmt.Printf("Error tpl: %s\n", err)
-
-		return
-	}
-
 }

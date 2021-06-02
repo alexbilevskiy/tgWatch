@@ -1,8 +1,13 @@
 package libs
 
 import (
+	"errors"
+	"fmt"
+	"go-tdlib/client"
+	"html/template"
 	"net/http"
 	"tgWatch/config"
+	"tgWatch/structs"
 )
 
 var verbose bool = false
@@ -13,4 +18,78 @@ func initWeb() {
 		Handler: HttpHandler{},
 	}
 	go server.ListenAndServe()
+}
+
+func renderTemplates(w http.ResponseWriter, templateData interface{}, templates... string) {
+	var t *template.Template
+	var errParse error
+	if verbose {
+		t, errParse = template.New(`json.tmpl`).ParseFiles(`templates/json.tmpl`)
+	} else {
+		t, errParse = template.New(`base.tmpl`).Funcs(template.FuncMap{
+			"safeHTML": func(b string) template.HTML {
+				return template.HTML(b)
+			},
+			"renderText": func(text *client.FormattedText) template.HTML {
+				return template.HTML(renderText(text))
+			},
+			"isMe": func(chatId int64) bool {
+				if chatId == int64(me.Id) {
+
+					return true
+				}
+
+				return false
+			},
+			"DateTime": func(date int32) string {
+				return FormatDateTime(date)
+			},
+			"Date": func(date int32) string {
+				return FormatDate(date)
+			},
+			"Time": func(date int32) string {
+				return FormatTime(date)
+			},
+			"SetNestedMsg": func(info structs.MessageInfo, text *client.FormattedText, simple string, attachments []structs.MessageAttachment) structs.MessageInfo {
+				info.FormattedText = text
+				info.SimpleText = simple
+				info.Attachments = attachments
+
+				return info
+			},
+			"dict": func(values ...interface{}) (map[string]interface{}, error) {
+				if len(values)%2 != 0 {
+					return nil, errors.New("invalid dict call")
+				}
+				dict := make(map[string]interface{}, len(values)/2)
+				for i := 0; i < len(values); i+=2 {
+					key, ok := values[i].(string)
+					if !ok {
+						return nil, errors.New("dict keys must be strings")
+					}
+					dict[key] = values[i+1]
+				}
+				return dict, nil
+			},
+		},
+		).ParseFiles(templates...)
+	}
+	if errParse != nil {
+		fmt.Printf("Error tpl: %s\n", errParse)
+
+		return
+	}
+
+	var err error
+	if verbose {
+		err = t.Execute(w, structs.JSON{JSON: JsonMarshalStr(templateData)})
+	} else {
+		err = t.Execute(w, templateData)
+	}
+
+	if err != nil {
+		fmt.Printf("Error tpl: %s\n", err)
+
+		return
+	}
 }

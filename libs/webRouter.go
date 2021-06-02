@@ -72,7 +72,7 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		}
 		chatId, _ := strconv.ParseInt(m[1], 10, 64)
 		messageId, _ := strconv.ParseInt(m[2], 10, 64)
-		processSingleMessage(chatId, messageId, res)
+		processTgSingleMessage(chatId, messageId, res)
 		return
 	case "d":
 		r := regexp.MustCompile(`^/d/(-?\d+)/([\d,]+)$`)
@@ -85,7 +85,7 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		}
 		chatId, _ := strconv.ParseInt(m[1], 10, 64)
 		messageIds := m[2]
-		processTgDeleted(chatId, ExplodeInt(messageIds), res)
+		processTgDeletedMessage(chatId, ExplodeInt(messageIds), res)
 		return
 	case "j":
 		processTgJournal(limit, res)
@@ -109,7 +109,7 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		processTdlibOptions(res)
 		return
 	case "as":
-		processActiveSessions(res)
+		processTgActiveSessions(res)
 		return
 	case "c":
 		r := regexp.MustCompile(`^/c/(-?\d+)$`)
