@@ -8,17 +8,6 @@ import (
 	"unicode/utf16"
 )
 
-func parseUpdateMessageEdited(upd *client.UpdateMessageEdited) structs.MessageEditedMeta {
-	m := structs.MessageEditedMeta{
-		T:         "EditedMeta",
-		MessageId: upd.MessageId,
-		Date:      upd.EditDate,
-		DateStr:   FormatDateTime(upd.EditDate),
-	}
-
-	return m
-}
-
 func parseUpdateNewMessage(upd *client.UpdateNewMessage) structs.MessageInfo {
 	senderChatId := GetChatIdBySender(upd.Message.Sender)
 	ct := GetContentWithText(upd.Message.Content)
@@ -40,20 +29,6 @@ func parseUpdateNewMessage(upd *client.UpdateNewMessage) structs.MessageInfo {
 	}
 	if verbose {
 		result.ContentRaw = upd.Message.Content
-	}
-
-	return result
-}
-
-func parseUpdateMessageContent(upd *client.UpdateMessageContent) structs.MessageNewContent {
-	result := structs.MessageNewContent{
-		T:          "NewContent",
-		MessageId:  upd.MessageId,
-		Content:    GetContent(upd.NewContent),
-		ContentRaw: nil,
-	}
-	if verbose {
-		result.ContentRaw = upd.NewContent
 	}
 
 	return result

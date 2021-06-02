@@ -1,7 +1,14 @@
 {{define "main"}}
 <div class="col col-6">
-   <ul class="list-group">
+   <div>
        {{template "message" dict "parent" .Message "chat" .Chat "needHeader" true "needSender" true  "needFooter" true "needPrevFooter" false}}
-   </ul>
+       {{if .Edits}}
+            {{range .Edits}}
+                Edited at {{.Date | Time}}
+                {{$msg := SetNestedMsg $.Message .FormattedText .SimpleText .Attachments}}
+               {{template "message" dict "parent" $msg "chat" $.Chat "needHeader" true "needSender" true  "needFooter" true "needPrevFooter" false}}
+            {{end}}
+       {{end}}
+    </div>
 </div>
 {{end}}

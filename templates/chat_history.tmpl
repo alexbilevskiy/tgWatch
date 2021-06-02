@@ -1,9 +1,7 @@
 {{define "main"}}
 <div class="col col-6">
     <h3><a href="/c/{{.Chat.ChatId}}">{{.Chat.ChatName}}</a></h3>
-    {{$chat := .Chat}}
     <div>
-<!--    <ul class="list-group">-->
         {{$lastM := 0}}
         {{$lastDate := ""}}
         {{$lastSender := 0}}
@@ -51,10 +49,10 @@
                 {{$needPrevFooter = true}}
                 {{$lastM = 0}}
             {{end}}
-            {{if ne $lastDate .DateStr}}
+            {{if ne $lastDate (.Date | Date)}}
                 <!--show date on each day start-->
                 {{$needDate = true}}
-                {{$lastDate = .DateStr}}
+                {{$lastDate = .Date | Date}}
             {{end}}
             {{if ne $lastSender .SenderId}}
                 <!--dont show sender name if he sends multiple messages in row-->
@@ -64,15 +62,14 @@
 
             <!-- CONTENT -->
             {{if eq $needDate true}}
-                <div><p class="text-center">{{.DateStr}}</p></div>
+                <div><p class="text-center">{{.Date | Date}}</p></div>
                 {{$needSender = true}}
             {{end}}
 
-            {{template "message" dict "parent" . "chat" $chat "needHeader" $needHeader "needSender" $needSender "needFooter" $needFooter "needPrevFooter" $needPrevFooter}}
+            {{template "message" dict "parent" . "chat" .Chat "needHeader" $needHeader "needSender" $needSender "needFooter" $needFooter "needPrevFooter" $needPrevFooter}}
         {{end}}
         {{if eq $stopWithMedia true}}</div></div></div>{{end}}
     </div>
-<!--    </ul>-->
     <a class="btn btn-sm btn-light" href="/h/{{.Chat.ChatId}}?limit={{.Limit}}&offset={{.PrevOffset}}">Prev page</a>
     <a class="btn btn-sm btn-light" href="/h/{{.Chat.ChatId}}?limit={{.Limit}}&offset={{.NextOffset}}">Next page</a>
 

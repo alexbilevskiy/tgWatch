@@ -172,7 +172,7 @@ func ListenUpdates()  {
 				//mongoId := SaveUpdate(t, upd, upd.Message.Date)
 				//link := GetLink(tdlibClient, upd.Message.ChatId, upd.Message.Id)
 				//chatName := GetChatName(upd.Message.ChatId)
-				//intLink := fmt.Sprintf("http://%s/e/%d/%d", config.Config.WebListen, upd.Message.ChatId, upd.Message.Id)
+				//intLink := fmt.Sprintf("http://%s/m/%d/%d", config.Config.WebListen, upd.Message.ChatId, upd.Message.Id)
 				//log.Printf("[%s] New Message from chat: %d, `%s`, %s, %s", mongoId, upd.Message.ChatId, chatName, link, intLink)
 
 				break
@@ -192,7 +192,7 @@ func ListenUpdates()  {
 				//mongoId := SaveUpdate(t, upd, upd.EditDate)
 				//link := GetLink(tdlibClient, upd.ChatId, upd.MessageId)
 				//chatName := GetChatName(upd.ChatId)
-				//intLink := fmt.Sprintf("http://%s/e/%d/%d", config.Config.WebListen, upd.ChatId, upd.MessageId)
+				//intLink := fmt.Sprintf("http://%s/m/%d/%d", config.Config.WebListen, upd.ChatId, upd.MessageId)
 				//log.Printf("[%s] EDITED msg! Chat: %d, msg %d, `%s`, %s, %s", mongoId, upd.ChatId, upd.MessageId, chatName, link, intLink)
 
 				break
@@ -210,7 +210,7 @@ func ListenUpdates()  {
 
 				link := GetLink(upd.ChatId, upd.MessageId)
 				chatName := GetChatName(upd.ChatId)
-				intLink := fmt.Sprintf("http://%s/e/%d/%d", config.Config.WebListen, upd.ChatId, upd.MessageId)
+				intLink := fmt.Sprintf("http://%s/m/%d/%d", config.Config.WebListen, upd.ChatId, upd.MessageId)
 				DLog(fmt.Sprintf("[%s] EDITED content! Chat: %d, msg %d, %s, %s, %s", mongoId, upd.ChatId, upd.MessageId, chatName, link, intLink))
 
 				break

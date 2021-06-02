@@ -51,6 +51,7 @@ type SingleMessage struct {
 	T       string
 	Chat    ChatInfo
 	Message MessageInfo
+	Edits[] MessageEditedInfo
 }
 
 type ChatFullInfo struct {

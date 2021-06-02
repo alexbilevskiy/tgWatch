@@ -29,7 +29,7 @@ func processTgJournal(limit int64, w http.ResponseWriter)  {
 				Time:    dates[i],
 				Date:    FormatDateTime(dates[i]),
 				Link:    GetLink(upd.Message.ChatId, upd.Message.Id),
-				IntLink: fmt.Sprintf("/e/%d/%d", upd.Message.ChatId, upd.Message.Id), //@TODO: link shoud be /m
+				IntLink: fmt.Sprintf("/m/%d/%d", upd.Message.ChatId, upd.Message.Id), //@TODO: link shoud be /m
 				Chat: structs.ChatInfo{
 					ChatId: upd.Message.ChatId,
 					ChatName: GetChatName(upd.Message.ChatId),
@@ -49,7 +49,7 @@ func processTgJournal(limit int64, w http.ResponseWriter)  {
 				Time:    dates[i],
 				Date:    FormatDateTime(dates[i]),
 				Link:    GetLink(upd.ChatId, upd.MessageId),
-				IntLink: fmt.Sprintf("/e/%d/%d", upd.ChatId, upd.MessageId),
+				IntLink: fmt.Sprintf("/m/%d/%d", upd.ChatId, upd.MessageId),
 				Chat: structs.ChatInfo{
 					ChatId: upd.ChatId,
 					ChatName: GetChatName(upd.ChatId),
@@ -65,7 +65,7 @@ func processTgJournal(limit int64, w http.ResponseWriter)  {
 				Time:    dates[i],
 				Date:    FormatDateTime(dates[i]),
 				Link:    GetLink(upd.ChatId, upd.MessageId),
-				IntLink: fmt.Sprintf("/e/%d/%d", upd.ChatId, upd.MessageId),
+				IntLink: fmt.Sprintf("/m/%d/%d", upd.ChatId, upd.MessageId),
 				Chat: structs.ChatInfo{
 					ChatId: upd.ChatId,
 					ChatName: GetChatName(upd.ChatId),
@@ -187,9 +187,6 @@ func processSingleMessage(chatId int64, messageId int64, w http.ResponseWriter) 
 		T:             "NewMessage",
 		MessageId:     upd.Message.Id,
 		Date:          upd.Message.Date,
-		DateTimeStr:   FormatDateTime(upd.Message.Date),
-		DateStr:       FormatDate(upd.Message.Date),
-		TimeStr:       FormatTime(upd.Message.Date),
 		ChatId:        upd.Message.ChatId,
 		ChatName:      GetChatName(upd.Message.ChatId),
 		SenderId:      senderChatId,
@@ -206,8 +203,48 @@ func processSingleMessage(chatId int64, messageId int64, w http.ResponseWriter) 
 	res := structs.SingleMessage{
 		T: "Message",
 		Message: msg,
+		Edits: make([]structs.MessageEditedInfo, 0),
 		Chat: buildChatInfoByLocalChat(chat, false),
 	}
+
+	updates, updateTypes, dates, err := FindAllMessageChanges(chatId, messageId)
+	if err != nil {
+		m := structs.MessageError{T: "Error", MessageId: messageId, Error: fmt.Sprintf("Error: %s", err)}
+		renderTemplates(w, m, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/error.tmpl`)
+		return
+	}
+
+	var edit structs.MessageEditedInfo
+	for i, rawJsonBytes := range updates {
+		switch updateTypes[i] {
+		case client.TypeUpdateNewMessage:
+		case client.TypeUpdateMessageEdited:
+			upd, _ := client.UnmarshalUpdateMessageEdited(rawJsonBytes)
+			edit.MessageId = upd.MessageId
+			edit.Date = upd.EditDate
+			res.Edits = append(res.Edits, edit)
+
+			break
+		case client.TypeUpdateMessageContent:
+			upd, _ := client.UnmarshalUpdateMessageContent(rawJsonBytes)
+			ct = GetContentWithText(upd.NewContent)
+			edit = structs.MessageEditedInfo{T:"MessageEdited"}
+			edit.FormattedText = ct.FormattedText
+			edit.SimpleText = ct.Text
+			edit.Attachments = GetContentAttachments(upd.NewContent)
+
+			break
+		case client.TypeUpdateDeleteMessages:
+			//upd, _ := client.UnmarshalUpdateDeleteMessages(rawJsonBytes)
+			msg.DeletedAt = dates[i]
+			break
+		default:
+			//m := structs.MessageError{T:"Error", MessageId: messageId, Error: fmt.Sprintf("Unknown update type: %s", updateTypes[i])}
+			//fullContentJ = append(fullContentJ, m)
+		}
+	}
+
+
 
 	renderTemplates(w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/single_message.tmpl`, `templates/message.tmpl`)
 }
@@ -237,51 +274,6 @@ func processTgDeleted(chatId int64, messageIds []int64, w http.ResponseWriter) {
 	}
 
 	renderTemplates(w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/deleted_message.tmpl`)
-}
-
-func processTgEdit(chatId int64, messageId int64, w http.ResponseWriter) {
-	var fullContentJ []interface{}
-
-	updates, updateTypes, dates, err := FindAllMessageChanges(chatId, messageId)
-	if err != nil {
-		m := structs.MessageError{T: "Error", MessageId: messageId, Error: fmt.Sprintf("Error: %s", err)}
-		renderTemplates(w, m, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/error.tmpl`)
-		return
-	}
-
-	for i, rawJsonBytes := range updates {
-		switch updateTypes[i] {
-		case client.TypeUpdateNewMessage:
-			upd, _ := client.UnmarshalUpdateNewMessage(rawJsonBytes)
-			fullContentJ = append(fullContentJ, parseUpdateNewMessage(upd))
-			break
-		case client.TypeUpdateMessageEdited:
-			upd, _ := client.UnmarshalUpdateMessageEdited(rawJsonBytes)
-			fullContentJ = append(fullContentJ, parseUpdateMessageEdited(upd))
-			break
-		case client.TypeUpdateMessageContent:
-			upd, _ := client.UnmarshalUpdateMessageContent(rawJsonBytes)
-			fullContentJ = append(fullContentJ, parseUpdateMessageContent(upd))
-			break
-		case client.TypeUpdateDeleteMessages:
-			upd, _ := client.UnmarshalUpdateDeleteMessages(rawJsonBytes)
-			fullContentJ = append(fullContentJ, parseUpdateDeleteMessages(upd, dates[i]))
-			break
-		default:
-			m := structs.MessageError{T:"Error", MessageId: messageId, Error: fmt.Sprintf("Unknown update type: %s", updateTypes[i])}
-			fullContentJ = append(fullContentJ, m)
-		}
-	}
-
-	res := structs.Messages{
-		T: "EditedMessages",
-		Messages: fullContentJ,
-	}
-	if !verbose {
-		res.MessagesRaw = jsonMarshalPretty(fullContentJ)
-	}
-
-	renderTemplates(w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/edited_message.tmpl`)
 }
 
 func processTgChatInfo(chatId int64, w http.ResponseWriter) {
@@ -505,6 +497,22 @@ func renderTemplates(w http.ResponseWriter, templateData interface{}, templates.
 				}
 
 				return false
+			},
+			"DateTime": func(date int32) string {
+				return FormatDateTime(date)
+			},
+			"Date": func(date int32) string {
+				return FormatDate(date)
+			},
+			"Time": func(date int32) string {
+				return FormatTime(date)
+			},
+			"SetNestedMsg": func(info structs.MessageInfo, text *client.FormattedText, simple string, attachments []structs.MessageAttachment) structs.MessageInfo {
+				info.FormattedText = text
+				info.SimpleText = simple
+				info.Attachments = attachments
+
+				return info
 			},
 			"dict": func(values ...interface{}) (map[string]interface{}, error) {
 				if len(values)%2 != 0 {

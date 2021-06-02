@@ -18,22 +18,19 @@ type MessageInfo struct {
 	SimpleText    string
 	Attachments   []MessageAttachment
 	Deleted       bool
+	DeletedAt     int32
 	Edited        bool
 	ContentRaw    interface{}
 }
 
-type MessageNewContent struct {
-	T          string
-	MessageId  int64
-	Content    string
-	ContentRaw interface{}
-}
-
-type MessageEditedMeta struct {
-	T         string
-	MessageId int64
-	Date      int32
-	DateStr   string
+type MessageEditedInfo struct {
+	T             string
+	MessageId     int64
+	FormattedText *client.FormattedText
+	SimpleText    string
+	Attachments   []MessageAttachment
+	Date          int32
+	ContentRaw    interface{}
 }
 
 type DeleteMessages struct {

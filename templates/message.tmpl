@@ -26,8 +26,8 @@
             {{$cardPadding = 0}}
             <a class="link-secondary fw-lighter small" data-bs-toggle="collapse" href="#m{{.parent.MessageId}}" role="button">
                 ❌
-                <span title="{{.parent.DateTimeStr}}">
-                {{.parent.TimeStr}}
+                <span title="{{.parent.Date | DateTime}}">
+                {{.parent.Date | Time}}
             </span>
             </a>
 
@@ -63,8 +63,8 @@
     {{if eq .needHeader true}}
         <div class="align-bottom text-end fw-lighter small float-end">
             {{if .parent.Edited}}📝{{end}}
-            <span title="{{.parent.DateTimeStr}}">
-                <a class="link-secondary" href="/m/{{.chat.ChatId}}/{{.parent.MessageId}}">{{.parent.TimeStr}}</a>
+            <span title="{{.parent.Date | DateTime}}">
+                <a class="link-secondary" href="/m/{{.chat.ChatId}}/{{.parent.MessageId}}">{{.parent.Date | Time}}</a>
             </span>
         </div>
     {{end}}

@@ -61,19 +61,6 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	}
 
 	switch action {
-	case "e":
-		r := regexp.MustCompile(`^/e/(-?\d+)/(\d+)$`)
-		m := r.FindStringSubmatch(req.URL.Path)
-		if m == nil {
-			data := []byte(fmt.Sprintf("Unknown path %s %s", action, req.URL.Path))
-			res.Write(data)
-
-			return
-		}
-		chatId, _ := strconv.ParseInt(m[1], 10, 64)
-		messageId, _ := strconv.ParseInt(m[2], 10, 64)
-		processTgEdit(chatId, messageId, res)
-		return
 	case "m":
 		r := regexp.MustCompile(`^/m/(-?\d+)/(\d+)$`)
 		m := r.FindStringSubmatch(req.URL.Path)
