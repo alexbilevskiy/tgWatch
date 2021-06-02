@@ -106,28 +106,6 @@ func processTgJournal(limit int64, w http.ResponseWriter)  {
 	renderTemplates(w, data, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/journal.tmpl`)
 }
 
-func processTgOverview(limit int64, w http.ResponseWriter) {
-	s, err := GetChatsStats(make([]int64, 0))
-	if err != nil {
-		fmt.Printf("Error tpl: %s\n", err)
-
-		return
-	}
-	data := structs.Overview{T: "Overview"}
-	for _, ci := range s {
-		oi := structs.ChatInfo{
-			ChatId: ci.ChatId,
-			ChatName: GetChatName(ci.ChatId),
-			CountTotal: ci.Counters["total"],
-			CountMessages: ci.Counters["updateNewMessage"],
-			CountDeletes: ci.Counters["updateDeleteMessages"],
-			CountEdits: ci.Counters["updateMessageEdited"],
-		}
-		data.Chats = append(data.Chats, oi)
-	}
-	renderTemplates(w, data, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/overview_table.tmpl`, `templates/overview.tmpl`)
-}
-
 func processTdlibOptions(w http.ResponseWriter) {
 	actualOptions := make(map[string]structs.TdlibOption, len(tdlibOptions))
 	for optionName, optionValue := range tdlibOptions {

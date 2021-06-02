@@ -102,9 +102,6 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		}
 		processTgChatList(refresh, folder, res)
 		return
-	case "o":
-		processTgOverview(limit, res)
-		return
 	case "to":
 		processTdlibOptions(res)
 		return
