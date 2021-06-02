@@ -152,6 +152,8 @@ func renderText(text *client.FormattedText) string {
 			res += "<i>" + string(utf16.Decode(repl)) + "</i>"
 		case client.TypeTextEntityTypeUnderline:
 			res += "<u>" + string(utf16.Decode(repl)) + "</u>"
+		case client.TypeTextEntityTypeStrikethrough:
+			res += "<s>" + string(utf16.Decode(repl)) + "</s>"
 		case client.TypeTextEntityTypeMention:
 			res += fmt.Sprintf(`<a href="https://t.me/%s">%s</a>`, string(utf16.Decode(repl[1:])), string(utf16.Decode(repl)))
 		case client.TypeTextEntityTypeMentionName:
