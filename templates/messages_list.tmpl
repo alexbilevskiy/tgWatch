@@ -1,0 +1,71 @@
+{{define "messages_list"}}
+    <div>
+        {{$lastM := 0}}
+        {{$lastDate := ""}}
+        {{$lastSender := 0}}
+
+        {{$needHeader := true}}
+        {{$needFooter := true}}
+        {{$needPrevFooter := false}}
+        {{$stopWithMedia := false}}
+        {{$needDate := false}}
+        {{$needSender := false}}
+
+        {{range .Messages}}
+
+            <!-- CONDITION RULES FOR CONTENT -->
+            {{$needHeader = true}}
+            {{$needFooter = true}}
+            {{$needPrevFooter = false}}
+            {{$needDate = false}}
+            {{$needSender = false}}
+            {{$stopWithMedia = false}}
+
+            {{if ne .MediaAlbumId 0}}
+                {{$stopWithMedia = true}}
+                {{if eq $lastM 0}}
+                    <!--media album start-->
+                    {{$needHeader = true}}
+                    {{$needFooter = false}}
+                    {{$lastM = .MediaAlbumId}}
+                {{else if eq .MediaAlbumId $lastM}}
+                    <!--media continue-->
+                    {{$needHeader = false}}
+                    {{$needFooter = false}}
+                    {{$lastM = .MediaAlbumId}}
+                {{else if ne .MediaAlbumId $lastM}}
+                    <!--another album start-->
+                    {{$needHeader = true}}
+                    {{$needFooter = false}}
+                    {{$needPrevFooter = true}}
+                    {{$lastM = .MediaAlbumId}}
+                {{end}}
+            {{else if ne $lastM 0}}
+                <!--media album end-->
+                {{$needHeader = true}}
+                {{$needFooter = true}}
+                {{$needPrevFooter = true}}
+                {{$lastM = 0}}
+            {{end}}
+            {{if ne $lastDate (.Date | Date)}}
+                <!--show date on each day start-->
+                {{$needDate = true}}
+                {{$lastDate = .Date | Date}}
+            {{end}}
+            {{if ne $lastSender .SenderId}}
+                <!--dont show sender name if he sends multiple messages in row-->
+                {{$needSender = true}}
+                {{$lastSender = .SenderId}}
+            {{end}}
+
+            <!-- CONTENT -->
+            {{if eq $needDate true}}
+                <div><p class="text-center">{{.Date | Date}}</p></div>
+                {{$needSender = true}}
+            {{end}}
+
+            {{template "message" dict "parent" . "chat" $.Chat "needHeader" $needHeader "needSender" $needSender "needFooter" $needFooter "needPrevFooter" $needPrevFooter}}
+        {{end}}
+        {{if eq $stopWithMedia true}}</div></div></div>{{end}}
+    </div>
+{{end}}
