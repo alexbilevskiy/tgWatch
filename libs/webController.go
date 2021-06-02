@@ -198,6 +198,8 @@ func processSingleMessage(chatId int64, messageId int64, w http.ResponseWriter) 
 		SimpleText:    ct.Text,
 		FormattedText: ct.FormattedText,
 		Attachments:   GetContentAttachments(upd.Message.Content),
+		Deleted:       IsMessageDeleted(upd.Message.ChatId, upd.Message.Id),
+		Edited:        IsMessageEdited(upd.Message.ChatId, upd.Message.Id),
 		ContentRaw:    nil,
 	}
 	chat, _ := GetChat(upd.Message.ChatId, false)
@@ -350,6 +352,8 @@ func processTgChatHistory(chatId int64, limit int64, offset int64, w http.Respon
 				SimpleText:    ct.Text,
 				FormattedText: ct.FormattedText,
 				Attachments:   GetContentAttachments(upd.Message.Content),
+				Deleted:       IsMessageDeleted(upd.Message.ChatId, upd.Message.Id),
+				Edited:        IsMessageEdited(upd.Message.ChatId, upd.Message.Id),
 				ContentRaw:    nil,
 			}
 			//hack to reverse, orig was: res.Messages = append(res.Messages, msg)

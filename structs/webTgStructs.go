@@ -14,9 +14,11 @@ type MessageInfo struct {
 	SenderId      int64
 	SenderName    string
 	MediaAlbumId  int64
-	FormattedText interface{}
-	SimpleText    interface{}
+	FormattedText *client.FormattedText
+	SimpleText    string
 	Attachments   []MessageAttachment
+	Deleted       bool
+	Edited        bool
 	ContentRaw    interface{}
 }
 

@@ -160,6 +160,29 @@ func FindAllMessageChanges(chatId int64, messageId int64) ([][]byte, []string, [
 	return iterateCursor(cur)
 }
 
+func IsMessageEdited(chatId int64, messageId int64) bool {
+	crit := bson.D{{"t", "updateMessageEdited"}, {"upd.messageid", messageId}, {"upd.chatid", chatId}}
+
+	return countBy(crit) > 0
+}
+
+func IsMessageDeleted(chatId int64, messageId int64) bool {
+	crit := bson.D{{"t", "updateDeleteMessages"}, {"upd.messageids", messageId}, {"upd.chatid", chatId}}
+
+	return countBy(crit) > 0
+}
+
+func countBy(crit bson.D) int64 {
+	count, err := updatesColl.CountDocuments(mongoContext, crit)
+	if err != nil {
+		fmt.Printf("Failed to count edits for %s: %s", JsonMarshalStr(crit), err)
+
+		return -1
+	}
+
+	return count
+}
+
 func FindRecentChanges(limit int64) ([][]byte, []string, []int32, error) {
 	availableTypes := []string{
 		//"updateNewMessage",

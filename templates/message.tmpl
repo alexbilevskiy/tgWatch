@@ -21,8 +21,19 @@
                 {{$realNeedSender = true}}
             {{end}}
         {{end}}
-        <div class="d-flex {{$flexRow}} my-2">
-        <div class="card border {{$borderColor}}" style="max-width: {{$cardWidth}}%; min-width: 10%;">
+        {{$cardPadding := 2}}
+        {{if eq .parent.Deleted true}}
+            {{$cardPadding = 0}}
+            <a class="link-secondary fw-lighter small" data-bs-toggle="collapse" href="#m{{.parent.MessageId}}" role="button">
+                ❌
+                <span title="{{.parent.DateTimeStr}}">
+                {{.parent.TimeStr}}
+            </span>
+            </a>
+
+        {{end}}
+        <div class="d-flex {{$flexRow}} my-{{$cardPadding}}">
+        <div class="card border {{$borderColor}} {{if eq .parent.Deleted true}}collapse{{end}}" style="max-width: {{$cardWidth}}%; min-width: 10%;" id="m{{.parent.MessageId}}">
         <div class="card-body p-1">
     {{end}}
 
@@ -51,6 +62,7 @@
 
     {{if eq .needHeader true}}
         <div class="align-bottom text-end fw-lighter small float-end">
+            {{if .parent.Edited}}📝{{end}}
             <span title="{{.parent.DateTimeStr}}">
                 <a class="link-secondary" href="/m/{{.chat.ChatId}}/{{.parent.MessageId}}">{{.parent.TimeStr}}</a>
             </span>
