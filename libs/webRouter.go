@@ -138,7 +138,7 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 		return
 	case "h":
-		r := regexp.MustCompile(`^/h/(-?\d+)$`)
+		r := regexp.MustCompile(`^/h/?(-?\d+)?$`)
 		m := r.FindStringSubmatch(req.URL.Path)
 		if m == nil {
 			data := []byte(fmt.Sprintf("Unknown path %s %s", action, req.URL.Path))
@@ -146,8 +146,11 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 			return
 		}
-
 		chatId, _ := strconv.ParseInt(m[1], 10, 64)
+		if m[1] == "" {
+			chatId = int64(me.Id)
+		}
+
 		processTgChatHistory(chatId, limit, offset, res)
 
 		return
