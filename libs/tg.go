@@ -256,7 +256,7 @@ func GetContentWithText(content client.MessageContent) structs.MessageTextConten
 	case client.TypeMessageVoiceNote:
 		msg := content.(*client.MessageVoiceNote)
 
-		return structs.MessageTextContent{FormattedText: msg.Caption, Text: fmt.Sprintf("Voice (%d s.)", msg.VoiceNote.Duration)}
+		return structs.MessageTextContent{FormattedText: msg.Caption}
 	case client.TypeMessageDocument:
 		msg := content.(*client.MessageDocument)
 
@@ -359,6 +359,7 @@ func GetContentAttachments(content client.MessageContent) []structs.MessageAttac
 		s := structs.MessageAttachment{
 			T: msg.VoiceNote.Type,
 			Id: msg.VoiceNote.Voice.Remote.Id,
+			Name: fmt.Sprintf("Voice (%ds.)", msg.VoiceNote.Duration),
 			Link: append(make([]string, 0), fmt.Sprintf("http://%s/f/%s", config.Config.WebListen, msg.VoiceNote.Voice.Remote.Id)),
 		}
 		cnt = append(cnt, s)
