@@ -59,6 +59,7 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	if req.FormValue("offset") != "" {
 		offset, _ = strconv.ParseInt(req.FormValue("offset"), 10, 64)
 	}
+	ids := req.FormValue("ids")
 
 	switch action {
 	case "m":
@@ -73,19 +74,6 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		chatId, _ := strconv.ParseInt(m[1], 10, 64)
 		messageId, _ := strconv.ParseInt(m[2], 10, 64)
 		processTgSingleMessage(chatId, messageId, res)
-		return
-	case "d":
-		r := regexp.MustCompile(`^/d/(-?\d+)/([\d,]+)$`)
-		m := r.FindStringSubmatch(req.URL.Path)
-		if m == nil {
-			data := []byte(fmt.Sprintf("Unknown path %s %s", action, req.URL.Path))
-			res.Write(data)
-
-			return
-		}
-		chatId, _ := strconv.ParseInt(m[1], 10, 64)
-		messageIds := m[2]
-		processTgDeletedMessages(chatId, ExplodeInt(messageIds), res)
 		return
 	case "j":
 		processTgJournal(limit, res)
@@ -122,7 +110,7 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 		return
 	case "h":
-		r := regexp.MustCompile(`^/h/?(-?\d+)?$`)
+		r := regexp.MustCompile(`^/h/?(-?\d+)?($|/)`)
 		m := r.FindStringSubmatch(req.URL.Path)
 		if m == nil {
 			data := []byte(fmt.Sprintf("Unknown path %s %s", action, req.URL.Path))
@@ -135,7 +123,11 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 			chatId = int64(me.Id)
 		}
 
-		processTgChatHistory(chatId, limit, offset, res)
+		if ids != "" {
+			processTgMessagesByIds(chatId, ExplodeInt(ids), res)
+		} else {
+			processTgChatHistory(chatId, limit, offset, res)
+		}
 
 		return
 	case "f":

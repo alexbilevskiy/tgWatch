@@ -90,7 +90,7 @@ func processTgJournal(limit int64, w http.ResponseWriter)  {
 				T:       updateTypes[i],
 				Time:    dates[i],
 				Date:    FormatDateTime(dates[i]),
-				IntLink: fmt.Sprintf("/d/%d/%s", upd.ChatId, ImplodeInt(upd.MessageIds)),
+				IntLink: fmt.Sprintf("/h/%d/?ids=%s", upd.ChatId, ImplodeInt(upd.MessageIds)),
 				Chat: structs.ChatInfo{
 					ChatId: upd.ChatId,
 					ChatName: GetChatName(upd.ChatId),
@@ -225,31 +225,25 @@ func processTgSingleMessage(chatId int64, messageId int64, w http.ResponseWriter
 	renderTemplates(w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/single_message.tmpl`, `templates/message.tmpl`)
 }
 
-func processTgDeletedMessages(chatId int64, messageIds []int64, w http.ResponseWriter) {
-	var fullContentJ []interface{}
+func processTgMessagesByIds(chatId int64, messageIds []int64, w http.ResponseWriter) {
+	res := structs.ChatHistory{
+		T: "ChatHistory-filtered",
+		Messages: make([]structs.MessageInfo, 0),
+	}
+
 	for _, messageId := range messageIds {
 		upd, err := FindUpdateNewMessage(chatId, messageId)
 		if err != nil {
-			m := structs.MessageError{T: "Error", MessageId: messageId, Error: fmt.Sprintf("Error: %s", err)}
-			fullContentJ = append(fullContentJ, m)
+			m := structs.MessageInfo{T: "Error", MessageId: messageId, SimpleText: fmt.Sprintf("Error: %s", err)}
+			res.Messages = append(res.Messages, m)
 
 			continue
 		}
 
-		m := parseUpdateNewMessage(upd)
-		m.T = "Deleted Message"
-		fullContentJ = append(fullContentJ, parseUpdateNewMessage(upd))
+		res.Messages = append(res.Messages, parseUpdateNewMessage(upd))
 	}
 
-	res := structs.Messages{
-		T: "DeletedMessages",
-		Messages: fullContentJ,
-	}
-	if !verbose {
-		res.MessagesRaw = jsonMarshalPretty(fullContentJ)
-	}
-
-	renderTemplates(w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/deleted_message.tmpl`)
+	renderTemplates(w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/chat_history_filtered.tmpl`, `templates/messages_list.tmpl`, `templates/message.tmpl`)
 }
 
 func processTgChatInfo(chatId int64, w http.ResponseWriter) {
@@ -280,7 +274,7 @@ func processTgChatInfo(chatId int64, w http.ResponseWriter) {
 }
 
 func processTgChatHistory(chatId int64, limit int64, offset int64, w http.ResponseWriter) {
-	updates, updateTypes, _, errSelect := GetChatHistory(chatId, limit, offset)
+	updates, _, _, errSelect := GetChatHistory(chatId, limit, offset)
 	if errSelect != nil {
 		fmt.Printf("Error select updates: %s\n", errSelect)
 
@@ -299,38 +293,11 @@ func processTgChatHistory(chatId int64, limit int64, offset int64, w http.Respon
 		res.PrevOffset = 0
 	}
 
-	for i, rawJsonBytes := range updates {
-		switch updateTypes[i] {
-		case client.TypeUpdateNewMessage:
-			upd, _ := client.UnmarshalUpdateNewMessage(rawJsonBytes)
-			senderChatId := GetChatIdBySender(upd.Message.Sender)
-			ct := GetContentWithText(upd.Message.Content)
-			msg := structs.MessageInfo{
-				T:             "NewMessage",
-				MessageId:     upd.Message.Id,
-				Date:          upd.Message.Date,
-				DateTimeStr:   FormatDateTime(upd.Message.Date),
-				DateStr:       FormatDate(upd.Message.Date),
-				TimeStr:       FormatTime(upd.Message.Date),
-				ChatId:        upd.Message.ChatId,
-				ChatName:      GetChatName(upd.Message.ChatId),
-				SenderId:      senderChatId,
-				SenderName:    GetSenderName(upd.Message.Sender),
-				MediaAlbumId:  int64(upd.Message.MediaAlbumId),
-				SimpleText:    ct.Text,
-				FormattedText: ct.FormattedText,
-				Attachments:   GetContentAttachments(upd.Message.Content),
-				Deleted:       IsMessageDeleted(upd.Message.ChatId, upd.Message.Id),
-				Edited:        IsMessageEdited(upd.Message.ChatId, upd.Message.Id),
-				ContentRaw:    nil,
-			}
-			//hack to reverse, orig was: res.Messages = append(res.Messages, msg)
-			res.Messages = append([]structs.MessageInfo{msg}, res.Messages...)
-
-			break
-		default:
-			fmt.Printf("Not supported chat history item %s\n", updateTypes[i])
-		}
+	for _, rawJsonBytes := range updates {
+		upd, _ := client.UnmarshalUpdateNewMessage(rawJsonBytes)
+		msg := parseUpdateNewMessage(upd)
+		//hack to reverse, orig was: res.Messages = append(res.Messages, msg)
+		res.Messages = append([]structs.MessageInfo{msg}, res.Messages...)
 	}
 
 	renderTemplates(w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/chat_history.tmpl`, `templates/messages_list.tmpl`, `templates/message.tmpl`)

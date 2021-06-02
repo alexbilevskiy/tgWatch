@@ -1,0 +1,9 @@
+{{define "main"}}
+<div class="col col-6">
+    <h4><a href="/c/{{.Chat.ChatId}}">{{.Chat.ChatName}}</a></h4>
+    {{template "messages_list" .}}
+    <a class="btn btn-sm btn-light" href="/h/{{.Chat.ChatId}}?limit={{.Limit}}&offset={{.PrevOffset}}">Prev page</a>
+    <a class="btn btn-sm btn-light" href="/h/{{.Chat.ChatId}}?limit={{.Limit}}&offset={{.NextOffset}}">Next page</a>
+
+</div>
+{{end}}

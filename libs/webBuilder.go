@@ -11,27 +11,31 @@ import (
 func parseUpdateNewMessage(upd *client.UpdateNewMessage) structs.MessageInfo {
 	senderChatId := GetChatIdBySender(upd.Message.Sender)
 	ct := GetContentWithText(upd.Message.Content)
-
-	result := structs.MessageInfo{
+	msg := structs.MessageInfo{
 		T:             "NewMessage",
 		MessageId:     upd.Message.Id,
 		Date:          upd.Message.Date,
-		DateStr:       FormatDateTime(upd.Message.Date),
+		DateTimeStr:   FormatDateTime(upd.Message.Date),
+		DateStr:       FormatDate(upd.Message.Date),
+		TimeStr:       FormatTime(upd.Message.Date),
 		ChatId:        upd.Message.ChatId,
 		ChatName:      GetChatName(upd.Message.ChatId),
 		SenderId:      senderChatId,
 		SenderName:    GetSenderName(upd.Message.Sender),
+		MediaAlbumId:  int64(upd.Message.MediaAlbumId),
 		SimpleText:    ct.Text,
 		FormattedText: ct.FormattedText,
 		Attachments:   GetContentAttachments(upd.Message.Content),
+		Deleted:       IsMessageDeleted(upd.Message.ChatId, upd.Message.Id),
+		Edited:        IsMessageEdited(upd.Message.ChatId, upd.Message.Id),
 		ContentRaw:    nil,
-		MediaAlbumId:  int64(upd.Message.MediaAlbumId),
-	}
-	if verbose {
-		result.ContentRaw = upd.Message.Content
 	}
 
-	return result
+	if verbose {
+		msg.ContentRaw = upd.Message.Content
+	}
+
+	return msg
 }
 
 func buildChatInfoByLocalChat(chat *client.Chat, buildCounters bool) structs.ChatInfo {

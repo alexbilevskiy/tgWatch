@@ -155,7 +155,7 @@ func ListenUpdates()  {
 				mongoId := SaveUpdate(t, upd, 0)
 
 				chatName := GetChatName(upd.ChatId)
-				intLink := fmt.Sprintf("http://%s/d/%d/%s", config.Config.WebListen, upd.ChatId, ImplodeInt(upd.MessageIds))
+				intLink := fmt.Sprintf("http://%s/h/%d/?ids=%s", config.Config.WebListen, upd.ChatId, ImplodeInt(upd.MessageIds))
 				count := len(upd.MessageIds)
 				DLog(fmt.Sprintf("[%s] DELETED %d Messages from chat: %d, `%s`, %s", mongoId, count, upd.ChatId, chatName, intLink))
 
