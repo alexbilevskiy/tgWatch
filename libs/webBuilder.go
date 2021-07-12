@@ -3,6 +3,7 @@ package libs
 import (
 	"fmt"
 	"go-tdlib/client"
+	"html"
 	"strings"
 	"tgWatch/structs"
 	"unicode/utf16"
@@ -89,51 +90,60 @@ func buildChatInfoByLocalChat(chat *client.Chat, buildCounters bool) structs.Cha
 }
 
 func renderText(text *client.FormattedText) string {
-	runes := utf16.Encode([]rune(text.Text))
+	utfText := utf16.Encode([]rune(text.Text))
 	res := ""
 	var prevOffset int32 = 0
 
 	for _, entity := range text.Entities {
 		if (entity.Offset - prevOffset > 0) || entity.Offset == 0 {
-			res += string(utf16.Decode(runes[prevOffset:entity.Offset]))
+			res += ut2hs(utfText[prevOffset:entity.Offset])
 		}
 		prevOffset = entity.Offset + entity.Length
-		if int32(len(runes)) < entity.Offset + entity.Length {
+		if int32(len(utfText)) < entity.Offset + entity.Length {
 			res += "ERROR!"
 			break
 		}
-		repl := runes[entity.Offset:entity.Offset + entity.Length]
+		repl := ut2hs(utfText[entity.Offset:entity.Offset + entity.Length])
+
 		switch entity.Type.TextEntityTypeType() {
 		case client.TypeTextEntityTypeBold:
-			res += "<b>" + string(utf16.Decode(repl)) + "</b>"
+			res += "<b>" + repl + "</b>"
 		case client.TypeTextEntityTypeItalic:
-			res += "<i>" + string(utf16.Decode(repl)) + "</i>"
+			res += "<i>" + repl + "</i>"
 		case client.TypeTextEntityTypeUnderline:
-			res += "<u>" + string(utf16.Decode(repl)) + "</u>"
+			res += "<u>" + repl + "</u>"
 		case client.TypeTextEntityTypeStrikethrough:
-			res += "<s>" + string(utf16.Decode(repl)) + "</s>"
+			res += "<s>" + repl + "</s>"
 		case client.TypeTextEntityTypeMention:
-			res += fmt.Sprintf(`<a href="https://t.me/%s">%s</a>`, string(utf16.Decode(repl[1:])), string(utf16.Decode(repl)))
+			res += fmt.Sprintf(`<a href="https://t.me/%s">%s</a>`, repl[1:], repl)
 		case client.TypeTextEntityTypeMentionName:
 			t := entity.Type.(*client.TextEntityTypeMentionName)
-			res += fmt.Sprintf(`<a href="/h/%d">%s</a>`, t.UserId, string(utf16.Decode(repl)))
+			res += fmt.Sprintf(`<a href="/h/%d">%s</a>`, t.UserId, repl)
 		case client.TypeTextEntityTypeCode:
-			res += "<code>" + string(utf16.Decode(repl)) + "</code>"
+			res += "<code>" + repl + "</code>"
 		case client.TypeTextEntityTypeUrl:
-			res += fmt.Sprintf(`<a href="%s">%s</a>`, string(utf16.Decode(repl)), string(utf16.Decode(repl)))
+			res += fmt.Sprintf(`<a href="%s">%s</a>`, repl, repl)
 		case client.TypeTextEntityTypeTextUrl:
 			t := entity.Type.(*client.TextEntityTypeTextUrl)
-			res += fmt.Sprintf(`<a href="%s">%s</a>`, t.Url, string(utf16.Decode(repl)))
+			res += fmt.Sprintf(`<a href="%s">%s</a>`, t.Url, repl)
 		case client.TypeTextEntityTypePre:
-			res += "<pre>" + string(utf16.Decode(repl)) + "</pre>"
+			res += "<pre>" + repl + "</pre>"
+		case client.TypeTextEntityTypeBotCommand:
+			res += "<a>" + repl + "</a>"
+		case client.TypeTextEntityTypeHashtag:
+			res += "<a>" + repl + "</a>"
 		default:
-			res += fmt.Sprintf(`<span title="%s" class="badge bg-danger">%s</span>`, entity.Type.TextEntityTypeType(), string(utf16.Decode(repl)))
+			res += fmt.Sprintf(`<span title="%s" class="badge bg-danger">%s</span>`, entity.Type.TextEntityTypeType(), repl)
 		}
 	}
-	if int32(len(runes)) > prevOffset {
-		res += string(utf16.Decode(runes[prevOffset:]))
+	if int32(len(utfText)) > prevOffset {
+		res += ut2hs(utfText[prevOffset:])
 	}
 	res = strings.Replace(res, "\n", "<br>", -1)
 
 	return res
+}
+
+func ut2hs(r []uint16) string { //utf text to html string
+	return html.EscapeString(string(utf16.Decode(r)))
 }
