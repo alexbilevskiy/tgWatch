@@ -262,6 +262,10 @@ func GetContentWithText(content client.MessageContent) structs.MessageTextConten
 		msg := content.(*client.MessageDocument)
 
 		return structs.MessageTextContent{FormattedText: msg.Caption}
+	case client.TypeMessageCall:
+		msg := content.(*client.MessageCall)
+
+		return structs.MessageTextContent{Text: fmt.Sprintf("Call (%ds)", msg.Duration)}
 	default:
 
 		return structs.MessageTextContent{Text: JsonMarshalStr(content)}
@@ -301,6 +305,7 @@ func GetContentAttachments(content client.MessageContent) []structs.MessageAttac
 	var cnt []structs.MessageAttachment
 	switch cType {
 	case client.TypeMessageText:
+	case client.TypeMessageCall:
 
 		return nil
 	case client.TypeMessagePhoto:

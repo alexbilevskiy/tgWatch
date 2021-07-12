@@ -127,11 +127,13 @@ func renderText(text *client.FormattedText) string {
 			t := entity.Type.(*client.TextEntityTypeTextUrl)
 			res += fmt.Sprintf(`<a href="%s">%s</a>`, t.Url, repl)
 		case client.TypeTextEntityTypePre:
-			res += "<pre>" + repl + "</pre>"
+			res += "<code>" + repl + "</code>"
 		case client.TypeTextEntityTypeBotCommand:
 			res += "<a>" + repl + "</a>"
 		case client.TypeTextEntityTypeHashtag:
 			res += "<a>" + repl + "</a>"
+		case client.TypeTextEntityTypeEmailAddress:
+			res += fmt.Sprintf(`<a href="mailto:%s">%s</a>`, repl, repl)
 		default:
 			res += fmt.Sprintf(`<span title="%s" class="badge bg-danger">%s</span>`, entity.Type.TextEntityTypeType(), repl)
 		}
