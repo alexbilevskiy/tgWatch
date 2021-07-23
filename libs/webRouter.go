@@ -169,7 +169,7 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 		break
 	case "s":
-		processSettings(res)
+		processSettings(req, res)
 		return
 	case "delete":
 		r := regexp.MustCompile(`^/delete/(-?\d+)$`)

@@ -421,12 +421,50 @@ func processTgDelete(chatId int64, pattern string, limit int, w http.ResponseWri
 	w.Write(data)
 }
 
-func processSettings(w http.ResponseWriter) {
-	res := structs.WebConfig{
-		T:"Config",
-		IgnoreChatIds: config.Config.IgnoreChatIds,
-		IgnoreAuthorIds: config.Config.IgnoreAuthorIds,
-		IgnoreFolders: config.Config.IgnoreFolders,
+func processSettings(r *http.Request, w http.ResponseWriter) {
+	var res structs.WebConfig
+	if r.Method == "POST" {
+		IgnoreChatIds := make(map[string]string, 0)
+		if _, ok := r.PostForm["ignoreChatIds"]; ok {
+			for _, chatId := range r.PostForm["ignoreChatIds"] {
+				if chatId == "" {
+					continue
+				}
+				IgnoreChatIds[chatId] = ""
+			}
+		}
+		IgnoreAuthorIds := make(map[string]string, 0)
+		if _, ok := r.PostForm["ignoreAuthorIds"]; ok {
+			for _, authorId := range r.PostForm["ignoreAuthorIds"] {
+				if authorId == "" {
+					continue
+				}
+				IgnoreAuthorIds[authorId] = ""
+			}
+		}
+		IgnoreFolders := make(map[string]bool, 0)
+		if _, ok := r.PostForm["ignoreFolders"]; ok {
+			for _, folder := range r.PostForm["ignoreFolders"] {
+				if folder == "" {
+					continue
+				}
+				IgnoreFolders[folder] = true
+			}
+		}
+		res = structs.WebConfig{
+			T:"Config",
+			IgnoreChatIds: IgnoreChatIds,
+			IgnoreAuthorIds: IgnoreAuthorIds,
+			IgnoreFolders: IgnoreFolders,
+		}
+
+	} else {
+		res = structs.WebConfig{
+			T:"Config",
+			IgnoreChatIds: config.Config.IgnoreChatIds,
+			IgnoreAuthorIds: config.Config.IgnoreAuthorIds,
+			IgnoreFolders: config.Config.IgnoreFolders,
+		}
 	}
 
 	renderTemplates(w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/settings.tmpl`)
