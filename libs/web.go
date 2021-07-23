@@ -51,6 +51,20 @@ func renderTemplates(w http.ResponseWriter, templateData interface{}, templates.
 
 				return buildChatInfoByLocalChat(localChats[chatId], false)
 			},
+			"chatInfo": func(chatIdstr string) structs.ChatInfo {
+				chatId, _ := strconv.ParseInt(chatIdstr, 10, 64)
+				c, err := GetChat(chatId, false)
+				if err != nil {
+					user, err := GetUser(int32(chatId))
+					if err != nil {
+						return structs.ChatInfo{ChatId: chatId, ChatName: fmt.Sprintf("ERROR: %s", err.Error())}
+					}
+
+					return structs.ChatInfo{ChatId: chatId, ChatName: getUserFullname(user)}
+				}
+
+				return buildChatInfoByLocalChat(c, false)
+			},
 			"DateTime": func(date int32) string {
 				return FormatDateTime(date)
 			},

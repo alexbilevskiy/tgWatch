@@ -18,7 +18,7 @@
                     </thead>
                     <tbody>
                         {{range $key, $value := .IgnoreChatIds }}
-                            {{$chat := $key | chatInfoLocal}}
+                            {{$chat := $key | chatInfo}}
                             <tr>
                                 <td>
                                     {{$chat.ChatName}}
@@ -64,7 +64,7 @@
                     </thead>
                     <tbody>
                         {{range $key, $value := .IgnoreAuthorIds }}
-                            {{$chat := $key | chatInfoLocal}}
+                            {{$chat := $key | chatInfo}}
                             <tr>
                                 <td>
                                     {{$chat.ChatName}}

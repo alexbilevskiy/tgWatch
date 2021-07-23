@@ -191,7 +191,7 @@ func GetChat(chatId int64, force bool) (*client.Chat, error) {
 	}
 	req := &client.GetChatRequest{ChatId: chatId}
 	fullChat, err := tdlibClient.GetChat(req)
-	if err != nil {
+	if err == nil {
 		fmt.Printf("Caching local chat %d\n", chatId)
 		localChats[chatId] = fullChat
 	}
