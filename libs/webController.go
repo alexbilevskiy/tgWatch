@@ -5,6 +5,7 @@ import (
 	"go-tdlib/client"
 	"net/http"
 	"strings"
+	"tgWatch/config"
 	"tgWatch/structs"
 )
 
@@ -418,4 +419,15 @@ func processTgDelete(chatId int64, pattern string, limit int, w http.ResponseWri
 	}
 	data := []byte(fmt.Sprintf("Deleted from chat %d `%s`", chatId, pattern))
 	w.Write(data)
+}
+
+func processSettings(w http.ResponseWriter) {
+	res := structs.WebConfig{
+		T:"Config",
+		IgnoreChatIds: config.Config.IgnoreChatIds,
+		IgnoreAuthorIds: config.Config.IgnoreAuthorIds,
+		IgnoreFolders: config.Config.IgnoreFolders,
+	}
+
+	renderTemplates(w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/settings.tmpl`)
 }

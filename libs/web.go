@@ -6,6 +6,7 @@ import (
 	"go-tdlib/client"
 	"html/template"
 	"net/http"
+	"strconv"
 	"tgWatch/config"
 	"tgWatch/structs"
 )
@@ -40,6 +41,15 @@ func renderTemplates(w http.ResponseWriter, templateData interface{}, templates.
 				}
 
 				return false
+			},
+			"chatInfoLocal": func(chatIdstr string) structs.ChatInfo {
+				chatId, _ := strconv.ParseInt(chatIdstr, 10, 64)
+				if _, ok := localChats[chatId]; !ok {
+
+					return structs.ChatInfo{ChatId: chatId, ChatName: "_NOT_FOUND_"}
+				}
+
+				return buildChatInfoByLocalChat(localChats[chatId], false)
 			},
 			"DateTime": func(date int32) string {
 				return FormatDateTime(date)

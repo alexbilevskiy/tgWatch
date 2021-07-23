@@ -168,6 +168,9 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		data = j
 
 		break
+	case "s":
+		processSettings(res)
+		return
 	case "delete":
 		r := regexp.MustCompile(`^/delete/(-?\d+)$`)
 		m := r.FindStringSubmatch(req.URL.Path)
