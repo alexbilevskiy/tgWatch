@@ -93,6 +93,7 @@ func initMongo() {
 	updatesColl = mongoClient.Database(config.Config.Mongo["db"]).Collection("updates")
 	chatFiltersColl = mongoClient.Database(config.Config.Mongo["db"]).Collection("chatFilters")
 	chatListColl = mongoClient.Database(config.Config.Mongo["db"]).Collection("chatList")
+	settingsColl = mongoClient.Database(config.Config.Mongo["db"]).Collection("settings")
 }
 
 func SaveUpdate(t string, upd interface{}, timestamp int32) string {
@@ -433,4 +434,38 @@ func LoadChatFilters() {
 		return
 	}
 	log.Printf("Loaded %d chat folders", len(chatFilters))
+}
+
+func LoadSettings() {
+	crit := bson.D{{"t", "ignore_lists"}}
+	ignoreListsDoc := settingsColl.FindOne(mongoContext, crit)
+	if ignoreListsDoc.Err() == mongo.ErrNoDocuments {
+		log.Printf("No ignore lists in DB!")
+		ignoreLists = structs.IgnoreLists{
+			T: "ignore_lists",
+			IgnoreAuthorIds: make(map[string]bool),
+			IgnoreChatIds: make(map[string]bool),
+			IgnoreFolders: make(map[string]bool),
+		}
+
+		return
+	}
+
+	err := ignoreListsDoc.Decode(&ignoreLists)
+	if err != nil {
+		log.Fatalf("Cannot load ignore lists: %s", err.Error())
+	}
+
+	log.Printf("Loaded settings OK!")
+}
+
+func saveSettings() {
+	crit := bson.D{{"t", "ignore_lists"}}
+	update := bson.D{{"$set", ignoreLists}}
+	t := true
+	opts := &options.UpdateOptions{Upsert: &t}
+	_, err := settingsColl.UpdateOne(mongoContext, crit, update, opts)
+	if err != nil {
+		fmt.Printf("Failed to save ignoreLists: %s", err)
+	}
 }

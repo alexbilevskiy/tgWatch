@@ -5,7 +5,6 @@ import (
 	"go-tdlib/client"
 	"net/http"
 	"strings"
-	"tgWatch/config"
 	"tgWatch/structs"
 )
 
@@ -422,24 +421,25 @@ func processTgDelete(chatId int64, pattern string, limit int, w http.ResponseWri
 }
 
 func processSettings(r *http.Request, w http.ResponseWriter) {
-	var res structs.WebConfig
+	var res structs.IgnoreLists
 	if r.Method == "POST" {
-		IgnoreChatIds := make(map[string]string, 0)
+		//@TODO: VALIDATE FORM DATA!! Only int acceptable as chat ID, only valid names for folders
+		IgnoreChatIds := make(map[string]bool, 0)
 		if _, ok := r.PostForm["ignoreChatIds"]; ok {
 			for _, chatId := range r.PostForm["ignoreChatIds"] {
 				if chatId == "" {
 					continue
 				}
-				IgnoreChatIds[chatId] = ""
+				IgnoreChatIds[chatId] = true
 			}
 		}
-		IgnoreAuthorIds := make(map[string]string, 0)
+		IgnoreAuthorIds := make(map[string]bool, 0)
 		if _, ok := r.PostForm["ignoreAuthorIds"]; ok {
 			for _, authorId := range r.PostForm["ignoreAuthorIds"] {
 				if authorId == "" {
 					continue
 				}
-				IgnoreAuthorIds[authorId] = ""
+				IgnoreAuthorIds[authorId] = true
 			}
 		}
 		IgnoreFolders := make(map[string]bool, 0)
@@ -451,20 +451,16 @@ func processSettings(r *http.Request, w http.ResponseWriter) {
 				IgnoreFolders[folder] = true
 			}
 		}
-		res = structs.WebConfig{
-			T:"Config",
-			IgnoreChatIds: IgnoreChatIds,
-			IgnoreAuthorIds: IgnoreAuthorIds,
-			IgnoreFolders: IgnoreFolders,
-		}
+		ignoreLists.IgnoreChatIds = IgnoreChatIds
+		ignoreLists.IgnoreAuthorIds = IgnoreAuthorIds
+		ignoreLists.IgnoreFolders = IgnoreFolders
+		saveSettings()
+		res = ignoreLists
+		res.T = "Settings"
 
 	} else {
-		res = structs.WebConfig{
-			T:"Config",
-			IgnoreChatIds: config.Config.IgnoreChatIds,
-			IgnoreAuthorIds: config.Config.IgnoreAuthorIds,
-			IgnoreFolders: config.Config.IgnoreFolders,
-		}
+		res = ignoreLists
+		res.T = "Settings"
 	}
 
 	renderTemplates(w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/settings.tmpl`)

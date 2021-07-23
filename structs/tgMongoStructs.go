@@ -24,3 +24,10 @@ type ChatCounters struct {
 	ChatId   int64
 	Counters map[string]int32
 }
+
+type IgnoreLists struct {
+	T               string
+	IgnoreChatIds   map[string]bool
+	IgnoreAuthorIds map[string]bool
+	IgnoreFolders   map[string]bool
+}

@@ -1,15 +1,6 @@
 {
   "ApiId": 12345,
   "ApiHash": "5f4dcc3b5aa765d61d8327deb882cf99",
-  "IgnoreChatIds": {
-    "-1001234567890": "title (any, just for info)"
-  },
-  "IgnoreAuthorIds": {
-    "123456789": "title (any)"
-  },
-  "IgnoreFolders": {
-    "FolderName": true
-  },
   "WebListen": "localhost:8092",
   "Mongo": {
     "uri": "mongodb://localhost:27017",

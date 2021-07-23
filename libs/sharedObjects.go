@@ -13,9 +13,11 @@ var mongoContext context.Context
 var updatesColl *mongo.Collection
 var chatFiltersColl *mongo.Collection
 var chatListColl *mongo.Collection
+var settingsColl *mongo.Collection
 var tdlibClient *client.Client
 var tdlibOptions map[string]structs.TdlibOption
 var chatFilters []structs.ChatFilter
+var ignoreLists structs.IgnoreLists
 var localChats map[int64]*client.Chat
 var me *client.User
 

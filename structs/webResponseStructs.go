@@ -76,10 +76,3 @@ type SessionsList struct {
 	Sessions    interface{}
 	SessionsRaw string
 }
-
-type WebConfig struct {
-	T string
-	IgnoreChatIds map[string]string `json:"IgnoreChatIds"`
-	IgnoreAuthorIds map[string]string `json:"IgnoreAuthorIds"`
-	IgnoreFolders map[string]bool `json:"IgnoreFolders"`
-}

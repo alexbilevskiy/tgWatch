@@ -13,6 +13,7 @@ import (
 )
 
 func initTdlib() {
+	LoadSettings()
 	LoadChatFilters()
 	loadOptionsList()
 	localChats = make(map[int64]*client.Chat)
@@ -458,11 +459,11 @@ func getChatsList(listId int32) []*client.Chat {
 }
 
 func checkSkippedChat(chatId string) bool {
-	if _, ok := config.Config.IgnoreAuthorIds[chatId]; ok {
+	if _, ok := ignoreLists.IgnoreAuthorIds[chatId]; ok {
 
 		return true
 	}
-	if _, ok := config.Config.IgnoreChatIds[chatId]; ok {
+	if _, ok := ignoreLists.IgnoreChatIds[chatId]; ok {
 
 		return true
 	}
@@ -473,7 +474,7 @@ func checkSkippedChat(chatId string) bool {
 func checkChatFilter(chatId int64) bool {
 	for _, filter := range chatFilters {
 		for _, chatInFilter := range filter.IncludedChats {
-			if chatInFilter == chatId && config.Config.IgnoreFolders[filter.Title] {
+			if chatInFilter == chatId && ignoreLists.IgnoreFolders[filter.Title] {
 				//log.Printf("Skip chat %d because it's in skipped folder %s", chatId, filter.Title)
 
 				return true
