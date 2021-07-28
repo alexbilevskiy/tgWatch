@@ -263,6 +263,19 @@ func GetContentWithText(content client.MessageContent) structs.MessageTextConten
 		msg := content.(*client.MessageDocument)
 
 		return structs.MessageTextContent{FormattedText: msg.Caption}
+	case client.TypeMessageChatAddMembers:
+		msg := content.(*client.MessageChatAddMembers)
+
+		return structs.MessageTextContent{Text: fmt.Sprintf("Added users %s", JsonMarshalStr(msg.MemberUserIds))}
+	case client.TypeMessagePinMessage:
+		msg := content.(*client.MessagePinMessage)
+		var url client.TextEntityType
+		//@TODO: where to get chat ID?
+		url = &client.TextEntityTypeTextUrl{Url: fmt.Sprintf("/m/1111/%d", msg.MessageId)}
+		entity := &client.TextEntity{Type: url, Offset: 0, Length: 6}
+		t := &client.FormattedText{Text: "Pinned message", Entities: append(make([]*client.TextEntity, 0), entity)}
+
+		return structs.MessageTextContent{FormattedText: t}
 	case client.TypeMessageCall:
 		msg := content.(*client.MessageCall)
 

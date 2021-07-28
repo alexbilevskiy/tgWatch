@@ -134,6 +134,8 @@ func renderText(text *client.FormattedText) string {
 			res += "<a>" + repl + "</a>"
 		case client.TypeTextEntityTypeEmailAddress:
 			res += fmt.Sprintf(`<a href="mailto:%s">%s</a>`, repl, repl)
+		case client.TypeTextEntityTypePhoneNumber:
+			res += fmt.Sprintf(`<a href="tel:%s">%s</a>`, repl, repl)
 		default:
 			res += fmt.Sprintf(`<span title="%s" class="badge bg-danger">%s</span>`, entity.Type.TextEntityTypeType(), repl)
 		}
