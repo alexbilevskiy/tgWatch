@@ -124,9 +124,11 @@ func ListenUpdates()  {
 				}
 
 				skipUpdate := 0
+				realUpdates := make([]int64, 0)
 				for _, messageId := range upd.MessageIds {
 					savedMessage, err := FindUpdateNewMessage(upd.ChatId, messageId)
 					if err != nil {
+						realUpdates = append(realUpdates, messageId)
 
 						continue
 					}
@@ -137,7 +139,7 @@ func ListenUpdates()  {
 						continue
 					}
 					if savedMessage.Message.Content == nil {
-						log.Printf("Skip deleted message %d with unknown content from %s", messageId, GetChatIdBySender(savedMessage.Message.Sender))
+						log.Printf("Skip deleted message %d with unknown content from %d", messageId, GetChatIdBySender(savedMessage.Message.Sender))
 
 						continue
 					}
@@ -147,11 +149,13 @@ func ListenUpdates()  {
 
 						continue
 					}
+					realUpdates = append(realUpdates, messageId)
 				}
-				if skipUpdate == len(upd.MessageIds) {
+				if len(realUpdates) <= 0 {
 
 					break
 				}
+				upd.MessageIds = realUpdates
 				mongoId := SaveUpdate(t, upd, 0)
 
 				chatName := GetChatName(upd.ChatId)
@@ -163,7 +167,7 @@ func ListenUpdates()  {
 
 			case client.TypeUpdateNewMessage:
 				upd := update.(*client.UpdateNewMessage)
-				if checkSkippedChat(strconv.FormatInt(upd.Message.ChatId, 10)) || checkChatFilter(upd.Message.ChatId) {
+				if checkSkippedChat(strconv.FormatInt(upd.Message.ChatId, 10)) || checkSkippedChat(strconv.FormatInt(GetChatIdBySender(upd.Message.Sender), 10)) || checkChatFilter(upd.Message.ChatId) {
 
 					break
 				}
@@ -178,6 +182,7 @@ func ListenUpdates()  {
 				break
 			case client.TypeUpdateMessageEdited:
 				upd := update.(*client.UpdateMessageEdited)
+				//@TODO: find message in DB and check sender, maybe he is ignored
 				if checkSkippedChat(strconv.FormatInt(upd.ChatId, 10)) || checkChatFilter(upd.ChatId) {
 
 					break
@@ -198,6 +203,7 @@ func ListenUpdates()  {
 				break
 			case client.TypeUpdateMessageContent:
 				upd := update.(*client.UpdateMessageContent)
+				//@TODO: find message in DB and check sender, maybe he is ignored
 				if checkSkippedChat(strconv.FormatInt(upd.ChatId, 10)) || checkChatFilter(upd.ChatId) {
 
 					break
