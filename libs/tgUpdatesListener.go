@@ -182,17 +182,19 @@ func ListenUpdates()  {
 				break
 			case client.TypeUpdateMessageEdited:
 				upd := update.(*client.UpdateMessageEdited)
-				//@TODO: find message in DB and check sender, maybe he is ignored
 				if checkSkippedChat(strconv.FormatInt(upd.ChatId, 10)) || checkChatFilter(upd.ChatId) {
 
 					break
 				}
-
 				if upd.ReplyMarkup != nil {
 					//messages with buttons - reactions, likes etc
+					break
+				}
+				if checkSkippedSenderBySavedMessage(upd.ChatId, upd.MessageId) {
 
 					break
 				}
+
 				SaveUpdate(t, upd, upd.EditDate)
 				//mongoId := SaveUpdate(t, upd, upd.EditDate)
 				//link := GetLink(tdlibClient, upd.ChatId, upd.MessageId)
@@ -212,6 +214,11 @@ func ListenUpdates()  {
 					//dont save "poll" updates - that's just counters, users cannot update polls manually
 					break
 				}
+				if checkSkippedSenderBySavedMessage(upd.ChatId, upd.MessageId) {
+
+					break
+				}
+
 				mongoId := SaveUpdate(t, upd, 0)
 
 				link := GetLink(upd.ChatId, upd.MessageId)

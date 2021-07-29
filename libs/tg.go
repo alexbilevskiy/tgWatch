@@ -7,6 +7,7 @@ import (
 	"go-tdlib/client"
 	"log"
 	"path/filepath"
+	"strconv"
 	"tgWatch/config"
 	"tgWatch/structs"
 	"time"
@@ -477,6 +478,21 @@ func checkSkippedChat(chatId string) bool {
 		return true
 	}
 	if _, ok := ignoreLists.IgnoreChatIds[chatId]; ok {
+
+		return true
+	}
+
+	return false
+}
+
+func checkSkippedSenderBySavedMessage(chatId int64, messageId int64) bool {
+	savedMessage, err := FindUpdateNewMessage(chatId, messageId)
+	if err != nil {
+
+		return false
+	}
+
+	if checkSkippedChat(strconv.FormatInt(GetChatIdBySender(savedMessage.Message.Sender), 10)) {
 
 		return true
 	}
