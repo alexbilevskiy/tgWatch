@@ -122,6 +122,7 @@ func ListenUpdates()  {
 
 					break
 				}
+				MarkAsDeleted(upd.ChatId, upd.MessageIds)
 
 				skipUpdate := 0
 				realUpdates := make([]int64, 0)

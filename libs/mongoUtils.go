@@ -161,6 +161,15 @@ func FindAllMessageChanges(chatId int64, messageId int64) ([][]byte, []string, [
 	return iterateCursor(cur)
 }
 
+func MarkAsDeleted(chatId int64, messageIds []int64) {
+	crit := bson.D{{"t", "updateNewMessage"}, {"upd.message.id", bson.M{"$in": messageIds}}, {"upd.message.chatid", chatId}}
+	update := bson.D{{"$set", bson.M{"deleted": true}}}
+	_, err := updatesColl.UpdateMany(mongoContext, crit, update)
+	if err != nil {
+		fmt.Printf("Failed to update deleted: %d, %s, %s", chatId, JsonMarshalStr(messageIds), err)
+	}
+}
+
 func IsMessageEdited(chatId int64, messageId int64) bool {
 	crit := bson.D{{"t", "updateMessageEdited"}, {"upd.messageid", messageId}, {"upd.chatid", chatId}}
 
@@ -283,8 +292,13 @@ func GetChatsStats(chats []int64) ([]structs.ChatCounters, error) {
 	return result, nil
 }
 
-func GetChatHistory(chatId int64, limit int64, offset int64) ([][]byte, []string, []int32, error) {
-	crit := bson.D{{"t", "updateNewMessage"}, {"upd.message.chatid", chatId}}
+func GetChatHistory(chatId int64, limit int64, offset int64, deleted bool) ([][]byte, []string, []int32, error) {
+	var crit bson.D
+	if !deleted {
+		crit = bson.D{{"t", "updateNewMessage"}, {"upd.message.chatid", chatId}}
+	} else {
+		crit = bson.D{{"t", "updateNewMessage"}, {"upd.message.chatid", chatId}, {"deleted", true}}
+	}
 	lim := &limit
 	offs := &offset
 	opts := options.FindOptions{Limit: lim, Skip: offs, Sort: bson.M{"_id": -1}}

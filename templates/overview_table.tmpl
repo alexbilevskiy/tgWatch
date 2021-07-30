@@ -57,7 +57,7 @@
         </td>
         <td>
             {{if gt .CountDeletes 0}}
-            <span class="badge bg-danger">{{.CountDeletes}}</span>
+            <a href="/h/{{.ChatId}}?deleted=1"><span class="badge bg-danger">{{.CountDeletes}}</span></a>
             {{end}}
         </td>
     </tr>

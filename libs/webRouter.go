@@ -126,7 +126,11 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		if ids != "" {
 			processTgMessagesByIds(chatId, ExplodeInt(ids), res)
 		} else {
-			processTgChatHistory(chatId, limit, offset, res)
+			deleted := false
+			if req.FormValue("deleted") == "1" {
+				deleted = true
+			}
+			processTgChatHistory(chatId, limit, offset, deleted, res)
 		}
 
 		return
