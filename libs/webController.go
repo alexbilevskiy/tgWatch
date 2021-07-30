@@ -152,13 +152,14 @@ func processTgActiveSessions(w http.ResponseWriter) {
 func processTgSingleMessage(chatId int64, messageId int64, w http.ResponseWriter) {
 	upd, err := FindUpdateNewMessage(chatId, messageId)
 	if err != nil {
-		fmt.Printf("Not found message %s", err)
+		m := structs.MessageError{T: "Error", MessageId: messageId, Error: fmt.Sprintf("Error: %s", err)}
+		renderTemplates(w, m, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/error.tmpl`)
 
 		return
 	}
 
 	senderChatId := GetChatIdBySender(upd.Message.Sender)
-	ct := GetContentWithText(upd.Message.Content)
+	ct := GetContentWithText(upd.Message.Content, upd.Message.ChatId)
 	msg := structs.MessageInfo{
 		T:             "NewMessage",
 		MessageId:     upd.Message.Id,
@@ -203,7 +204,7 @@ func processTgSingleMessage(chatId int64, messageId int64, w http.ResponseWriter
 			break
 		case client.TypeUpdateMessageContent:
 			upd, _ := client.UnmarshalUpdateMessageContent(rawJsonBytes)
-			ct = GetContentWithText(upd.NewContent)
+			ct = GetContentWithText(upd.NewContent, upd.ChatId)
 			edit = structs.MessageEditedInfo{T:"MessageEdited"}
 			edit.FormattedText = ct.FormattedText
 			edit.SimpleText = ct.Text
@@ -386,7 +387,7 @@ func processTgDelete(chatId int64, pattern string, limit int, w http.ResponseWri
 		noMore := true
 		for _, message := range history.Messages {
 			lastId = message.Id
-			content := GetContent(message.Content)
+			content := GetContentWithText(message.Content, message.ChatId).Text
 			if content == "" {
 				fmt.Printf("NO content: %d, `%s`\n", message.Id, content)
 				continue

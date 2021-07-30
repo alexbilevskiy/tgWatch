@@ -79,6 +79,15 @@ func initTdlib() {
 			//time.Sleep(10 * time.Second)
 		}
 	}()
+
+	//req := &client.SetOptionRequest{Name: "ignore_background_updates", Value: &client.OptionValueBoolean{Value: false}}
+	//ok, err := tdlibClient.SetOption(req)
+	//if err != nil {
+	//	log.Printf("failed to set ignore_background_updates option: %s", err)
+	//} else {
+	//	log.Printf("Set ignore_background_updates option: %s", JsonMarshalStr(ok))
+	//}
+
 }
 
 func GetChatIdBySender(sender client.MessageSender) int64 {
@@ -219,17 +228,12 @@ func GetBasicGroup(groupId int32) (*client.BasicGroup, error) {
 	return tdlibClient.GetBasicGroup(bgReq)
 }
 
-func GetContent(content client.MessageContent) string {
+func GetContentWithText(content client.MessageContent, chatId int64) structs.MessageTextContent {
 	if content == nil {
 
-		return "UNSUPPORTED_CONTENT"
+		return structs.MessageTextContent{Text: "UNSUPPORTED_CONTENT"}
 	}
 
-	return GetContentWithText(content).Text
-}
-
-
-func GetContentWithText(content client.MessageContent) structs.MessageTextContent {
 	cType := content.MessageContentType()
 	switch cType {
 	case client.TypeMessageText:
@@ -272,7 +276,7 @@ func GetContentWithText(content client.MessageContent) structs.MessageTextConten
 		msg := content.(*client.MessagePinMessage)
 		var url client.TextEntityType
 		//@TODO: where to get chat ID?
-		url = &client.TextEntityTypeTextUrl{Url: fmt.Sprintf("/m/1111/%d", msg.MessageId)}
+		url = &client.TextEntityTypeTextUrl{Url: fmt.Sprintf("/m/%d/%d", chatId, msg.MessageId)}
 		entity := &client.TextEntity{Type: url, Offset: 0, Length: 6}
 		t := &client.FormattedText{Text: "Pinned message", Entities: append(make([]*client.TextEntity, 0), entity)}
 
@@ -451,7 +455,9 @@ func getChatsList(listId int32) []*client.Chat {
 				continue
 			}
 			if len(chat.Positions) == 0 {
-				log.Fatalf("Cannot load chats without position %d", chatId)
+				log.Printf("Cannot load chat without position %d: %s", chatId, GetChatName(chatId))
+
+				continue
 			}
 			offsetChatId = chat.Id
 			offsetOrder = chat.Positions[0].Order

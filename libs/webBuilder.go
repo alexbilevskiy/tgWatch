@@ -11,7 +11,7 @@ import (
 
 func parseUpdateNewMessage(upd *client.UpdateNewMessage) structs.MessageInfo {
 	senderChatId := GetChatIdBySender(upd.Message.Sender)
-	ct := GetContentWithText(upd.Message.Content)
+	ct := GetContentWithText(upd.Message.Content, upd.Message.ChatId)
 	msg := structs.MessageInfo{
 		T:             "NewMessage",
 		MessageId:     upd.Message.Id,
@@ -40,6 +40,10 @@ func parseUpdateNewMessage(upd *client.UpdateNewMessage) structs.MessageInfo {
 }
 
 func buildChatInfoByLocalChat(chat *client.Chat, buildCounters bool) structs.ChatInfo {
+	if chat == nil {
+
+		return structs.ChatInfo{ChatId: -1, Username: "ERROR", ChatName: "NULL CHAT"}
+	}
 	info := structs.ChatInfo{ChatId: chat.Id, ChatName: GetChatName(chat.Id)}
 	switch chat.Type.ChatTypeType() {
 	case client.TypeChatTypeSupergroup:
