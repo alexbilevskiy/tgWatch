@@ -353,6 +353,14 @@ func SaveChatFilters(chatFilters *client.UpdateChatFilters) {
 		if err != nil {
 			fmt.Printf("Failed to save chat filter: id: %d, n: %s, err: %s\n", filterInfo.Id, filterInfo.Title, err)
 		}
+
+		crit = bson.D{{"chatid", bson.M{"$nin": chatFilter.IncludedChatIds}}, {"listid", filterInfo.Id}}
+		dr, err := chatListColl.DeleteMany(mongoContext, crit)
+		if err != nil {
+			fmt.Printf("Failed to delete non-matching chats for filter: id: %d, n: %s, err: %s\n", filterInfo.Id, filterInfo.Title, err)
+		} else {
+			fmt.Printf("Deleted %d non matching chats, id: %d, name: %s\n", dr.DeletedCount, filterInfo.Id, filterInfo.Title)
+		}
 	}
 	LoadChatFilters()
 }
@@ -440,7 +448,7 @@ func getSavedChats(listId int32) []structs.ChatPosition {
 
 func LoadChatFilters() {
 	cur, _ := chatFiltersColl.Find(mongoContext, bson.M{})
-	err := cur.All(mongoContext, &chatFilters);
+	err := cur.All(mongoContext, &chatFilters)
 	if err != nil {
 		errmsg := fmt.Sprintf("ERROR load chat filters: %s", err)
 		fmt.Printf(errmsg)

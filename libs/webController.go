@@ -303,7 +303,7 @@ func processTgChatHistory(chatId int64, limit int64, offset int64, deleted bool,
 	renderTemplates(w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/chat_history.tmpl`, `templates/messages_list.tmpl`, `templates/message.tmpl`)
 }
 
-func processTgChatList(refresh int, folder int32, w http.ResponseWriter) {
+func processTgChatList(refresh bool, folder int32, w http.ResponseWriter) {
 	var folders []structs.ChatFolder
 	folders = make([]structs.ChatFolder, 0)
 	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: ClMain, Title: "Main"})
