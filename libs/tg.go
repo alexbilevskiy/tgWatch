@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"go-tdlib/client"
+	"go.mongodb.org/mongo-driver/bson"
 	"log"
 	"path/filepath"
 	"strconv"
@@ -435,6 +436,13 @@ func getChatsList(listId int32) []*client.Chat {
 	default:
 		chatList = &client.ChatListFilter{ChatFilterId: listId}
 	}
+	crit := bson.D{{"listid", listId}}
+	d, err := chatListColl.DeleteMany(mongoContext, crit)
+	if err != nil {
+		fmt.Printf("Failed to delete chats by list %d: %s\n", listId, err.Error())
+	} else {
+		fmt.Printf("Deleted %d chats by listid %d\n", d.DeletedCount, listId)
+	}
 
 	page := 0
 	offsetChatId := int64(0)
@@ -447,7 +455,7 @@ func getChatsList(listId int32) []*client.Chat {
 		}
 		log.Printf("GetChats got page %d with %d chats", page, chats.TotalCount)
 		for _, chatId := range chats.ChatIds {
-			log.Printf("New ChatID %d", chatId)
+			DLog(fmt.Sprintf("New ChatID %d", chatId))
 			chat, err := GetChat(chatId, true)
 			if err != nil {
 				log.Printf("[ERROR] GetChat id %d: %s", chatId, err)
