@@ -144,7 +144,7 @@ func ListenUpdates()  {
 
 						continue
 					}
-					if savedMessage.Message.Content.MessageContentType() == "messageChatAddMembers" {
+					if savedMessage.Message.Content.MessageContentType() == client.TypeMessageChatAddMembers {
 						DLog(fmt.Sprintf("Skip deleted message %d (chat join of user %d)", messageId, GetChatIdBySender(savedMessage.Message.Sender)))
 						skipUpdate++
 
@@ -179,6 +179,10 @@ func ListenUpdates()  {
 				//chatName := GetChatName(upd.Message.ChatId)
 				//intLink := fmt.Sprintf("http://%s/m/%d/%d", config.Config.WebListen, upd.Message.ChatId, upd.Message.Id)
 				//log.Printf("[%s] New Message from chat: %d, `%s`, %s, %s", mongoId, upd.Message.ChatId, chatName, link, intLink)
+				if upd.Message.Content.MessageContentType() == client.TypeMessageChatAddMembers ||
+					upd.Message.Content.MessageContentType() == client.TypeMessageChatJoinByLink {
+					MarkAsReadMessage(upd.Message.ChatId, upd.Message.Id)
+				}
 
 				break
 			case client.TypeUpdateMessageEdited:
@@ -211,7 +215,7 @@ func ListenUpdates()  {
 
 					break
 				}
-				if upd.NewContent.MessageContentType() == "messagePoll" {
+				if upd.NewContent.MessageContentType() == client.TypeMessagePoll {
 					//dont save "poll" updates - that's just counters, users cannot update polls manually
 					break
 				}

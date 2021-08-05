@@ -292,6 +292,38 @@ func GetContentWithText(content client.MessageContent, chatId int64) structs.Mes
 	}
 }
 
+func MarkAsReadMessage(chatId int64, messageId int64) {
+	chat, err := GetChat(chatId, true)
+	if err != nil {
+		fmt.Printf("Cannot update unread count because chat %d not found: %s\n", chatId, err.Error())
+
+		return
+	}
+	name := GetChatName(chatId)
+
+	if chat.UnreadCount != 1 {
+		fmt.Printf("Chat `%s` %d unread count: %d>1, not marking as read\n", name, chatId, chat.UnreadCount)
+		return
+	}
+	fmt.Printf("Chat `%s` %d unread count: %d, marking join as read\n", name, chatId, chat.UnreadCount)
+
+	req := &client.ViewMessagesRequest{ChatId: chatId, MessageIds: append(make([]int64, 0), messageId), ForceRead: true}
+	_, err = tdlibClient.ViewMessages(req)
+	if err != nil {
+		fmt.Printf("Cannot mark as read chat %d, message %d: %s\n", chatId, messageId, err.Error())
+
+		return
+	}
+	chat, err = GetChat(chatId, true)
+	if err != nil {
+		fmt.Printf("Cannot get NEW unread count because chat %d not found: %s\n", chatId, err.Error())
+
+		return
+	}
+	fmt.Printf("NEW Chat `%s` %d unread count: %d\n", name, chatId, chat.UnreadCount)
+
+}
+
 func DownloadFile(id int32) (*client.File, error) {
 	req := client.DownloadFileRequest{FileId: id, Priority: 1, Synchronous: true}
 	file, err := tdlibClient.DownloadFile(&req)
@@ -405,6 +437,8 @@ func GetContentAttachments(content client.MessageContent) []structs.MessageAttac
 	case client.TypeMessagePoll:
 	case client.TypeMessageLocation:
 	case client.TypeMessageChatAddMembers:
+	case client.TypeMessageChatJoinByLink:
+	case client.TypeMessageBasicGroupChatCreate:
 	case client.TypeMessagePinMessage:
 	case client.TypeMessageVideoNote:
 	case client.TypeMessageAudio:
