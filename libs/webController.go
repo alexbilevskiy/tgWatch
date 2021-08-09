@@ -4,11 +4,17 @@ import (
 	"fmt"
 	"go-tdlib/client"
 	"net/http"
+	"os"
+	"strconv"
 	"strings"
 	"tgWatch/structs"
 )
 
-func processTgJournal(limit int64, w http.ResponseWriter)  {
+func processTgJournal(req *http.Request, w http.ResponseWriter)  {
+	limit := int64(50)
+	if req.FormValue("limit") != "" {
+		limit, _ = strconv.ParseInt(req.FormValue("limit"), 10, 64)
+	}
 	updates, updateTypes, dates, errSelect := FindRecentChanges(limit)
 	if errSelect != nil {
 		fmt.Printf("Error select updates: %s\n", errSelect)
@@ -106,7 +112,7 @@ func processTgJournal(limit int64, w http.ResponseWriter)  {
 	renderTemplates(w, data, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/journal.tmpl`)
 }
 
-func processTdlibOptions(w http.ResponseWriter) {
+func processTdlibOptions(req *http.Request, w http.ResponseWriter) {
 	actualOptions := make(map[string]structs.TdlibOption, len(tdlibOptions))
 	for optionName, optionValue := range tdlibOptions {
 		req := client.GetOptionRequest{Name: optionName}
@@ -135,7 +141,7 @@ func processTdlibOptions(w http.ResponseWriter) {
 	renderTemplates(w, data, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/tdlib_options.tmpl`)
 }
 
-func processTgActiveSessions(w http.ResponseWriter) {
+func processTgActiveSessions(req *http.Request, w http.ResponseWriter) {
 	sessions, err := tdlibClient.GetActiveSessions()
 	if err != nil {
 		fmt.Printf("Get sessions error: %s", err)
@@ -226,7 +232,8 @@ func processTgSingleMessage(chatId int64, messageId int64, w http.ResponseWriter
 	renderTemplates(w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/single_message.tmpl`, `templates/message.tmpl`)
 }
 
-func processTgMessagesByIds(chatId int64, messageIds []int64, w http.ResponseWriter) {
+func processTgMessagesByIds(chatId int64, req *http.Request, w http.ResponseWriter) {
+	messageIds := ExplodeInt(req.FormValue("ids"))
 	res := structs.ChatHistory{
 		T: "ChatHistory-filtered",
 		Messages: make([]structs.MessageInfo, 0),
@@ -274,7 +281,20 @@ func processTgChatInfo(chatId int64, w http.ResponseWriter) {
 	renderTemplates(w, data, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/chat_info.tmpl`)
 }
 
-func processTgChatHistory(chatId int64, limit int64, offset int64, deleted bool, w http.ResponseWriter) {
+func processTgChatHistory(chatId int64, req *http.Request, w http.ResponseWriter) {
+	deleted := false
+	if req.FormValue("deleted") == "1" {
+		deleted = true
+	}
+	limit := int64(50)
+	if req.FormValue("limit") != "" {
+		limit, _ = strconv.ParseInt(req.FormValue("limit"), 10, 64)
+	}
+	offset := int64(0)
+	if req.FormValue("offset") != "" {
+		offset, _ = strconv.ParseInt(req.FormValue("offset"), 10, 64)
+	}
+
 	updates, _, _, errSelect := GetChatHistory(chatId, limit, offset, deleted)
 	if errSelect != nil {
 		fmt.Printf("Error select updates: %s\n", errSelect)
@@ -304,7 +324,17 @@ func processTgChatHistory(chatId int64, limit int64, offset int64, deleted bool,
 	renderTemplates(w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/chat_history.tmpl`, `templates/messages_list.tmpl`, `templates/message.tmpl`)
 }
 
-func processTgChatList(refresh bool, folder int32, w http.ResponseWriter) {
+func processTgChatList(req *http.Request, w http.ResponseWriter) {
+	refresh := false
+	if req.FormValue("refresh") == "1" {
+		refresh = true
+	}
+	var folder int32 = ClMain
+	if req.FormValue("folder") != "" {
+		folder64, _ := strconv.ParseInt(req.FormValue("folder"), 10, 32)
+		folder = int32(folder64)
+	}
+
 	var folders []structs.ChatFolder
 	folders = make([]structs.ChatFolder, 0)
 	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: ClMain, Title: "Main"})
@@ -370,7 +400,19 @@ func processTgChatList(refresh bool, folder int32, w http.ResponseWriter) {
 	renderTemplates(w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/overview_table.tmpl`, `templates/chatlist.tmpl`)
 }
 
-func processTgDelete(chatId int64, pattern string, limit int, w http.ResponseWriter) {
+func processTgDelete(chatId int64, req *http.Request, w http.ResponseWriter) {
+
+	pattern := req.FormValue("pattern")
+	if pattern == "" || len(pattern) < 3 {
+		errorResponse(structs.WebError{T: "Invalid pattern", Error: pattern}, 503, req, w)
+
+		return
+	}
+	limit := 50
+	if req.FormValue("limit") != "" {
+		limit64, _ := strconv.ParseInt(req.FormValue("limit"), 10, 0)
+		limit = int(limit64)
+	}
 
 	var messageIds []int64
 	messageIds = make([]int64, 0)
@@ -465,4 +507,21 @@ func processSettings(r *http.Request, w http.ResponseWriter) {
 	}
 
 	renderTemplates(w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/settings.tmpl`)
+}
+
+func errorResponse(error structs.WebError, code int, req *http.Request, w http.ResponseWriter) {
+	w.WriteHeader(code)
+	renderTemplates(w, error, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/error.tmpl`)
+}
+
+func tryFile(req *http.Request, w http.ResponseWriter) bool {
+	path := "web/" + req.URL.Path
+	stat, err := os.Stat(path)
+	if err == nil && !stat.IsDir() {
+		http.ServeFile(w, req, path)
+
+		return true
+	}
+
+	return false
 }

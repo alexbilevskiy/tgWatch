@@ -69,3 +69,8 @@ type MessageTextContent struct {
 	FormattedText *client.FormattedText
 	Text string
 }
+
+type WebError struct {
+	T         string
+	Error	  string
+}

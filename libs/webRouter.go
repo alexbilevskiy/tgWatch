@@ -1,13 +1,9 @@
 package libs
 
 import (
-	"encoding/json"
-	"fmt"
 	"go-tdlib/client"
-	"html/template"
 	"log"
 	"net/http"
-	"os"
 	"regexp"
 	"strconv"
 	"tgWatch/structs"
@@ -15,59 +11,39 @@ import (
 
 type HttpHandler struct{}
 func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	if req.URL.Path == "/" {
-		t, errParse := template.New(`base.tmpl`).ParseFiles(`templates/base.tmpl`, `templates/navbar.tmpl`, `templates/index.tmpl`)
-		if errParse != nil {
-			req.URL.Path = "index.html"
-		} else {
-			t.Execute(res, structs.Index{T: "Hello, gopher"})
-			return
-		}
-	}
-	path := "web/" + req.URL.Path
-	stat, err := os.Stat(path)
-	if err == nil && !stat.IsDir() {
-		http.ServeFile(res, req, path)
-
-		return
-	}
-
 	log.Printf("HTTP: %s", req.URL.Path)
-	r := regexp.MustCompile(`^/([a-z]+?)($|/.+$)`)
-
-	m := r.FindStringSubmatch(req.URL.Path)
-	if m == nil {
-		res.WriteHeader(404)
-		res.Write([]byte("not found "+ req.URL.Path))
-
+	if tryFile(req, res) {
 		return
 	}
-	data := []byte(fmt.Sprintf("Request URL: %s", req.RequestURI))
 
-	action := m[1]
-	req.ParseForm()
+	err := req.ParseForm()
+	if err != nil {
+		errorResponse(structs.WebError{T: "Unknown error", Error: err.Error()}, 504, req, res)
+		return
+	}
+
+	verbose = false
 	if req.FormValue("a") == "1" {
 		verbose = true
-	} else {
-		verbose = false
 	}
-	limit := int64(50)
-	if req.FormValue("limit") != "" {
-		limit, _ = strconv.ParseInt(req.FormValue("limit"), 10, 64)
+
+	m := regexp.MustCompile(`^/([a-z]*?)(?:$|/.+$)`).FindStringSubmatch(req.URL.Path)
+	if m == nil {
+		errorResponse(structs.WebError{T: "Not found", Error: req.URL.Path}, 404, req, res)
+
+		return
 	}
-	offset := int64(0)
-	if req.FormValue("offset") != "" {
-		offset, _ = strconv.ParseInt(req.FormValue("offset"), 10, 64)
-	}
-	ids := req.FormValue("ids")
+	action := m[1]
 
 	switch action {
+	case "":
+		renderTemplates(res, nil, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/index.tmpl`)
+		return
 	case "m":
 		r := regexp.MustCompile(`^/m/(-?\d+)/(\d+)$`)
 		m := r.FindStringSubmatch(req.URL.Path)
 		if m == nil {
-			data := []byte(fmt.Sprintf("Unknown path %s %s", action, req.URL.Path))
-			res.Write(data)
+			errorResponse(structs.WebError{T: "Not found", Error: req.URL.Path}, 404, req, res)
 
 			return
 		}
@@ -76,32 +52,22 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		processTgSingleMessage(chatId, messageId, res)
 		return
 	case "j":
-		processTgJournal(limit, res)
+		processTgJournal(req, res)
 		return
 	case "l":
-		refresh := false
-		if req.FormValue("refresh") == "1" {
-			refresh = true
-		}
-		var folder int32 = ClMain
-		if req.FormValue("folder") != "" {
-			folder64, _ := strconv.ParseInt(req.FormValue("folder"), 10, 32)
-			folder = int32(folder64)
-		}
-		processTgChatList(refresh, folder, res)
+		processTgChatList(req, res)
 		return
 	case "to":
-		processTdlibOptions(res)
+		processTdlibOptions(req, res)
 		return
 	case "as":
-		processTgActiveSessions(res)
+		processTgActiveSessions(req, res)
 		return
 	case "c":
 		r := regexp.MustCompile(`^/c/(-?\d+)$`)
 		m := r.FindStringSubmatch(req.URL.Path)
 		if m == nil {
-			data := []byte(fmt.Sprintf("Unknown path %s %s", action, req.URL.Path))
-			res.Write(data)
+			errorResponse(structs.WebError{T: "Not found", Error: req.URL.Path}, 404, req, res)
 
 			return
 		}
@@ -113,8 +79,7 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		r := regexp.MustCompile(`^/h/?(-?\d+)?($|/)`)
 		m := r.FindStringSubmatch(req.URL.Path)
 		if m == nil {
-			data := []byte(fmt.Sprintf("Unknown path %s %s", action, req.URL.Path))
-			res.Write(data)
+			errorResponse(structs.WebError{T: "Not found", Error: req.URL.Path}, 404, req, res)
 
 			return
 		}
@@ -123,55 +88,55 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 			chatId = int64(me.Id)
 		}
 
+		ids := req.FormValue("ids")
 		if ids != "" {
-			processTgMessagesByIds(chatId, ExplodeInt(ids), res)
+			processTgMessagesByIds(chatId, req, res)
 		} else {
-			deleted := false
-			if req.FormValue("deleted") == "1" {
-				deleted = true
-			}
-			processTgChatHistory(chatId, limit, offset, deleted, res)
+			processTgChatHistory(chatId, req, res)
 		}
 
 		return
 	case "f":
-		r := regexp.MustCompile(`^/f/((\d+)|([\w\-_]+))$`)
+		r := regexp.MustCompile(`^/f/(?:(\d+)|([\w\-_]+))$`)
 		m := r.FindStringSubmatch(req.URL.Path)
 		var file *client.File
 		var err error
 		if m == nil {
-			data := []byte(fmt.Sprintf("Unknown path %s %s", action, req.URL.Path))
-			res.Write(data)
+			errorResponse(structs.WebError{T: "Not found", Error: req.URL.Path}, 404, req, res)
 
 			return
-		} else if m[2] != "" {
+		}
+
+		if m[1] != "" {
 			imageId, _ := strconv.ParseInt(m[2], 10, 32)
 			file, err = DownloadFile(int32(imageId))
-		} else if m[3] != "" {
-			file, err = DownloadFileByRemoteId(m[3])
+		} else if m[2] != "" {
+			file, err = DownloadFileByRemoteId(m[2])
 		} else {
-			data := []byte(fmt.Sprintf("Unknown file name %s %s", action, req.URL.Path))
-			res.Write(data)
+			errorResponse(structs.WebError{T: "Not found", Error: req.URL.Path}, 404, req, res)
 
 			return
 		}
 		if err != nil {
-			errMsg := structs.MessageAttachmentError{T:"attachmentError", Id: m[1], Error: err.Error()}
-			j, _ := json.Marshal(errMsg)
-			data = j
+			errorResponse(structs.WebError{T: "Attachment error", Error: err.Error()}, 502, req, res)
 
-			break
+			return
 		}
-		if file.Local.Path != "" && !verbose {
+		if verbose {
+			renderTemplates(res, file)
+
+			return
+		}
+		if file.Local.Path != "" {
 			//res.Header().Add("Content-Type", "file/jpeg")
 			http.ServeFile(res, req, file.Local.Path)
 
 			return
 		}
-		j, _ := json.Marshal(file)
-		data = j
 
-		break
+		errorResponse(structs.WebError{T: "Invalid file", Error: file.Extra}, 504, req, res)
+
+		return
 	case "s":
 		processSettings(req, res)
 		return
@@ -179,36 +144,19 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		r := regexp.MustCompile(`^/delete/(-?\d+)$`)
 		m := r.FindStringSubmatch(req.URL.Path)
 		if m == nil {
-			data := []byte(fmt.Sprintf("Unknown path %s %s", action, req.URL.Path))
-			res.Write(data)
+			errorResponse(structs.WebError{T: "Not found", Error: req.URL.Path}, 404, req, res)
 
 			return
 		}
 
 		chatId, _ := strconv.ParseInt(m[1], 10, 64)
-		pattern := req.FormValue("pattern")
-		if pattern == "" || len(pattern) < 3 {
-			data := []byte(fmt.Sprintf("Unknown pattern `%s`", pattern))
-			res.Write(data)
 
-			return
-		}
-		limit := 50
-		if req.FormValue("limit") != "" {
-			limit64, _ := strconv.ParseInt(req.FormValue("limit"), 10, 0)
-			limit = int(limit64)
-		}
-
-		processTgDelete(chatId, pattern, limit, res)
+		processTgDelete(chatId, req, res)
 
 		return
 	default:
-		res.WriteHeader(404)
-		res.Write([]byte("not found " + req.URL.Path))
+		errorResponse(structs.WebError{T: "Not found", Error: req.URL.Path}, 404, req, res)
 
 		return
 	}
-
-	res.WriteHeader(200)
-	res.Write(data)
 }
