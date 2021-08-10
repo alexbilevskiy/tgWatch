@@ -12,6 +12,7 @@ import (
 )
 
 var verbose bool = false
+var currentAcc int64
 
 func initWeb() {
 	server := &http.Server{
@@ -34,8 +35,22 @@ func renderTemplates(w http.ResponseWriter, templateData interface{}, templates.
 			"renderText": func(text *client.FormattedText) template.HTML {
 				return template.HTML(renderText(text))
 			},
+			"accountsList": func() map[int32]string {
+				accounts := make(map[int32]string, 0)
+				accounts[me.Id] = me.PhoneNumber
+
+				return accounts
+			},
 			"isMe": func(chatId int64) bool {
 				if chatId == int64(me.Id) {
+
+					return true
+				}
+
+				return false
+			},
+			"isCurrentAcc": func(acc int32) bool {
+				if acc == me.Id {
 
 					return true
 				}

@@ -27,6 +27,18 @@
                 </li>
             </ul>
         </div>
+        <form class="d-flex" method="post">
+            <div class="input-group">
+                <span class="input-group-text" id="phone-icon">📞</span>
+                <label for="acc"></label>
+                <select class="form-select me-2" id="acc" name="acc" aria-describedby="phone-icon" onchange="changePhone(this);">
+                    <option value="new">(add new)</option>
+                    {{range $key, $value := accountsList}}
+                    <option value="{{$key}}" {{if isCurrentAcc $key}}selected{{end}}>{{$value}}</option>
+                    {{end}}
+                </select>
+            </div>
+        </form>
         <ul class="navbar-nav">
             <li class="nav-item">
                 <a class="nav-link active" aria-current="page" href="?a=1">DEBUG</a>

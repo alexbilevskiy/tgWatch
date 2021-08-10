@@ -27,3 +27,7 @@ function addRow(id, hasTitleColumn = true) {
 function deleteRow(row) {
     $(row).parents('tr').html('');
 }
+
+function changePhone(select) {
+    select.form.submit();
+}

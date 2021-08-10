@@ -27,15 +27,19 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		verbose = true
 	}
 
-	m := regexp.MustCompile(`^/([a-z]*?)(?:$|/.+$)`).FindStringSubmatch(req.URL.Path)
-	if m == nil {
+	if detectAccount(req, res) == false {
+
+		return
+	}
+
+	action := regexp.MustCompile(`^/([a-z]*?)(?:$|/.+$)`).FindStringSubmatch(req.URL.Path)
+	if action == nil {
 		errorResponse(structs.WebError{T: "Not found", Error: req.URL.Path}, 404, req, res)
 
 		return
 	}
-	action := m[1]
 
-	switch action {
+	switch action[1] {
 	case "":
 		renderTemplates(res, nil, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/index.tmpl`)
 		return
@@ -159,4 +163,36 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 		return
 	}
+}
+
+func detectAccount(req *http.Request, res http.ResponseWriter) bool {
+	if req.FormValue("acc") != "" && req.Method == "POST" {
+		if req.FormValue("acc") == "new" {
+			//@TODO: create new account
+
+			errorResponse(structs.WebError{T: "add account", Error: "todo: form to add new account"}, 504, req, res)
+
+			return false
+		}
+		currentAcc, _ = strconv.ParseInt(req.FormValue("acc"), 10, 32)
+	} else {
+		accCookie, err := req.Cookie("acc")
+		if err != nil {
+			renderTemplates(res, nil, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/account_select.tmpl`)
+
+			return false
+		}
+		currentAcc, err = strconv.ParseInt(accCookie.Value, 10, 32)
+		if err != nil {
+			errorResponse(structs.WebError{T: "Invalid account", Error: err.Error()}, 504, req, res)
+
+			return false
+		}
+	}
+	//@TODO: validate if current acc exists
+
+	cookie := http.Cookie{Name: "acc", Value: strconv.FormatInt(currentAcc, 10)}
+	http.SetCookie(res, &cookie)
+
+	return true
 }
