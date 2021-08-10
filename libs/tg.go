@@ -14,18 +14,17 @@ import (
 	"time"
 )
 
-func initTdlib() {
-	LoadSettings()
-	LoadChatFilters()
-	loadOptionsList()
-	localChats = make(map[int64]*client.Chat)
+func InitTdlib(acc int32) {
+	LoadSettings(acc)
+	LoadChatFilters(acc)
+	loadOptionsList(acc)
 	authorizer := client.ClientAuthorizer()
 	go client.CliInteractor(authorizer)
 
 	authorizer.TdlibParameters <- &client.TdlibParameters{
 		UseTestDc:              false,
-		DatabaseDirectory:      filepath.Join(".tdlib", "database"),
-		FilesDirectory:         filepath.Join(".tdlib", "files"),
+		DatabaseDirectory:      filepath.Join(Accounts[acc].DataDir, "database"),
+		FilesDirectory:         filepath.Join(Accounts[acc].DataDir, "files"),
 		UseFileDatabase:        true,
 		UseChatInfoDatabase:    true,
 		UseMessageDatabase:     true,
@@ -45,12 +44,12 @@ func initTdlib() {
 	})
 
 	var err error
-	tdlibClient, err = client.NewClient(authorizer, logVerbosity)
+	tdlibClient[acc], err = client.NewClient(authorizer, logVerbosity)
 	if err != nil {
 		log.Fatalf("NewClient error: %s", err)
 	}
 
-	optionValue, err := tdlibClient.GetOption(&client.GetOptionRequest{
+	optionValue, err := tdlibClient[acc].GetOption(&client.GetOptionRequest{
 		Name: "version",
 	})
 	if err != nil {
@@ -59,19 +58,19 @@ func initTdlib() {
 
 	log.Printf("TDLib version: %s", optionValue.(*client.OptionValueString).Value)
 
-	me, err = tdlibClient.GetMe()
+	me[acc], err = tdlibClient[acc].GetMe()
 	if err != nil {
 		log.Fatalf("GetMe error: %s", err)
 	}
 
-	log.Printf("Me: %s %s [%s]", me.FirstName, me.LastName, me.Username)
+	log.Printf("Me: %s %s [%s]", me[acc].FirstName, me[acc].LastName, me[acc].Username)
 
 	//@NOTE: https://github.com/tdlib/td/issues/1005#issuecomment-613839507
 	go func() {
 		//for true {
 		{
 			req := &client.SetOptionRequest{Name: "online", Value: &client.OptionValueBoolean{Value: true}}
-			ok, err := tdlibClient.SetOption(req)
+			ok, err := tdlibClient[acc].SetOption(req)
 			if err != nil {
 				log.Printf("failed to set online option: %s", err)
 			} else {
@@ -82,13 +81,108 @@ func initTdlib() {
 	}()
 
 	//req := &client.SetOptionRequest{Name: "ignore_background_updates", Value: &client.OptionValueBoolean{Value: false}}
-	//ok, err := tdlibClient.SetOption(req)
+	//ok, err := tdlibClient[acc].SetOption(req)
 	//if err != nil {
 	//	log.Printf("failed to set ignore_background_updates option: %s", err)
 	//} else {
 	//	log.Printf("Set ignore_background_updates option: %s", JsonMarshalStr(ok))
 	//}
 
+}
+
+const AccStatusActive = "active"
+const AccStatusNew = "new"
+var authParams chan string
+var currentAuthorizingAcc *structs.Account
+func CreateAccount(phone string) {
+	currentAuthorizingAcc = GetSavedAccount(phone)
+	if currentAuthorizingAcc == nil {
+		log.Printf("Starting new account creation for phone %s", phone)
+		currentAuthorizingAcc = &structs.Account{
+			Phone: phone,
+			DataDir: ".tdlib" + phone,
+			DbPrefix: "tg",
+			Status: AccStatusNew,
+		}
+		SaveAccount(currentAuthorizingAcc)
+	} else {
+		if currentAuthorizingAcc.Status == AccStatusActive {
+			log.Printf("Not creating new account again for phone %s", phone)
+
+			return
+		}
+		log.Printf("Continuing account creation for phone %s from state %s", phone, currentAuthorizingAcc.Status)
+	}
+
+	go func() {
+		authorizer := ClientAuthorizer()
+		var tdlibClientLocal *client.Client
+		var meLocal *client.User
+
+		log.Println("push tdlib params")
+		//@TODO: unify with InitTdlib
+
+		authorizer.TdlibParameters <- &client.TdlibParameters{
+			UseTestDc:              false,
+			DatabaseDirectory:      filepath.Join(currentAuthorizingAcc.DataDir, "database"),
+			FilesDirectory:         filepath.Join(currentAuthorizingAcc.DataDir, "files"),
+			UseFileDatabase:        true,
+			UseChatInfoDatabase:    true,
+			UseMessageDatabase:     true,
+			UseSecretChats:         false,
+			ApiId:                  config.Config.ApiId,
+			ApiHash:                config.Config.ApiHash,
+			SystemLanguageCode:     "en",
+			DeviceModel:            "Linux",
+			SystemVersion:          "1.0.0",
+			ApplicationVersion:     "1.0.0",
+			EnableStorageOptimizer: true,
+			IgnoreFileNames:        false,
+		}
+
+		logVerbosity := client.WithLogVerbosity(&client.SetLogVerbosityLevelRequest{
+			NewVerbosityLevel: 2,
+		})
+		authParams = make(chan string)
+
+		go CliInteractor(authorizer, phone, authParams)
+
+		log.Println("create client")
+
+		var err error
+		tdlibClientLocal, err = client.NewClient(authorizer, logVerbosity)
+		if err != nil {
+			log.Fatalf("NewClient error: %s", err)
+		}
+		log.Println("get version")
+
+		optionValue, err := tdlibClientLocal.GetOption(&client.GetOptionRequest{
+			Name: "version",
+		})
+		if err != nil {
+			log.Fatalf("GetOption error: %s", err)
+		}
+
+		log.Printf("TDLib version: %s", optionValue.(*client.OptionValueString).Value)
+
+
+
+		meLocal, err = tdlibClientLocal.GetMe()
+		if err != nil {
+			log.Fatalf("GetMe error: %s", err)
+		}
+		me[meLocal.Id] = meLocal
+		tdlibClient[meLocal.Id] = tdlibClientLocal
+
+		log.Printf("NEW Me: %s %s [%s]", meLocal.FirstName, meLocal.LastName, meLocal.Username)
+
+		state = nil
+		currentAuthorizingAcc.Id = meLocal.Id
+		currentAuthorizingAcc.Status = AccStatusActive
+		SaveAccount(currentAuthorizingAcc)
+		LoadAccounts()
+		currentAuthorizingAcc = nil
+	}()
 }
 
 func GetChatIdBySender(sender client.MessageSender) int64 {
@@ -102,8 +196,8 @@ func GetChatIdBySender(sender client.MessageSender) int64 {
 	return senderChatId
 }
 
-func GetSenderName(sender client.MessageSender) string {
-	chat, err := GetSenderObj(sender)
+func GetSenderName(acc int32, sender client.MessageSender) string {
+	chat, err := GetSenderObj(acc, sender)
 	if err != nil {
 
 		return err.Error()
@@ -139,10 +233,10 @@ func getUserFullname(user *client.User) string {
 	return name
 }
 
-func GetSenderObj(sender client.MessageSender) (interface{}, error) {
+func GetSenderObj(acc int32, sender client.MessageSender) (interface{}, error) {
 	if sender.MessageSenderType() == "messageSenderChat" {
 		chatId := sender.(*client.MessageSenderChat).ChatId
-		chat, err := GetChat(chatId, false)
+		chat, err := GetChat(acc, chatId, false)
 		if err != nil {
 			log.Printf("Failed to request sender chat info by id %d: %s", chatId, err)
 
@@ -152,7 +246,7 @@ func GetSenderObj(sender client.MessageSender) (interface{}, error) {
 		return chat, nil
 	} else if sender.MessageSenderType() == "messageSenderUser" {
 		userId := sender.(*client.MessageSenderUser).UserId
-		user, err := GetUser(userId)
+		user, err := GetUser(acc, userId)
 		if err != nil {
 			log.Printf("Failed to request user info by id %d: %s", userId, err)
 
@@ -165,9 +259,9 @@ func GetSenderObj(sender client.MessageSender) (interface{}, error) {
 	return nil, errors.New("unknown sender type")
 }
 
-func GetLink(chatId int64, messageId int64) string {
+func GetLink(acc int32, chatId int64, messageId int64) string {
 	linkReq := &client.GetMessageLinkRequest{ChatId: chatId, MessageId: messageId}
-	link, err := tdlibClient.GetMessageLink(linkReq)
+	link, err := tdlibClient[acc].GetMessageLink(linkReq)
 	if err != nil {
 		if err.Error() != "400 Public message links are available only for messages in supergroups and channel chats" {
 			log.Printf("Failed to get msg link by chat id %d, msg id %d: %s", chatId, messageId, err)
@@ -179,8 +273,8 @@ func GetLink(chatId int64, messageId int64) string {
 	return link.Link
 }
 
-func GetChatName(chatId int64) string {
-	fullChat, err := GetChat(chatId, false)
+func GetChatName(acc int32, chatId int64) string {
+	fullChat, err := GetChat(acc, chatId, false)
 	if err != nil {
 		log.Printf("Failed to get chat name by id %d: %s", chatId, err)
 
@@ -194,39 +288,39 @@ func GetChatName(chatId int64) string {
 	return name
 }
 
-func GetChat(chatId int64, force bool) (*client.Chat, error) {
-	fullChat, ok := localChats[chatId]
+func GetChat(acc int32, chatId int64, force bool) (*client.Chat, error) {
+	fullChat, ok := localChats[acc][chatId]
 	if !force && ok {
 		//fmt.Printf("Found local chat %d\n", chatId)
 
 		return fullChat, nil
 	}
 	req := &client.GetChatRequest{ChatId: chatId}
-	fullChat, err := tdlibClient.GetChat(req)
+	fullChat, err := tdlibClient[acc].GetChat(req)
 	if err == nil {
 		DLog(fmt.Sprintf("Caching local chat %d\n", chatId))
-		localChats[chatId] = fullChat
+		localChats[acc][chatId] = fullChat
 	}
 
 	return fullChat, err
 }
 
-func GetUser(userId int32) (*client.User, error) {
+func GetUser(acc int32, userId int32) (*client.User, error) {
 	userReq := &client.GetUserRequest{UserId: userId}
 
-	return tdlibClient.GetUser(userReq)
+	return tdlibClient[acc].GetUser(userReq)
 }
 
-func GetSuperGroup(sgId int32) (*client.Supergroup, error) {
+func GetSuperGroup(acc int32, sgId int32) (*client.Supergroup, error) {
 	sgReq := &client.GetSupergroupRequest{SupergroupId: sgId}
 
-	return tdlibClient.GetSupergroup(sgReq)
+	return tdlibClient[acc].GetSupergroup(sgReq)
 }
 
-func GetBasicGroup(groupId int32) (*client.BasicGroup, error) {
+func GetBasicGroup(acc int32, groupId int32) (*client.BasicGroup, error) {
 	bgReq := &client.GetBasicGroupRequest{BasicGroupId: groupId}
 
-	return tdlibClient.GetBasicGroup(bgReq)
+	return tdlibClient[acc].GetBasicGroup(bgReq)
 }
 
 func GetContentWithText(content client.MessageContent, chatId int64) structs.MessageTextContent {
@@ -292,14 +386,14 @@ func GetContentWithText(content client.MessageContent, chatId int64) structs.Mes
 	}
 }
 
-func MarkAsReadMessage(chatId int64, messageId int64) {
-	chat, err := GetChat(chatId, true)
+func MarkAsReadMessage(acc int32, chatId int64, messageId int64) {
+	chat, err := GetChat(acc, chatId, true)
 	if err != nil {
 		fmt.Printf("Cannot update unread count because chat %d not found: %s\n", chatId, err.Error())
 
 		return
 	}
-	name := GetChatName(chatId)
+	name := GetChatName(acc, chatId)
 
 	if chat.UnreadCount != 1 {
 		DLog(fmt.Sprintf("Chat `%s` %d unread count: %d>1, not marking as read\n", name, chatId, chat.UnreadCount))
@@ -308,13 +402,13 @@ func MarkAsReadMessage(chatId int64, messageId int64) {
 	fmt.Printf("Chat `%s` %d unread count: %d, marking join as read\n", name, chatId, chat.UnreadCount)
 
 	req := &client.ViewMessagesRequest{ChatId: chatId, MessageIds: append(make([]int64, 0), messageId), ForceRead: true}
-	_, err = tdlibClient.ViewMessages(req)
+	_, err = tdlibClient[acc].ViewMessages(req)
 	if err != nil {
 		fmt.Printf("Cannot mark as read chat %d, message %d: %s\n", chatId, messageId, err.Error())
 
 		return
 	}
-	chat, err = GetChat(chatId, true)
+	chat, err = GetChat(acc, chatId, true)
 	if err != nil {
 		fmt.Printf("Cannot get NEW unread count because chat %d not found: %s\n", chatId, err.Error())
 
@@ -324,9 +418,9 @@ func MarkAsReadMessage(chatId int64, messageId int64) {
 
 }
 
-func DownloadFile(id int32) (*client.File, error) {
+func DownloadFile(acc int32, id int32) (*client.File, error) {
 	req := client.DownloadFileRequest{FileId: id, Priority: 1, Synchronous: true}
-	file, err := tdlibClient.DownloadFile(&req)
+	file, err := tdlibClient[acc].DownloadFile(&req)
 	if err != nil {
 		log.Printf("Cannot download file: %s %d", err, id)
 
@@ -336,16 +430,16 @@ func DownloadFile(id int32) (*client.File, error) {
 	return file, nil
 }
 
-func DownloadFileByRemoteId(id string) (*client.File, error) {
+func DownloadFileByRemoteId(acc int32, id string) (*client.File, error) {
 	remoteFileReq := client.GetRemoteFileRequest{RemoteFileId: id}
-	remoteFile, err := tdlibClient.GetRemoteFile(&remoteFileReq)
+	remoteFile, err := tdlibClient[acc].GetRemoteFile(&remoteFileReq)
 	if err != nil {
 		log.Printf("Cannot download remote file: %s %s", err, id)
 
 		return nil, err
 	}
 
-	return DownloadFile(remoteFile.Id)
+	return DownloadFile(acc, remoteFile.Id)
 }
 
 func GetContentAttachments(content client.MessageContent) []structs.MessageAttachment {
@@ -454,7 +548,7 @@ func GetContentAttachments(content client.MessageContent) []structs.MessageAttac
 	return nil
 }
 
-func getChatsList(listId int32) []*client.Chat {
+func getChatsList(acc int32, listId int32) []*client.Chat {
 	maxChatId := client.JsonInt64(int64((^uint64(0)) >> 1))
 	offsetOrder := maxChatId
 	log.Printf("Requesting chats with max id: %d", maxChatId)
@@ -471,7 +565,7 @@ func getChatsList(listId int32) []*client.Chat {
 		chatList = &client.ChatListFilter{ChatFilterId: listId}
 	}
 	crit := bson.D{{"listid", listId}}
-	d, err := chatListColl.DeleteMany(mongoContext, crit)
+	d, err := chatListColl[acc].DeleteMany(mongoContext, crit)
 	if err != nil {
 		fmt.Printf("Failed to delete chats by list %d: %s\n", listId, err.Error())
 	} else {
@@ -483,21 +577,21 @@ func getChatsList(listId int32) []*client.Chat {
 	for {
 		log.Printf("GetChats requesting page %d, offset %d", page, offsetChatId)
 		chatsRequest := &client.GetChatsRequest{ChatList: chatList, OffsetOrder: offsetOrder, Limit: 100, OffsetChatId: offsetChatId}
-		chats, err := tdlibClient.GetChats(chatsRequest)
+		chats, err := tdlibClient[acc].GetChats(chatsRequest)
 		if err != nil {
 			log.Fatalf("[ERROR] GetChats: %s", err)
 		}
 		log.Printf("GetChats got page %d with %d chats", page, chats.TotalCount)
 		for _, chatId := range chats.ChatIds {
 			DLog(fmt.Sprintf("New ChatID %d", chatId))
-			chat, err := GetChat(chatId, true)
+			chat, err := GetChat(acc, chatId, true)
 			if err != nil {
 				log.Printf("[ERROR] GetChat id %d: %s", chatId, err)
 
 				continue
 			}
 			if len(chat.Positions) == 0 {
-				log.Printf("Cannot load chat without position %d: %s", chatId, GetChatName(chatId))
+				log.Printf("Cannot load chat without position %d: %s", chatId, GetChatName(acc, chatId))
 
 				continue
 			}
@@ -520,12 +614,12 @@ func getChatsList(listId int32) []*client.Chat {
 	return fullList
 }
 
-func checkSkippedChat(chatId string) bool {
-	if _, ok := ignoreLists.IgnoreAuthorIds[chatId]; ok {
+func checkSkippedChat(acc int32, chatId string) bool {
+	if _, ok := ignoreLists[acc].IgnoreAuthorIds[chatId]; ok {
 
 		return true
 	}
-	if _, ok := ignoreLists.IgnoreChatIds[chatId]; ok {
+	if _, ok := ignoreLists[acc].IgnoreChatIds[chatId]; ok {
 
 		return true
 	}
@@ -533,14 +627,14 @@ func checkSkippedChat(chatId string) bool {
 	return false
 }
 
-func checkSkippedSenderBySavedMessage(chatId int64, messageId int64) bool {
-	savedMessage, err := FindUpdateNewMessage(chatId, messageId)
+func checkSkippedSenderBySavedMessage(acc int32, chatId int64, messageId int64) bool {
+	savedMessage, err := FindUpdateNewMessage(acc, chatId, messageId)
 	if err != nil {
 
 		return false
 	}
 
-	if checkSkippedChat(strconv.FormatInt(GetChatIdBySender(savedMessage.Message.Sender), 10)) {
+	if checkSkippedChat(acc, strconv.FormatInt(GetChatIdBySender(savedMessage.Message.Sender), 10)) {
 
 		return true
 	}
@@ -548,10 +642,10 @@ func checkSkippedSenderBySavedMessage(chatId int64, messageId int64) bool {
 	return false
 }
 
-func checkChatFilter(chatId int64) bool {
-	for _, filter := range chatFilters {
+func checkChatFilter(acc int32, chatId int64) bool {
+	for _, filter := range chatFilters[acc] {
 		for _, chatInFilter := range filter.IncludedChats {
-			if chatInFilter == chatId && ignoreLists.IgnoreFolders[filter.Title] {
+			if chatInFilter == chatId && ignoreLists[acc].IgnoreFolders[filter.Title] {
 				//log.Printf("Skip chat %d because it's in skipped folder %s", chatId, filter.Title)
 
 				return true
@@ -562,6 +656,9 @@ func checkChatFilter(chatId int64) bool {
 	return false
 }
 
-func loadOptionsList() {
-	config.UnmarshalJsonFile("tdlib_options.json", &tdlibOptions)
+func loadOptionsList(acc int32) {
+	var opts map[string]structs.TdlibOption
+	opts = make(map[string]structs.TdlibOption)
+	config.UnmarshalJsonFile("tdlib_options.json", &opts)
+	tdlibOptions[acc] = opts
 }

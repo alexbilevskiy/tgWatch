@@ -29,12 +29,11 @@
         </div>
         <form class="d-flex" method="post">
             <div class="input-group">
-                <span class="input-group-text" id="phone-icon">📞</span>
+                <span class="input-group-text" id="phone-icon"><a href="/new" class="text-decoration-none">📞</a></span>
                 <label for="acc"></label>
                 <select class="form-select me-2" id="acc" name="acc" aria-describedby="phone-icon" onchange="changePhone(this);">
-                    <option value="new">(add new)</option>
-                    {{range $key, $value := accountsList}}
-                    <option value="{{$key}}" {{if isCurrentAcc $key}}selected{{end}}>{{$value}}</option>
+                    {{range accountsList}}
+                        <option value="{{.Id}}" {{if isCurrentAcc .Id}}selected{{end}}>{{.Phone}}</option>
                     {{end}}
                 </select>
             </div>

@@ -31,3 +31,11 @@ type IgnoreLists struct {
 	IgnoreAuthorIds map[string]bool
 	IgnoreFolders   map[string]bool
 }
+
+type Account struct {
+	Id int32
+	Phone string
+	DbPrefix string
+	DataDir string
+	Status string
+}

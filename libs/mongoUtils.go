@@ -70,8 +70,9 @@ func (n messageSenderDecoder) DecodeValue(decodeContext bsoncodec.DecodeContext,
 	return nil
 }
 
-func initMongo() {
-	mongoContext, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+func InitGlobalMongo() {
+	var cancel context.CancelFunc
+	mongoContext, cancel = context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	rb := bson.NewRegistryBuilder()
@@ -89,14 +90,22 @@ func initMongo() {
 	mongoClient, err = mongo.Connect(mongoContext, clientOptions)
 	if err != nil {
 		log.Fatalf("Mongo error: %s", err)
+		return
 	}
-	updatesColl = mongoClient.Database(config.Config.Mongo["db"]).Collection("updates")
-	chatFiltersColl = mongoClient.Database(config.Config.Mongo["db"]).Collection("chatFilters")
-	chatListColl = mongoClient.Database(config.Config.Mongo["db"]).Collection("chatList")
-	settingsColl = mongoClient.Database(config.Config.Mongo["db"]).Collection("settings")
+	//@TODO: why we need context on each query and why it is possible to use null?
+	mongoContext = nil
+	accountColl = mongoClient.Database(config.Config.Mongo["db"]).Collection("accounts")
 }
 
-func SaveUpdate(t string, upd interface{}, timestamp int32) string {
+func InitMongo(acc int32) {
+	db := Accounts[acc].DbPrefix + Accounts[acc].Phone
+	updatesColl[acc] = mongoClient.Database(db).Collection("updates")
+	chatFiltersColl[acc] = mongoClient.Database(db).Collection("chatFilters")
+	chatListColl[acc] = mongoClient.Database(db).Collection("chatList")
+	settingsColl[acc] = mongoClient.Database(db).Collection("settings")
+}
+
+func SaveUpdate(acc int32, t string, upd interface{}, timestamp int32) string {
 	if timestamp == 0 {
 		timestamp = int32(time.Now().Unix())
 	}
@@ -107,7 +116,7 @@ func SaveUpdate(t string, upd interface{}, timestamp int32) string {
 	}
 
 	update := structs.TgUpdate{T: t, Time: timestamp, Upd: upd, Raw: r}
-	res, err := updatesColl.InsertOne(mongoContext, update)
+	res, err := updatesColl[acc].InsertOne(mongoContext, update)
 	if err != nil {
 		log.Printf("[ERROR] insert %s: %s", t, err)
 
@@ -117,8 +126,8 @@ func SaveUpdate(t string, upd interface{}, timestamp int32) string {
 	return res.InsertedID.(primitive.ObjectID).String()
 }
 
-func FindUpdateNewMessage(chatId int64, messageId int64) (*client.UpdateNewMessage, error) {
-	msg := updatesColl.FindOne(mongoContext, bson.D{{"t", "updateNewMessage"}, {"upd.message.id", messageId}, {"upd.message.chatid", chatId}})
+func FindUpdateNewMessage(acc int32, chatId int64, messageId int64) (*client.UpdateNewMessage, error) {
+	msg := updatesColl[acc].FindOne(mongoContext, bson.D{{"t", "updateNewMessage"}, {"upd.message.id", messageId}, {"upd.message.chatid", chatId}})
 	if msg == nil {
 
 		return nil, errors.New("message not found")
@@ -147,7 +156,7 @@ func FindUpdateNewMessage(chatId int64, messageId int64) (*client.UpdateNewMessa
 	return upd, nil
 }
 
-func FindAllMessageChanges(chatId int64, messageId int64) ([][]byte, []string, []int32, error) {
+func FindAllMessageChanges(acc int32, chatId int64, messageId int64) ([][]byte, []string, []int32, error) {
 	crit := bson.D{
 		{"$or", []interface{}{
 			bson.D{{"t", "updateNewMessage"}, {"upd.message.id", messageId}, {"upd.message.chatid", chatId}},
@@ -156,34 +165,34 @@ func FindAllMessageChanges(chatId int64, messageId int64) ([][]byte, []string, [
 			bson.D{{"t", "updateDeleteMessages"}, {"upd.messageids", messageId}, {"upd.chatid", chatId}},
 		}},
 	}
-	cur, _ := updatesColl.Find(mongoContext, crit)
+	cur, _ := updatesColl[acc].Find(mongoContext, crit)
 
-	return iterateCursor(cur)
+	return iterateCursor(acc, cur)
 }
 
-func MarkAsDeleted(chatId int64, messageIds []int64) {
+func MarkAsDeleted(acc int32, chatId int64, messageIds []int64) {
 	crit := bson.D{{"t", "updateNewMessage"}, {"upd.message.id", bson.M{"$in": messageIds}}, {"upd.message.chatid", chatId}}
 	update := bson.D{{"$set", bson.M{"deleted": true}}}
-	_, err := updatesColl.UpdateMany(mongoContext, crit, update)
+	_, err := updatesColl[acc].UpdateMany(mongoContext, crit, update)
 	if err != nil {
 		fmt.Printf("Failed to update deleted: %d, %s, %s", chatId, JsonMarshalStr(messageIds), err)
 	}
 }
 
-func IsMessageEdited(chatId int64, messageId int64) bool {
+func IsMessageEdited(acc int32, chatId int64, messageId int64) bool {
 	crit := bson.D{{"t", "updateMessageEdited"}, {"upd.messageid", messageId}, {"upd.chatid", chatId}}
 
-	return countBy(crit) > 0
+	return countBy(acc, crit) > 0
 }
 
-func IsMessageDeleted(chatId int64, messageId int64) bool {
+func IsMessageDeleted(acc int32, chatId int64, messageId int64) bool {
 	crit := bson.D{{"t", "updateDeleteMessages"}, {"upd.messageids", messageId}, {"upd.chatid", chatId}}
 
-	return countBy(crit) > 0
+	return countBy(acc, crit) > 0
 }
 
-func countBy(crit bson.D) int64 {
-	count, err := updatesColl.CountDocuments(mongoContext, crit)
+func countBy(acc int32, crit bson.D) int64 {
+	count, err := updatesColl[acc].CountDocuments(mongoContext, crit)
 	if err != nil {
 		fmt.Printf("Failed to count edits for %s: %s", JsonMarshalStr(crit), err)
 
@@ -193,7 +202,7 @@ func countBy(crit bson.D) int64 {
 	return count
 }
 
-func FindRecentChanges(limit int64) ([][]byte, []string, []int32, error) {
+func FindRecentChanges(acc int32, limit int64) ([][]byte, []string, []int32, error) {
 	availableTypes := []string{
 		//"updateNewMessage",
 		"updateMessageContent",
@@ -202,12 +211,12 @@ func FindRecentChanges(limit int64) ([][]byte, []string, []int32, error) {
 	crit := bson.D{{"t", bson.M{"$in": availableTypes}}}
 	lim := &limit
 	opts := options.FindOptions{Limit: lim, Sort: bson.M{"_id": -1}}
-	cur, _ := updatesColl.Find(mongoContext, crit, &opts)
+	cur, _ := updatesColl[acc].Find(mongoContext, crit, &opts)
 
-	return iterateCursor(cur)
+	return iterateCursor(acc, cur)
 }
 
-func GetChatsStats(chats []int64) ([]structs.ChatCounters, error) {
+func GetChatsStats(acc int32, chats []int64) ([]structs.ChatCounters, error) {
 	basicCrit := bson.D{{
 		"t", bson.D{
 			{"$in", bson.A{
@@ -262,7 +271,7 @@ func GetChatsStats(chats []int64) ([]structs.ChatCounters, error) {
 	DLog(fmt.Sprintf("ChatStats crit: %s", JsonMarshalStr(match)))
 	agg := bson.A{match, group, sort}
 
-	cur, err := updatesColl.Aggregate(mongoContext, agg)
+	cur, err := updatesColl[acc].Aggregate(mongoContext, agg)
 	if err != nil {
 		errmsg := fmt.Sprintf("ERROR mongo agg: %s\n", err)
 		fmt.Printf(errmsg)
@@ -292,7 +301,7 @@ func GetChatsStats(chats []int64) ([]structs.ChatCounters, error) {
 	return result, nil
 }
 
-func GetChatHistory(chatId int64, limit int64, offset int64, deleted bool) ([][]byte, []string, []int32, error) {
+func GetChatHistory(acc int32, chatId int64, limit int64, offset int64, deleted bool) ([][]byte, []string, []int32, error) {
 	var crit bson.D
 	if !deleted {
 		crit = bson.D{{"t", "updateNewMessage"}, {"upd.message.chatid", chatId}}
@@ -303,12 +312,12 @@ func GetChatHistory(chatId int64, limit int64, offset int64, deleted bool) ([][]
 	offs := &offset
 	opts := options.FindOptions{Limit: lim, Skip: offs, Sort: bson.M{"_id": -1}}
 	DLog(fmt.Sprintf("History opts: %s", JsonMarshalStr(opts)))
-	cur, _ := updatesColl.Find(mongoContext, crit, &opts)
+	cur, _ := updatesColl[acc].Find(mongoContext, crit, &opts)
 
-	return iterateCursor(cur)
+	return iterateCursor(acc, cur)
 }
 
-func iterateCursor(cur *mongo.Cursor) ([][]byte, []string, []int32, error) {
+func iterateCursor(acc int32, cur *mongo.Cursor) ([][]byte, []string, []int32, error) {
 	var updates []bson.M
 	err := cur.All(mongoContext, &updates);
 	if err != nil {
@@ -331,14 +340,14 @@ func iterateCursor(cur *mongo.Cursor) ([][]byte, []string, []int32, error) {
 	return jsons, types, dates, nil
 }
 
-func SaveChatFilters(chatFilters *client.UpdateChatFilters) {
+func SaveChatFilters(acc int32, chatFilters *client.UpdateChatFilters) {
 	fmt.Printf("Chat filters update! %s\n", chatFilters.Type)
 
 	for _, filterInfo := range chatFilters.ChatFilters {
 		fmt.Printf("New chat filter: id: %d, n: %s\n", filterInfo.Id, filterInfo.Title)
 		//@TODO: tg request logic shoud be in tg.go
 		req := &client.GetChatFilterRequest{ChatFilterId: filterInfo.Id}
-		chatFilter, err := tdlibClient.GetChatFilter(req)
+		chatFilter, err := tdlibClient[acc].GetChatFilter(req)
 		if err != nil {
 			fmt.Printf("Failed to load chat filter: id: %d, n: %s\n", filterInfo.Id, filterInfo.Title)
 
@@ -349,20 +358,20 @@ func SaveChatFilters(chatFilters *client.UpdateChatFilters) {
 		update := bson.D{{"$set", filStr}}
 		t := true
 		opts := &options.UpdateOptions{Upsert: &t}
-		_, err = chatFiltersColl.UpdateOne(mongoContext, crit, update, opts)
+		_, err = chatFiltersColl[acc].UpdateOne(mongoContext, crit, update, opts)
 		if err != nil {
 			fmt.Printf("Failed to save chat filter: id: %d, n: %s, err: %s\n", filterInfo.Id, filterInfo.Title, err)
 		}
 
 		crit = bson.D{{"chatid", bson.M{"$nin": chatFilter.IncludedChatIds}}, {"listid", filterInfo.Id}}
-		dr, err := chatListColl.DeleteMany(mongoContext, crit)
+		dr, err := chatListColl[acc].DeleteMany(mongoContext, crit)
 		if err != nil {
 			fmt.Printf("Failed to delete non-matching chats for filter: id: %d, n: %s, err: %s\n", filterInfo.Id, filterInfo.Title, err)
 		} else {
 			fmt.Printf("Deleted %d non matching chats, id: %d, name: %s\n", dr.DeletedCount, filterInfo.Id, filterInfo.Title)
 		}
 	}
-	LoadChatFilters()
+	LoadChatFilters(acc)
 }
 
 const (
@@ -373,16 +382,16 @@ const (
 	ClNotSubscribed int32 = -4
 )
 
-func saveAllChatPositions(chatId int64, positions []*client.ChatPosition) {
+func saveAllChatPositions(acc int32, chatId int64, positions []*client.ChatPosition) {
 	if len(positions) == 0 {
 		return
 	}
 	for _, pos := range positions {
-		saveChatPosition(chatId, pos)
+		saveChatPosition(acc, chatId, pos)
 	}
 }
 
-func saveChatPosition(chatId int64, chatPosition *client.ChatPosition) {
+func saveChatPosition(acc int32, chatId int64, chatPosition *client.ChatPosition) {
 	var listId int32
 	clType := chatPosition.List.ChatListType()
 	switch clType {
@@ -409,16 +418,16 @@ func saveChatPosition(chatId int64, chatPosition *client.ChatPosition) {
 	update := bson.D{{"$set", filStr}}
 	t := true
 	opts := &options.UpdateOptions{Upsert: &t}
-	_, err := chatListColl.UpdateOne(mongoContext, crit, update, opts)
+	_, err := chatListColl[acc].UpdateOne(mongoContext, crit, update, opts)
 	if err != nil {
 		fmt.Printf("Failed to save chatPosition: %d | %d: %s", chatId, chatPosition.Order, err)
 	}
 }
 
-func getSavedChats(listId int32) []structs.ChatPosition {
+func getSavedChats(acc int32, listId int32) []structs.ChatPosition {
 	crit := bson.D{{"listid", listId}}
 	opts := options.FindOptions{Sort: bson.M{"order": -1}}
-	cur, err := chatListColl.Find(mongoContext, crit, &opts)
+	cur, err := chatListColl[acc].Find(mongoContext, crit, &opts)
 	var list []structs.ChatPosition
 	if err != nil {
 		fmt.Printf("Chat list error: %s", err)
@@ -446,24 +455,26 @@ func getSavedChats(listId int32) []structs.ChatPosition {
 	return chats
 }
 
-func LoadChatFilters() {
-	cur, _ := chatFiltersColl.Find(mongoContext, bson.M{})
-	err := cur.All(mongoContext, &chatFilters)
+func LoadChatFilters(acc int32) {
+	cur, _ := chatFiltersColl[acc].Find(mongoContext, bson.M{})
+	fi := make([]structs.ChatFilter, 0)
+	err := cur.All(mongoContext, &fi)
 	if err != nil {
 		errmsg := fmt.Sprintf("ERROR load chat filters: %s", err)
 		fmt.Printf(errmsg)
 
 		return
 	}
-	log.Printf("Loaded %d chat folders", len(chatFilters))
+	chatFilters[acc] = fi
+	log.Printf("Loaded %d chat folders", len(chatFilters[acc]))
 }
 
-func LoadSettings() {
+func LoadSettings(acc int32) {
 	crit := bson.D{{"t", "ignore_lists"}}
-	ignoreListsDoc := settingsColl.FindOne(mongoContext, crit)
+	ignoreListsDoc := settingsColl[acc].FindOne(mongoContext, crit)
 	if ignoreListsDoc.Err() == mongo.ErrNoDocuments {
 		log.Printf("No ignore lists in DB!")
-		ignoreLists = structs.IgnoreLists{
+		ignoreLists[acc] = structs.IgnoreLists{
 			T: "ignore_lists",
 			IgnoreAuthorIds: make(map[string]bool),
 			IgnoreChatIds: make(map[string]bool),
@@ -472,22 +483,83 @@ func LoadSettings() {
 
 		return
 	}
+	il := structs.IgnoreLists{}
 
-	err := ignoreListsDoc.Decode(&ignoreLists)
+	err := ignoreListsDoc.Decode(&il)
 	if err != nil {
 		log.Fatalf("Cannot load ignore lists: %s", err.Error())
 	}
+	ignoreLists[acc] = il
 
 	log.Printf("Loaded settings OK!")
 }
 
-func saveSettings() {
+func saveSettings(acc int32) {
 	crit := bson.D{{"t", "ignore_lists"}}
-	update := bson.D{{"$set", ignoreLists}}
+	update := bson.D{{"$set", ignoreLists[acc]}}
 	t := true
 	opts := &options.UpdateOptions{Upsert: &t}
-	_, err := settingsColl.UpdateOne(mongoContext, crit, update, opts)
+	_, err := settingsColl[acc].UpdateOne(mongoContext, crit, update, opts)
 	if err != nil {
 		fmt.Printf("Failed to save ignoreLists: %s", err)
 	}
+}
+
+func LoadAccounts() {
+	accountsCursor, err := accountColl.Find(mongoContext, bson.M{})
+	if err != nil {
+		log.Fatalf("Accounts load error: %s", err.Error())
+		return
+	}
+	var accountsBson []bson.M
+	err = accountsCursor.All(mongoContext, &accountsBson)
+	if err != nil {
+		log.Fatalf("Accounts cursor error: %s", err.Error())
+		return
+	}
+	Accounts = make(map[int32]structs.Account)
+	counter := 0
+	for _, accObj := range accountsBson {
+		counter++
+		acc := structs.Account{
+			Id: accObj["id"].(int32),
+			Phone: accObj["phone"].(string),
+			DbPrefix: accObj["dbprefix"].(string),
+			DataDir: accObj["datadir"].(string),
+			Status: accObj["status"].(string),
+		}
+		Accounts[acc.Id] = acc
+	}
+	log.Printf("Loaded %d accounts", counter)
+}
+
+func SaveAccount(account *structs.Account) {
+	crit := bson.D{{"phone", account.Phone}}
+	update := bson.D{{"$set", account}}
+	t := true
+	opts := &options.UpdateOptions{Upsert: &t}
+
+	_, err := accountColl.UpdateOne(mongoContext, crit, update, opts)
+	if err != nil {
+		log.Fatalf("Failed to save account %d", account.Id)
+	}
+	log.Printf("Saved new account id:%d", account.Id)
+}
+
+func GetSavedAccount(phone string) *structs.Account {
+	var acc *structs.Account
+
+	crit := bson.D{{"phone", phone}}
+	accObj := accountColl.FindOne(mongoContext, crit)
+	if accObj.Err() == mongo.ErrNoDocuments {
+		return nil
+	} else if accObj.Err() != nil {
+		log.Fatalf("Failed to find account: %s", accObj.Err().Error())
+	}
+	err := accObj.Decode(&acc)
+	if err != nil {
+		log.Fatalf("Failed to decode db account: %s", accObj.Err().Error())
+	}
+
+	return acc
 }

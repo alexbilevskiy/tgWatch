@@ -27,14 +27,20 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		verbose = true
 	}
 
+	action := regexp.MustCompile(`^/([a-z]*?)(?:$|/.+$)`).FindStringSubmatch(req.URL.Path)
+	if action == nil {
+		errorResponse(structs.WebError{T: "Not found", Error: req.URL.Path}, 404, req, res)
+
+		return
+	}
+
 	if detectAccount(req, res) == false {
 
 		return
 	}
 
-	action := regexp.MustCompile(`^/([a-z]*?)(?:$|/.+$)`).FindStringSubmatch(req.URL.Path)
-	if action == nil {
-		errorResponse(structs.WebError{T: "Not found", Error: req.URL.Path}, 404, req, res)
+	if action[1] == "new" {
+		processAddAccount(req, res)
 
 		return
 	}
@@ -89,7 +95,7 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		}
 		chatId, _ := strconv.ParseInt(m[1], 10, 64)
 		if m[1] == "" {
-			chatId = int64(me.Id)
+			chatId = int64(me[currentAcc].Id)
 		}
 
 		ids := req.FormValue("ids")
@@ -113,9 +119,9 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 		if m[1] != "" {
 			imageId, _ := strconv.ParseInt(m[2], 10, 32)
-			file, err = DownloadFile(int32(imageId))
+			file, err = DownloadFile(currentAcc, int32(imageId))
 		} else if m[2] != "" {
-			file, err = DownloadFileByRemoteId(m[2])
+			file, err = DownloadFileByRemoteId(currentAcc, m[2])
 		} else {
 			errorResponse(structs.WebError{T: "Not found", Error: req.URL.Path}, 404, req, res)
 
@@ -167,14 +173,8 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 func detectAccount(req *http.Request, res http.ResponseWriter) bool {
 	if req.FormValue("acc") != "" && req.Method == "POST" {
-		if req.FormValue("acc") == "new" {
-			//@TODO: create new account
-
-			errorResponse(structs.WebError{T: "add account", Error: "todo: form to add new account"}, 504, req, res)
-
-			return false
-		}
-		currentAcc, _ = strconv.ParseInt(req.FormValue("acc"), 10, 32)
+		currentAcc64, _ := strconv.ParseInt(req.FormValue("acc"), 10, 32)
+		currentAcc = int32(currentAcc64)
 	} else {
 		accCookie, err := req.Cookie("acc")
 		if err != nil {
@@ -182,16 +182,21 @@ func detectAccount(req *http.Request, res http.ResponseWriter) bool {
 
 			return false
 		}
-		currentAcc, err = strconv.ParseInt(accCookie.Value, 10, 32)
+		currentAcc64, err := strconv.ParseInt(accCookie.Value, 10, 32)
+		currentAcc = int32(currentAcc64)
 		if err != nil {
 			errorResponse(structs.WebError{T: "Invalid account", Error: err.Error()}, 504, req, res)
 
 			return false
 		}
 	}
-	//@TODO: validate if current acc exists
+	if _, ok := Accounts[currentAcc]; !ok {
+		errorResponse(structs.WebError{T: "Invalid account", Error: "no such account"}, 504, req, res)
 
-	cookie := http.Cookie{Name: "acc", Value: strconv.FormatInt(currentAcc, 10)}
+		return false
+	}
+
+	cookie := http.Cookie{Name: "acc", Value: strconv.FormatInt(int64(currentAcc), 10)}
 	http.SetCookie(res, &cookie)
 
 	return true

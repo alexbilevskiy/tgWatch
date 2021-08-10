@@ -76,3 +76,11 @@ type SessionsList struct {
 	Sessions    interface{}
 	SessionsRaw string
 }
+
+type NewAccountState struct {
+	T        string
+	Phone    string
+	Code     string
+	Password string
+	State    string
+}

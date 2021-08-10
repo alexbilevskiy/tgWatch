@@ -1,0 +1,22 @@
+{{define "main"}}
+<div class="col">
+    <h4>adding new account</h4>
+
+    <p>current state: {{.State}}</p>
+
+    <form method="post">
+        <div class="mb-12 row">
+            <div class="col-sm-2">
+                <label for="phone" class="form-label"></label>
+                <input class="form-control" type="tel" placeholder="phone" id="phone" name="phone" {{if ne .State "start"}}disabled{{end}} value="{{.Phone}}">
+
+                <label for="code" class="form-label"></label>
+                <input class="form-control" type="text" placeholder="code" id="code" name="code" {{if ne .State "code"}}disabled{{end}} value="{{.Code}}">
+                <label for="button" class="form-label"></label>
+
+                <input type="submit" class="form-control btn btn-primary" value="add" id="button">
+            </div>
+        </div>
+    </form>
+</div>
+{{end}}

@@ -12,9 +12,9 @@ import (
 )
 
 var verbose bool = false
-var currentAcc int64
+var currentAcc int32
 
-func initWeb() {
+func InitWeb() {
 	server := &http.Server{
 		Addr:    config.Config.WebListen,
 		Handler: HttpHandler{},
@@ -35,14 +35,12 @@ func renderTemplates(w http.ResponseWriter, templateData interface{}, templates.
 			"renderText": func(text *client.FormattedText) template.HTML {
 				return template.HTML(renderText(text))
 			},
-			"accountsList": func() map[int32]string {
-				accounts := make(map[int32]string, 0)
-				accounts[me.Id] = me.PhoneNumber
+			"accountsList": func() map[int32]structs.Account {
 
-				return accounts
+				return Accounts
 			},
 			"isMe": func(chatId int64) bool {
-				if chatId == int64(me.Id) {
+				if chatId == int64(me[currentAcc].Id) {
 
 					return true
 				}
@@ -50,7 +48,7 @@ func renderTemplates(w http.ResponseWriter, templateData interface{}, templates.
 				return false
 			},
 			"isCurrentAcc": func(acc int32) bool {
-				if acc == me.Id {
+				if acc == me[currentAcc].Id {
 
 					return true
 				}
@@ -59,18 +57,18 @@ func renderTemplates(w http.ResponseWriter, templateData interface{}, templates.
 			},
 			"chatInfoLocal": func(chatIdstr string) structs.ChatInfo {
 				chatId, _ := strconv.ParseInt(chatIdstr, 10, 64)
-				if _, ok := localChats[chatId]; !ok {
+				if _, ok := localChats[currentAcc][chatId]; !ok {
 
 					return structs.ChatInfo{ChatId: chatId, ChatName: "_NOT_FOUND_"}
 				}
 
-				return buildChatInfoByLocalChat(localChats[chatId], false)
+				return buildChatInfoByLocalChat(localChats[currentAcc][chatId], false)
 			},
 			"chatInfo": func(chatIdstr string) structs.ChatInfo {
 				chatId, _ := strconv.ParseInt(chatIdstr, 10, 64)
-				c, err := GetChat(chatId, false)
+				c, err := GetChat(currentAcc, chatId, false)
 				if err != nil {
-					user, err := GetUser(int32(chatId))
+					user, err := GetUser(currentAcc, int32(chatId))
 					if err != nil {
 						return structs.ChatInfo{ChatId: chatId, ChatName: fmt.Sprintf("ERROR: %s", err.Error())}
 					}

@@ -20,15 +20,15 @@ func parseUpdateNewMessage(upd *client.UpdateNewMessage) structs.MessageInfo {
 		DateStr:       FormatDate(upd.Message.Date),
 		TimeStr:       FormatTime(upd.Message.Date),
 		ChatId:        upd.Message.ChatId,
-		ChatName:      GetChatName(upd.Message.ChatId),
+		ChatName:      GetChatName(currentAcc, upd.Message.ChatId),
 		SenderId:      senderChatId,
-		SenderName:    GetSenderName(upd.Message.Sender),
+		SenderName:    GetSenderName(currentAcc, upd.Message.Sender),
 		MediaAlbumId:  int64(upd.Message.MediaAlbumId),
 		SimpleText:    ct.Text,
 		FormattedText: ct.FormattedText,
 		Attachments:   GetContentAttachments(upd.Message.Content),
-		Deleted:       IsMessageDeleted(upd.Message.ChatId, upd.Message.Id),
-		Edited:        IsMessageEdited(upd.Message.ChatId, upd.Message.Id),
+		Deleted:       IsMessageDeleted(currentAcc, upd.Message.ChatId, upd.Message.Id),
+		Edited:        IsMessageEdited(currentAcc, upd.Message.ChatId, upd.Message.Id),
 		ContentRaw:    nil,
 	}
 
@@ -44,11 +44,11 @@ func buildChatInfoByLocalChat(chat *client.Chat, buildCounters bool) structs.Cha
 
 		return structs.ChatInfo{ChatId: -1, Username: "ERROR", ChatName: "NULL CHAT"}
 	}
-	info := structs.ChatInfo{ChatId: chat.Id, ChatName: GetChatName(chat.Id)}
+	info := structs.ChatInfo{ChatId: chat.Id, ChatName: GetChatName(currentAcc, chat.Id)}
 	switch chat.Type.ChatTypeType() {
 	case client.TypeChatTypeSupergroup:
 		t := chat.Type.(*client.ChatTypeSupergroup)
-		sg, err := GetSuperGroup(t.SupergroupId)
+		sg, err := GetSuperGroup(currentAcc, t.SupergroupId)
 		if err != nil {
 			info.Username = "Error " + err.Error()
 		} else {
@@ -64,7 +64,7 @@ func buildChatInfoByLocalChat(chat *client.Chat, buildCounters bool) structs.Cha
 	case client.TypeChatTypePrivate:
 		t := chat.Type.(*client.ChatTypePrivate)
 		info.Type = "User"
-		user, err := GetUser(t.UserId)
+		user, err := GetUser(currentAcc, t.UserId)
 		if err != nil {
 			info.Username = "Error " + err.Error()
 		} else {
@@ -79,7 +79,7 @@ func buildChatInfoByLocalChat(chat *client.Chat, buildCounters bool) structs.Cha
 		info.Type = chat.Type.ChatTypeType()
 	}
 	if buildCounters {
-		chatStats, err := GetChatsStats(append(make([]int64, 0), chat.Id))
+		chatStats, err := GetChatsStats(currentAcc, append(make([]int64, 0), chat.Id))
 		if err != nil {
 			fmt.Printf("Failed to get chat stats %d", chat.Id)
 		} else if len(chatStats) > 0 {

@@ -9,8 +9,8 @@ import (
 	"tgWatch/config"
 )
 
-func ListenUpdates()  {
-	listener := tdlibClient.GetListener()
+func ListenUpdates(acc int32)  {
+	listener := tdlibClient[acc].GetListener()
 	defer listener.Close()
 
 	for update := range listener.Updates {
@@ -63,9 +63,12 @@ func ListenUpdates()  {
 				break
 			case client.TypeUpdateNewChat:
 				upd := update.(*client.UpdateNewChat)
-				localChats[upd.Chat.Id] = upd.Chat
+				if localChats[acc] == nil {
+					log.Fatalf("Local chats empty %d", acc)
+				}
+				localChats[acc][upd.Chat.Id] = upd.Chat
 				DLog(fmt.Sprintf("New chat added: %d / %s", upd.Chat.Id, upd.Chat.Title))
-				saveAllChatPositions(upd.Chat.Id, upd.Chat.Positions)
+				saveAllChatPositions(acc, upd.Chat.Id, upd.Chat.Positions)
 
 				break
 			case client.TypeUpdateConnectionState:
@@ -79,7 +82,7 @@ func ListenUpdates()  {
 					DLog(fmt.Sprintf("Skipping action in non-user chat %d: %s", upd.ChatId, upd.Action.ChatActionType()))
 					break
 				}
-				user, err := GetUser(upd.UserId)
+				user, err := GetUser(acc, upd.UserId)
 				userName := "err_name"
 				if err != nil {
 					fmt.Printf("failed to get user %d: %s", upd.UserId, err)
@@ -94,7 +97,7 @@ func ListenUpdates()  {
 				if len(upd.Positions) == 0 {
 					break
 				}
-				saveAllChatPositions(upd.ChatId, upd.Positions)
+				saveAllChatPositions(acc, upd.ChatId, upd.Positions)
 
 				break
 			case client.TypeUpdateOption:
@@ -104,12 +107,12 @@ func ListenUpdates()  {
 				break
 			case client.TypeUpdateChatPosition:
 				upd := update.(*client.UpdateChatPosition)
-				saveChatPosition(upd.ChatId, upd.Position)
+				saveChatPosition(acc, upd.ChatId, upd.Position)
 
 				break
 			case client.TypeUpdateChatFilters:
 				upd := update.(*client.UpdateChatFilters)
-				SaveChatFilters(upd)
+				SaveChatFilters(acc, upd)
 
 				break
 
@@ -119,23 +122,23 @@ func ListenUpdates()  {
 
 					break
 				}
-				if checkSkippedChat(strconv.FormatInt(upd.ChatId, 10)) || checkChatFilter(upd.ChatId) {
+				if checkSkippedChat(acc, strconv.FormatInt(upd.ChatId, 10)) || checkChatFilter(acc, upd.ChatId) {
 
 					break
 				}
-				MarkAsDeleted(upd.ChatId, upd.MessageIds)
+				MarkAsDeleted(acc, upd.ChatId, upd.MessageIds)
 
 				skipUpdate := 0
 				realUpdates := make([]int64, 0)
 				for _, messageId := range upd.MessageIds {
-					savedMessage, err := FindUpdateNewMessage(upd.ChatId, messageId)
+					savedMessage, err := FindUpdateNewMessage(acc, upd.ChatId, messageId)
 					if err != nil {
 						realUpdates = append(realUpdates, messageId)
 
 						continue
 					}
-					if checkSkippedChat(strconv.FormatInt(GetChatIdBySender(savedMessage.Message.Sender), 10)) {
-						DLog(fmt.Sprintf("Skip deleted message %d from sender %d, `%s`", messageId, GetChatIdBySender(savedMessage.Message.Sender), GetSenderName(savedMessage.Message.Sender)))
+					if checkSkippedChat(acc, strconv.FormatInt(GetChatIdBySender(savedMessage.Message.Sender), 10)) {
+						DLog(fmt.Sprintf("Skip deleted message %d from sender %d, `%s`", messageId, GetChatIdBySender(savedMessage.Message.Sender), GetSenderName(acc, savedMessage.Message.Sender)))
 						skipUpdate++
 
 						continue
@@ -158,9 +161,9 @@ func ListenUpdates()  {
 					break
 				}
 				upd.MessageIds = realUpdates
-				mongoId := SaveUpdate(t, upd, 0)
+				mongoId := SaveUpdate(acc, t, upd, 0)
 
-				chatName := GetChatName(upd.ChatId)
+				chatName := GetChatName(acc, upd.ChatId)
 				intLink := fmt.Sprintf("http://%s/h/%d/?ids=%s", config.Config.WebListen, upd.ChatId, ImplodeInt(upd.MessageIds))
 				count := len(upd.MessageIds)
 				DLog(fmt.Sprintf("[%s] DELETED %d Messages from chat: %d, `%s`, %s", mongoId, count, upd.ChatId, chatName, intLink))
@@ -169,12 +172,12 @@ func ListenUpdates()  {
 
 			case client.TypeUpdateNewMessage:
 				upd := update.(*client.UpdateNewMessage)
-				if checkSkippedChat(strconv.FormatInt(upd.Message.ChatId, 10)) || checkSkippedChat(strconv.FormatInt(GetChatIdBySender(upd.Message.Sender), 10)) || checkChatFilter(upd.Message.ChatId) {
+				if checkSkippedChat(acc, strconv.FormatInt(upd.Message.ChatId, 10)) || checkSkippedChat(acc, strconv.FormatInt(GetChatIdBySender(upd.Message.Sender), 10)) || checkChatFilter(acc, upd.Message.ChatId) {
 
 					break
 				}
 				//senderChatId := GetChatIdBySender(upd.Message.Sender)
-				SaveUpdate(t, upd, upd.Message.Date)
+				SaveUpdate(acc, t, upd, upd.Message.Date)
 				//mongoId := SaveUpdate(t, upd, upd.Message.Date)
 				//link := GetLink(tdlibClient, upd.Message.ChatId, upd.Message.Id)
 				//chatName := GetChatName(upd.Message.ChatId)
@@ -182,13 +185,13 @@ func ListenUpdates()  {
 				//log.Printf("[%s] New Message from chat: %d, `%s`, %s, %s", mongoId, upd.Message.ChatId, chatName, link, intLink)
 				if upd.Message.Content.MessageContentType() == client.TypeMessageChatAddMembers ||
 					upd.Message.Content.MessageContentType() == client.TypeMessageChatJoinByLink {
-					MarkAsReadMessage(upd.Message.ChatId, upd.Message.Id)
+					MarkAsReadMessage(acc, upd.Message.ChatId, upd.Message.Id)
 				}
 
 				break
 			case client.TypeUpdateMessageEdited:
 				upd := update.(*client.UpdateMessageEdited)
-				if checkSkippedChat(strconv.FormatInt(upd.ChatId, 10)) || checkChatFilter(upd.ChatId) {
+				if checkSkippedChat(acc, strconv.FormatInt(upd.ChatId, 10)) || checkChatFilter(acc, upd.ChatId) {
 
 					break
 				}
@@ -196,12 +199,12 @@ func ListenUpdates()  {
 					//messages with buttons - reactions, likes etc
 					break
 				}
-				if checkSkippedSenderBySavedMessage(upd.ChatId, upd.MessageId) {
+				if checkSkippedSenderBySavedMessage(acc, upd.ChatId, upd.MessageId) {
 
 					break
 				}
 
-				SaveUpdate(t, upd, upd.EditDate)
+				SaveUpdate(acc, t, upd, upd.EditDate)
 				//mongoId := SaveUpdate(t, upd, upd.EditDate)
 				//link := GetLink(tdlibClient, upd.ChatId, upd.MessageId)
 				//chatName := GetChatName(upd.ChatId)
@@ -212,7 +215,7 @@ func ListenUpdates()  {
 			case client.TypeUpdateMessageContent:
 				upd := update.(*client.UpdateMessageContent)
 				//@TODO: find message in DB and check sender, maybe he is ignored
-				if checkSkippedChat(strconv.FormatInt(upd.ChatId, 10)) || checkChatFilter(upd.ChatId) {
+				if checkSkippedChat(acc, strconv.FormatInt(upd.ChatId, 10)) || checkChatFilter(acc, upd.ChatId) {
 
 					break
 				}
@@ -220,15 +223,15 @@ func ListenUpdates()  {
 					//dont save "poll" updates - that's just counters, users cannot update polls manually
 					break
 				}
-				if checkSkippedSenderBySavedMessage(upd.ChatId, upd.MessageId) {
+				if checkSkippedSenderBySavedMessage(acc, upd.ChatId, upd.MessageId) {
 
 					break
 				}
 
-				mongoId := SaveUpdate(t, upd, 0)
+				mongoId := SaveUpdate(acc, t, upd, 0)
 
-				link := GetLink(upd.ChatId, upd.MessageId)
-				chatName := GetChatName(upd.ChatId)
+				link := GetLink(acc, upd.ChatId, upd.MessageId)
+				chatName := GetChatName(acc, upd.ChatId)
 				intLink := fmt.Sprintf("http://%s/m/%d/%d", config.Config.WebListen, upd.ChatId, upd.MessageId)
 				DLog(fmt.Sprintf("[%s] EDITED content! Chat: %d, msg %d, %s, %s, %s", mongoId, upd.ChatId, upd.MessageId, chatName, link, intLink))
 

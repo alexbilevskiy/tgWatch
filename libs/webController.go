@@ -15,7 +15,7 @@ func processTgJournal(req *http.Request, w http.ResponseWriter)  {
 	if req.FormValue("limit") != "" {
 		limit, _ = strconv.ParseInt(req.FormValue("limit"), 10, 64)
 	}
-	updates, updateTypes, dates, errSelect := FindRecentChanges(limit)
+	updates, updateTypes, dates, errSelect := FindRecentChanges(currentAcc, limit)
 	if errSelect != nil {
 		fmt.Printf("Error select updates: %s\n", errSelect)
 
@@ -32,16 +32,16 @@ func processTgJournal(req *http.Request, w http.ResponseWriter)  {
 				T:       updateTypes[i],
 				Time:    dates[i],
 				Date:    FormatDateTime(dates[i]),
-				Link:    GetLink(upd.Message.ChatId, upd.Message.Id),
+				Link:    GetLink(currentAcc, upd.Message.ChatId, upd.Message.Id),
 				IntLink: fmt.Sprintf("/m/%d/%d", upd.Message.ChatId, upd.Message.Id), //@TODO: link shoud be /m
 				Chat: structs.ChatInfo{
 					ChatId: upd.Message.ChatId,
-					ChatName: GetChatName(upd.Message.ChatId),
+					ChatName: GetChatName(currentAcc, upd.Message.ChatId),
 				},
 			}
 			if upd.Message.Sender.MessageSenderType() == "messageSenderChat" {
 			} else {
-				item.From = structs.ChatInfo{ChatId: GetChatIdBySender(upd.Message.Sender), ChatName: GetSenderName(upd.Message.Sender)}
+				item.From = structs.ChatInfo{ChatId: GetChatIdBySender(upd.Message.Sender), ChatName: GetSenderName(currentAcc, upd.Message.Sender)}
 			}
 			data.J = append(data.J, item)
 
@@ -52,11 +52,11 @@ func processTgJournal(req *http.Request, w http.ResponseWriter)  {
 				T:       updateTypes[i],
 				Time:    dates[i],
 				Date:    FormatDateTime(dates[i]),
-				Link:    GetLink(upd.ChatId, upd.MessageId),
+				Link:    GetLink(currentAcc, upd.ChatId, upd.MessageId),
 				IntLink: fmt.Sprintf("/m/%d/%d", upd.ChatId, upd.MessageId),
 				Chat: structs.ChatInfo{
 					ChatId: upd.ChatId,
-					ChatName: GetChatName(upd.ChatId),
+					ChatName: GetChatName(currentAcc, upd.ChatId),
 				},
 			}
 			data.J = append(data.J, item)
@@ -68,14 +68,14 @@ func processTgJournal(req *http.Request, w http.ResponseWriter)  {
 				T:       updateTypes[i],
 				Time:    dates[i],
 				Date:    FormatDateTime(dates[i]),
-				Link:    GetLink(upd.ChatId, upd.MessageId),
+				Link:    GetLink(currentAcc, upd.ChatId, upd.MessageId),
 				IntLink: fmt.Sprintf("/m/%d/%d", upd.ChatId, upd.MessageId),
 				Chat: structs.ChatInfo{
 					ChatId: upd.ChatId,
-					ChatName: GetChatName(upd.ChatId),
+					ChatName: GetChatName(currentAcc, upd.ChatId),
 				},
 			}
-			m, err := FindUpdateNewMessage(upd.ChatId, upd.MessageId)
+			m, err := FindUpdateNewMessage(currentAcc, upd.ChatId, upd.MessageId)
 			if err != nil {
 				item.Error = fmt.Sprintf("Message not found: %s", err)
 				data.J = append(data.J, item)
@@ -85,7 +85,7 @@ func processTgJournal(req *http.Request, w http.ResponseWriter)  {
 
 			if m.Message.Sender.MessageSenderType() == "messageSenderChat" {
 			} else {
-				item.From = structs.ChatInfo{ChatId: GetChatIdBySender(m.Message.Sender), ChatName: GetSenderName(m.Message.Sender)}
+				item.From = structs.ChatInfo{ChatId: GetChatIdBySender(m.Message.Sender), ChatName: GetSenderName(currentAcc, m.Message.Sender)}
 			}
 			data.J = append(data.J, item)
 
@@ -99,7 +99,7 @@ func processTgJournal(req *http.Request, w http.ResponseWriter)  {
 				IntLink: fmt.Sprintf("/h/%d/?ids=%s", upd.ChatId, ImplodeInt(upd.MessageIds)),
 				Chat: structs.ChatInfo{
 					ChatId: upd.ChatId,
-					ChatName: GetChatName(upd.ChatId),
+					ChatName: GetChatName(currentAcc, upd.ChatId),
 				},
 				MessageId: upd.MessageIds,
 			}
@@ -114,9 +114,9 @@ func processTgJournal(req *http.Request, w http.ResponseWriter)  {
 
 func processTdlibOptions(req *http.Request, w http.ResponseWriter) {
 	actualOptions := make(map[string]structs.TdlibOption, len(tdlibOptions))
-	for optionName, optionValue := range tdlibOptions {
+	for optionName, optionValue := range tdlibOptions[currentAcc] {
 		req := client.GetOptionRequest{Name: optionName}
-		res, err := tdlibClient.GetOption(&req)
+		res, err := tdlibClient[currentAcc].GetOption(&req)
 		if err != nil {
 			fmt.Printf("Failed to get option %s: %s", optionName, err)
 			continue
@@ -142,7 +142,7 @@ func processTdlibOptions(req *http.Request, w http.ResponseWriter) {
 }
 
 func processTgActiveSessions(req *http.Request, w http.ResponseWriter) {
-	sessions, err := tdlibClient.GetActiveSessions()
+	sessions, err := tdlibClient[currentAcc].GetActiveSessions()
 	if err != nil {
 		fmt.Printf("Get sessions error: %s", err)
 		return
@@ -156,7 +156,7 @@ func processTgActiveSessions(req *http.Request, w http.ResponseWriter) {
 }
 
 func processTgSingleMessage(chatId int64, messageId int64, w http.ResponseWriter) {
-	upd, err := FindUpdateNewMessage(chatId, messageId)
+	upd, err := FindUpdateNewMessage(currentAcc, chatId, messageId)
 	if err != nil {
 		m := structs.MessageError{T: "Error", MessageId: messageId, Error: fmt.Sprintf("Error: %s", err)}
 		renderTemplates(w, m, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/error.tmpl`)
@@ -171,18 +171,18 @@ func processTgSingleMessage(chatId int64, messageId int64, w http.ResponseWriter
 		MessageId:     upd.Message.Id,
 		Date:          upd.Message.Date,
 		ChatId:        upd.Message.ChatId,
-		ChatName:      GetChatName(upd.Message.ChatId),
+		ChatName:      GetChatName(currentAcc, upd.Message.ChatId),
 		SenderId:      senderChatId,
-		SenderName:    GetSenderName(upd.Message.Sender),
+		SenderName:    GetSenderName(currentAcc, upd.Message.Sender),
 		MediaAlbumId:  int64(upd.Message.MediaAlbumId),
 		SimpleText:    ct.Text,
 		FormattedText: ct.FormattedText,
 		Attachments:   GetContentAttachments(upd.Message.Content),
-		Deleted:       IsMessageDeleted(upd.Message.ChatId, upd.Message.Id),
-		Edited:        IsMessageEdited(upd.Message.ChatId, upd.Message.Id),
+		Deleted:       IsMessageDeleted(currentAcc, upd.Message.ChatId, upd.Message.Id),
+		Edited:        IsMessageEdited(currentAcc, upd.Message.ChatId, upd.Message.Id),
 		ContentRaw:    nil,
 	}
-	chat, _ := GetChat(upd.Message.ChatId, false)
+	chat, _ := GetChat(currentAcc, upd.Message.ChatId, false)
 	res := structs.SingleMessage{
 		T: "Message",
 		Message: msg,
@@ -190,7 +190,7 @@ func processTgSingleMessage(chatId int64, messageId int64, w http.ResponseWriter
 		Chat: buildChatInfoByLocalChat(chat, false),
 	}
 
-	updates, updateTypes, dates, err := FindAllMessageChanges(chatId, messageId)
+	updates, updateTypes, dates, err := FindAllMessageChanges(currentAcc, chatId, messageId)
 	if err != nil {
 		m := structs.MessageError{T: "Error", MessageId: messageId, Error: fmt.Sprintf("Error: %s", err)}
 		renderTemplates(w, m, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/error.tmpl`)
@@ -240,7 +240,7 @@ func processTgMessagesByIds(chatId int64, req *http.Request, w http.ResponseWrit
 	}
 
 	for _, messageId := range messageIds {
-		upd, err := FindUpdateNewMessage(chatId, messageId)
+		upd, err := FindUpdateNewMessage(currentAcc, chatId, messageId)
 		if err != nil {
 			m := structs.MessageInfo{T: "Error", MessageId: messageId, SimpleText: fmt.Sprintf("Error: %s", err)}
 			res.Messages = append(res.Messages, m)
@@ -258,9 +258,9 @@ func processTgChatInfo(chatId int64, w http.ResponseWriter) {
 	var chat interface{}
 	var err error
 	if chatId > 0 {
-		chat, err = GetUser(int32(chatId))
+		chat, err = GetUser(currentAcc, int32(chatId))
 	} else{
-		chat, err = GetChat(chatId, false)
+		chat, err = GetChat(currentAcc, chatId, false)
 	}
 	if err != nil {
 		fmt.Printf("Error get chat: %s\n", err)
@@ -295,13 +295,13 @@ func processTgChatHistory(chatId int64, req *http.Request, w http.ResponseWriter
 		offset, _ = strconv.ParseInt(req.FormValue("offset"), 10, 64)
 	}
 
-	updates, _, _, errSelect := GetChatHistory(chatId, limit, offset, deleted)
+	updates, _, _, errSelect := GetChatHistory(currentAcc, chatId, limit, offset, deleted)
 	if errSelect != nil {
 		fmt.Printf("Error select updates: %s\n", errSelect)
 
 		return
 	}
-	chat, _ := GetChat(chatId, false)
+	chat, _ := GetChat(currentAcc, chatId, false)
 	res := structs.ChatHistory{
 		T: "ChatHistory",
 		Chat: buildChatInfoByLocalChat(chat, false),
@@ -342,54 +342,54 @@ func processTgChatList(req *http.Request, w http.ResponseWriter) {
 	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: ClCached, Title: "Cached"})
 	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: ClMy, Title: "Owned chats"})
 	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: ClNotSubscribed, Title: "Not subscribed chats"})
-	for _, filter := range chatFilters {
+	for _, filter := range chatFilters[currentAcc] {
 		folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: filter.Id, Title: filter.Title})
 	}
 
 	res := structs.ChatList{T: "Chat list", ChatFolders: folders, SelectedFolder: folder}
 	if folder == ClCached {
-		for _, chat := range localChats {
+		for _, chat := range localChats[currentAcc] {
 			info := buildChatInfoByLocalChat(chat, true)
 			res.Chats = append(res.Chats, info)
 		}
 	} else if folder == ClMy {
-		for _, chat := range localChats {
-			req := &client.GetChatMemberRequest{ChatId: chat.Id, UserId: me.Id}
-			cm, err := tdlibClient.GetChatMember(req)
+		for _, chat := range localChats[currentAcc] {
+			req := &client.GetChatMemberRequest{ChatId: chat.Id, UserId: me[currentAcc].Id}
+			cm, err := tdlibClient[currentAcc].GetChatMember(req)
 			if err != nil {
-				fmt.Printf("failed to get chat member status: %d, `%s`, %s\n", chat.Id, GetChatName(chat.Id), err)
+				fmt.Printf("failed to get chat member status: %d, `%s`, %s\n", chat.Id, GetChatName(currentAcc, chat.Id), err)
 				continue
 			}
 			switch cm.Status.ChatMemberStatusType() {
 			case client.TypeChatMemberStatusCreator:
-				res.Chats = append(res.Chats, structs.ChatInfo{ChatId: chat.Id, ChatName: GetChatName(chat.Id)})
+				res.Chats = append(res.Chats, structs.ChatInfo{ChatId: chat.Id, ChatName: GetChatName(currentAcc, chat.Id)})
 			case client.TypeChatMemberStatusAdministrator:
 			case client.TypeChatMemberStatusMember:
 			case client.TypeChatMemberStatusLeft:
 			default:
-				fmt.Printf("Unusual chat memer status: %d, `%s`, %s\n", chat.Id, GetChatName(chat.Id), cm.Status.ChatMemberStatusType())
+				fmt.Printf("Unusual chat memer status: %d, `%s`, %s\n", chat.Id, GetChatName(currentAcc, chat.Id), cm.Status.ChatMemberStatusType())
 
 			}
 		}
 	} else if folder == ClNotSubscribed {
-		for _, chat := range localChats {
+		for _, chat := range localChats[currentAcc] {
 			if chat.LastMessage == nil && chat.LastReadInboxMessageId == 0 {
 				info := buildChatInfoByLocalChat(chat, true)
 				res.Chats = append(res.Chats, info)
 			}
 		}
 	} else if refresh {
-		chatList := getChatsList(folder)
+		chatList := getChatsList(currentAcc, folder)
 		for _, chat := range chatList {
 			res.Chats = append(res.Chats, buildChatInfoByLocalChat(chat, false))
 		}
 	} else {
-		chatList := getSavedChats(folder)
+		chatList := getSavedChats(currentAcc, folder)
 		for _, chatPos := range chatList {
-			chat, err := GetChat(chatPos.ChatId, false)
+			chat, err := GetChat(currentAcc, chatPos.ChatId, false)
 			var chatInfo structs.ChatInfo
 			if err != nil {
-				chatInfo = structs.ChatInfo{ChatId: chatPos.ChatId, ChatName: GetChatName(chatPos.ChatId), Username: "ERROR " + err.Error()}
+				chatInfo = structs.ChatInfo{ChatId: chatPos.ChatId, ChatName: GetChatName(currentAcc, chatPos.ChatId), Username: "ERROR " + err.Error()}
 			} else {
 				chatInfo = buildChatInfoByLocalChat(chat, true)
 			}
@@ -419,7 +419,7 @@ func processTgDelete(chatId int64, req *http.Request, w http.ResponseWriter) {
 	var lastId int64 = 0
 	for len(messageIds) < limit {
 		req := &client.GetChatHistoryRequest{ChatId: chatId, Limit: 100, FromMessageId: lastId, Offset: 0}
-		history, err := tdlibClient.GetChatHistory(req)
+		history, err := tdlibClient[currentAcc].GetChatHistory(req)
 		if err != nil {
 			data := []byte(fmt.Sprintf("Error get chat %d history: %s", chatId, err))
 			w.Write(data)
@@ -448,7 +448,7 @@ func processTgDelete(chatId int64, req *http.Request, w http.ResponseWriter) {
 	}
 	reqDelete := &client.DeleteMessagesRequest{ChatId: chatId, MessageIds: messageIds}
 	var ok *client.Ok
-	ok, err := tdlibClient.DeleteMessages(reqDelete)
+	ok, err := tdlibClient[currentAcc].DeleteMessages(reqDelete)
 	if err != nil {
 		fmt.Printf("Failed to delete: `%s`\n", err)
 		return
@@ -494,19 +494,64 @@ func processSettings(r *http.Request, w http.ResponseWriter) {
 				IgnoreFolders[folder] = true
 			}
 		}
-		ignoreLists.IgnoreChatIds = IgnoreChatIds
-		ignoreLists.IgnoreAuthorIds = IgnoreAuthorIds
-		ignoreLists.IgnoreFolders = IgnoreFolders
-		saveSettings()
-		res = ignoreLists
+		ignoreLists[currentAcc] = structs.IgnoreLists{
+			IgnoreChatIds: IgnoreChatIds,
+			IgnoreAuthorIds: IgnoreAuthorIds,
+			IgnoreFolders: IgnoreFolders,
+		}
+		saveSettings(currentAcc)
+		res = ignoreLists[currentAcc]
 		res.T = "Settings"
 
 	} else {
-		res = ignoreLists
+		res = ignoreLists[currentAcc]
 		res.T = "Settings"
 	}
 
 	renderTemplates(w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/settings.tmpl`)
+}
+
+func processAddAccount(req *http.Request, w http.ResponseWriter) {
+	st := structs.NewAccountState{
+		T: "New account creation",
+	}
+	if req.Method == "POST" {
+		if req.FormValue("phone") != "" && currentAuthorizingAcc == nil {
+			CreateAccount(req.FormValue("phone"))
+			if currentAuthorizingAcc.Status == AccStatusActive {
+				st.State = "already_authorized"
+				currentAuthorizingAcc = nil
+			} else {
+				st.State = "wait"
+			}
+			st.Phone = req.FormValue("phone")
+		} else if currentAuthorizingAcc == nil {
+			st.State = "ERROR! Account not in auth state"
+		} else if req.FormValue("code") != "" {
+			authParams <- req.FormValue("code")
+
+			st.State = "wait"
+			st.Phone = currentAuthorizingAcc.Phone
+			st.Code = req.FormValue("code")
+		} else {
+			st.State = "code"
+			st.Phone = currentAuthorizingAcc.Phone
+		}
+
+		renderTemplates(w, st, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/account_add.tmpl`)
+	} else {
+		if state == nil {
+			st.State = "start"
+		} else if state.AuthorizationStateType() == client.TypeAuthorizationStateWaitCode {
+			st.State = "code"
+			st.Phone = currentAuthorizingAcc.Phone
+		} else {
+			st.State = state.AuthorizationStateType()
+			st.Phone = currentAuthorizingAcc.Phone
+		}
+
+		renderTemplates(w, st, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/account_add.tmpl`)
+	}
 }
 
 func errorResponse(error structs.WebError, code int, req *http.Request, w http.ResponseWriter) {

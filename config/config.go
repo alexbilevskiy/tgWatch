@@ -22,19 +22,19 @@ func UnmarshalJsonFile(path string, dest interface{}) {
 	}
 
 	if jsonFile, err := os.Open(path); err != nil {
-		log.Fatal("failed to open json file: " + err.Error())
+		log.Fatalf("failed to open json file: %s", err.Error())
 
 		return
 	} else {
 		defer jsonFile.Close()
 
 		if byteValue, err := ioutil.ReadAll(jsonFile); err != nil {
-			log.Fatal("failed to read json file: " + err.Error())
+			log.Fatalf("failed to read json file: %s", err.Error())
 
 			return
 		} else {
 			if err := json.Unmarshal(byteValue, &dest); err != nil {
-				log.Fatal("failed to parse json file: " + err.Error())
+				log.Fatalf("failed to parse json file %s: %s", path, err.Error())
 
 				return
 			}
