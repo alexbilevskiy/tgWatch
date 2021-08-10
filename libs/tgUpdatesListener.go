@@ -52,6 +52,7 @@ func ListenUpdates()  {
 			case client.TypeUpdateUser:
 			case client.TypeUpdateUserFullInfo:
 			case client.TypeUpdateChatPhoto:
+			case client.TypeUpdateMessageSendSucceeded:
 				//break
 				//golang WTF? U dont need break??
 
@@ -258,6 +259,7 @@ func ListenUpdates()  {
 		case client.ClassOptionValue:
 		case client.ClassChatMember:
 		case client.ClassSessions:
+		case client.ClassMessage:
 			break
 		default:
 			log.Printf("WAAAT? update who??? %s, %v", update.GetClass(), update)

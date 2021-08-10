@@ -204,7 +204,7 @@ func GetChat(chatId int64, force bool) (*client.Chat, error) {
 	req := &client.GetChatRequest{ChatId: chatId}
 	fullChat, err := tdlibClient.GetChat(req)
 	if err == nil {
-		fmt.Printf("Caching local chat %d\n", chatId)
+		DLog(fmt.Sprintf("Caching local chat %d\n", chatId))
 		localChats[chatId] = fullChat
 	}
 
@@ -302,7 +302,7 @@ func MarkAsReadMessage(chatId int64, messageId int64) {
 	name := GetChatName(chatId)
 
 	if chat.UnreadCount != 1 {
-		fmt.Printf("Chat `%s` %d unread count: %d>1, not marking as read\n", name, chatId, chat.UnreadCount)
+		DLog(fmt.Sprintf("Chat `%s` %d unread count: %d>1, not marking as read\n", name, chatId, chat.UnreadCount))
 		return
 	}
 	fmt.Printf("Chat `%s` %d unread count: %d, marking join as read\n", name, chatId, chat.UnreadCount)
@@ -320,7 +320,7 @@ func MarkAsReadMessage(chatId int64, messageId int64) {
 
 		return
 	}
-	fmt.Printf("NEW Chat `%s` %d unread count: %d\n", name, chatId, chat.UnreadCount)
+	DLog(fmt.Sprintf("NEW Chat `%s` %d unread count: %d\n", name, chatId, chat.UnreadCount))
 
 }
 
