@@ -29,5 +29,6 @@ function deleteRow(row) {
 }
 
 function changePhone(select) {
-    select.form.submit();
+    document.cookie = 'acc=' + select.value + '; path=/';
+    location.reload();
 }

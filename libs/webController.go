@@ -495,6 +495,7 @@ func processSettings(r *http.Request, w http.ResponseWriter) {
 			}
 		}
 		ignoreLists[currentAcc] = structs.IgnoreLists{
+			T: "ignore_lists",
 			IgnoreChatIds: IgnoreChatIds,
 			IgnoreAuthorIds: IgnoreAuthorIds,
 			IgnoreFolders: IgnoreFolders,
@@ -502,7 +503,8 @@ func processSettings(r *http.Request, w http.ResponseWriter) {
 		saveSettings(currentAcc)
 		res = ignoreLists[currentAcc]
 		res.T = "Settings"
-
+		http.Redirect(w, r, "/s", 302)
+		return
 	} else {
 		res = ignoreLists[currentAcc]
 		res.T = "Settings"
@@ -560,7 +562,17 @@ func errorResponse(error structs.WebError, code int, req *http.Request, w http.R
 }
 
 func tryFile(req *http.Request, w http.ResponseWriter) bool {
-	path := "web/" + req.URL.Path
+	i := strings.Index(req.URL.Path, "/web/")
+	var path string
+	if i == -1 {
+		path = "web/" + req.URL.Path
+	} else if i == 0 {
+		path = req.URL.Path[1:]
+	} else {
+		errorResponse(structs.WebError{T: "Not found", Error: "Invalid path"}, 404, req, w)
+
+		return true
+	}
 	stat, err := os.Stat(path)
 	if err == nil && !stat.IsDir() {
 		http.ServeFile(w, req, path)

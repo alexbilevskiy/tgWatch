@@ -48,6 +48,9 @@ func renderTemplates(w http.ResponseWriter, templateData interface{}, templates.
 				return false
 			},
 			"isCurrentAcc": func(acc int32) bool {
+				if _, ok := me[currentAcc]; !ok {
+					return false
+				}
 				if acc == me[currentAcc].Id {
 
 					return true

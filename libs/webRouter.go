@@ -172,24 +172,21 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 }
 
 func detectAccount(req *http.Request, res http.ResponseWriter) bool {
-	if req.FormValue("acc") != "" && req.Method == "POST" {
-		currentAcc64, _ := strconv.ParseInt(req.FormValue("acc"), 10, 32)
-		currentAcc = int32(currentAcc64)
-	} else {
-		accCookie, err := req.Cookie("acc")
-		if err != nil {
-			renderTemplates(res, nil, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/account_select.tmpl`)
+	accCookie, err := req.Cookie("acc")
+	if err != nil {
+		currentAcc = -1
+		renderTemplates(res, nil, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/account_select.tmpl`)
 
-			return false
-		}
-		currentAcc64, err := strconv.ParseInt(accCookie.Value, 10, 32)
-		currentAcc = int32(currentAcc64)
-		if err != nil {
-			errorResponse(structs.WebError{T: "Invalid account", Error: err.Error()}, 504, req, res)
-
-			return false
-		}
+		return false
 	}
+	currentAcc64, err := strconv.ParseInt(accCookie.Value, 10, 32)
+	currentAcc = int32(currentAcc64)
+	if err != nil {
+		errorResponse(structs.WebError{T: "Invalid account", Error: err.Error()}, 504, req, res)
+
+		return false
+	}
+
 	if _, ok := Accounts[currentAcc]; !ok {
 		errorResponse(structs.WebError{T: "Invalid account", Error: "no such account"}, 504, req, res)
 
