@@ -2,14 +2,21 @@
 
 Initially this client was intended for logging and viewing deleted and updated messages in telegram chats.   
 Now it's more like a telegram explorer - view raw messages and chats, files downloader, etc.
-Includes chat history viewer (can't reply though)
+
+Features:
+* chats list (folders included) with message counters 
+* chat history (only *local* history)
+* configurable list of ignored chats and senders
+* multi-account support (beta!)
+* files downloader
 
 Next ideas: 
-* mute chats by conditions. For example, mute chat for 6 hours if someone sends birthday congratulations card
+* mute chats by conditions (how to define rules?)
 * merge multiple outgoing one-line messages into one
 * auto-respond
 * decode voice messages in private chats (send recognized text as response)
-* multi-account support
+* load remote chat history
+* replies
 
 
 ### install:
