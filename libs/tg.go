@@ -512,7 +512,7 @@ func GetContentAttachments(content client.MessageContent) []structs.MessageAttac
 			T: msg.VoiceNote.Type,
 			Id: msg.VoiceNote.Voice.Remote.Id,
 			Name: fmt.Sprintf("Voice (%ds.)", msg.VoiceNote.Duration),
-			Link: append(make([]string, 0), fmt.Sprintf("http://%s/f/%s", config.Config.WebListen, msg.VoiceNote.Voice.Remote.Id)),
+			Link: append(make([]string, 0), fmt.Sprintf("http://%s/v/%s", config.Config.WebListen, msg.VoiceNote.Voice.Remote.Id)),
 		}
 		cnt = append(cnt, s)
 

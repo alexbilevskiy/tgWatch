@@ -1,7 +1,6 @@
 package libs
 
 import (
-	"go-tdlib/client"
 	"log"
 	"net/http"
 	"regexp"
@@ -107,26 +106,16 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 		return
 	case "f":
-		r := regexp.MustCompile(`^/f/(?:(\d+)|([\w\-_]+))$`)
+		r := regexp.MustCompile(`^/f/([\w\-_]+)$`)
 		m := r.FindStringSubmatch(req.URL.Path)
-		var file *client.File
-		var err error
-		if m == nil {
+		if m == nil || m[1] == "" {
 			errorResponse(structs.WebError{T: "Not found", Error: req.URL.Path}, 404, req, res)
 
 			return
 		}
 
-		if m[1] != "" {
-			imageId, _ := strconv.ParseInt(m[2], 10, 32)
-			file, err = DownloadFile(currentAcc, int32(imageId))
-		} else if m[2] != "" {
-			file, err = DownloadFileByRemoteId(currentAcc, m[2])
-		} else {
-			errorResponse(structs.WebError{T: "Not found", Error: req.URL.Path}, 404, req, res)
+		file, err := DownloadFileByRemoteId(currentAcc, m[1])
 
-			return
-		}
 		if err != nil {
 			errorResponse(structs.WebError{T: "Attachment error", Error: err.Error()}, 502, req, res)
 
@@ -145,6 +134,24 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		}
 
 		errorResponse(structs.WebError{T: "Invalid file", Error: file.Extra}, 504, req, res)
+
+		return
+
+	case "v":
+		r := regexp.MustCompile(`^/v/([\w\-_]+)$`)
+		m := r.FindStringSubmatch(req.URL.Path)
+		if m == nil || m[1] == "" {
+			errorResponse(structs.WebError{T: "Not found", Error: req.URL.Path}, 404, req, res)
+
+			return
+		}
+		text, err := RecognizeByFileId(m[1])
+		if err != nil {
+			errorResponse(structs.WebError{T: "recognize error", Error: err.Error()}, 504, req, res)
+
+			return
+		}
+		errorResponse(structs.WebError{T: "not error", Error: text}, 200, req, res)
 
 		return
 	case "s":
