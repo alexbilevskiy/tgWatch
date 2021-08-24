@@ -3,10 +3,10 @@ package libs
 import (
 	"errors"
 	"fmt"
-	vosk "github.com/alphacep/vosk-api/go"
 	"log"
 	"os"
 	"os/exec"
+	"tgWatch/modules/vosk"
 )
 
 //CGO_CFLAGS="-I/opt/src/vosk-api/src" CGO_LDFLAGS="-L/opt/src/kaldi/tools/openfst/src/lib/.libs -L/opt/src/kaldi/tools/OpenBLAS/install/lib -L/opt/src/kaldi/tools/openfst/lib -L/opt/src/kaldi/tools/openfst/lib/fst -L/opt/src/vosk-api/src -lvosk -ldl -lpthread -lfst -lfstngram -lfstlookahead -lfstfar" go get github.com/alphacep/vosk-api/go
