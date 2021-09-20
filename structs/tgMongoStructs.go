@@ -33,7 +33,7 @@ type IgnoreLists struct {
 }
 
 type Account struct {
-	Id int32
+	Id int64
 	Phone string
 	DbPrefix string
 	DataDir string

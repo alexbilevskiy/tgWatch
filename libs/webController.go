@@ -128,10 +128,10 @@ func processTdlibOptions(req *http.Request, w http.ResponseWriter) {
 			optionValue.Value = int64(actualOption.Value)
 		case client.TypeOptionValueString:
 			actualOption := res.(*client.OptionValueString)
-			optionValue.Value = string(actualOption.Value)
+			optionValue.Value = actualOption.Value
 		case client.TypeOptionValueBoolean:
 			actualOption := res.(*client.OptionValueBoolean)
-			optionValue.Value = bool(actualOption.Value)
+			optionValue.Value = actualOption.Value
 		case client.TypeOptionValueEmpty:
 			optionValue.Value = nil
 		}
@@ -258,7 +258,7 @@ func processTgChatInfo(chatId int64, w http.ResponseWriter) {
 	var chat interface{}
 	var err error
 	if chatId > 0 {
-		chat, err = GetUser(currentAcc, int32(chatId))
+		chat, err = GetUser(currentAcc, chatId)
 	} else{
 		chat, err = GetChat(currentAcc, chatId, false)
 	}
@@ -354,7 +354,8 @@ func processTgChatList(req *http.Request, w http.ResponseWriter) {
 		}
 	} else if folder == ClMy {
 		for _, chat := range localChats[currentAcc] {
-			req := &client.GetChatMemberRequest{ChatId: chat.Id, UserId: me[currentAcc].Id}
+			m := client.MessageSenderUser{UserId: me[currentAcc].Id}
+			req := &client.GetChatMemberRequest{ChatId: chat.Id, MemberId: &m}
 			cm, err := tdlibClient[currentAcc].GetChatMember(req)
 			if err != nil {
 				fmt.Printf("failed to get chat member status: %d, `%s`, %s\n", chat.Id, GetChatName(currentAcc, chat.Id), err)

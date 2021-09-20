@@ -94,7 +94,7 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		}
 		chatId, _ := strconv.ParseInt(m[1], 10, 64)
 		if m[1] == "" {
-			chatId = int64(me[currentAcc].Id)
+			chatId = me[currentAcc].Id
 		}
 
 		ids := req.FormValue("ids")
@@ -181,13 +181,14 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 func detectAccount(req *http.Request, res http.ResponseWriter) bool {
 	accCookie, err := req.Cookie("acc")
 	if err != nil {
+		log.Printf("Cookie errror: %s", err.Error())
+
 		currentAcc = -1
 		renderTemplates(res, nil, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/account_select.tmpl`)
 
 		return false
 	}
-	currentAcc64, err := strconv.ParseInt(accCookie.Value, 10, 32)
-	currentAcc = int32(currentAcc64)
+	currentAcc, err = strconv.ParseInt(accCookie.Value, 10, 64)
 	if err != nil {
 		errorResponse(structs.WebError{T: "Invalid account", Error: err.Error()}, 504, req, res)
 
@@ -200,7 +201,7 @@ func detectAccount(req *http.Request, res http.ResponseWriter) bool {
 		return false
 	}
 
-	cookie := http.Cookie{Name: "acc", Value: strconv.FormatInt(int64(currentAcc), 10)}
+	cookie := http.Cookie{Name: "acc", Value: strconv.FormatInt(currentAcc, 10)}
 	http.SetCookie(res, &cookie)
 
 	return true

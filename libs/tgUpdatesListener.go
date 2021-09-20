@@ -9,7 +9,7 @@ import (
 	"tgWatch/config"
 )
 
-func ListenUpdates(acc int32)  {
+func ListenUpdates(acc int64)  {
 	listener := tdlibClient[acc].GetListener()
 	defer listener.Close()
 

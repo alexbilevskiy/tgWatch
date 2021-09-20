@@ -12,7 +12,7 @@ import (
 )
 
 var verbose bool = false
-var currentAcc int32
+var currentAcc int64
 
 func InitWeb() {
 	server := &http.Server{
@@ -35,23 +35,23 @@ func renderTemplates(w http.ResponseWriter, templateData interface{}, templates.
 			"renderText": func(text *client.FormattedText) template.HTML {
 				return template.HTML(renderText(text))
 			},
-			"accountsList": func() map[int32]structs.Account {
+			"accountsList": func() map[int64]structs.Account {
 
 				return Accounts
 			},
 			"isMe": func(chatId int64) bool {
-				if chatId == int64(me[currentAcc].Id) {
+				if chatId == me[currentAcc].Id {
 
 					return true
 				}
 
 				return false
 			},
-			"isCurrentAcc": func(acc int32) bool {
-				if _, ok := me[currentAcc]; !ok {
+			"isCurrentAcc": func(acc int64) bool {
+				if _, ok := Accounts[currentAcc]; !ok {
 					return false
 				}
-				if acc == me[currentAcc].Id {
+				if acc == Accounts[currentAcc].Id {
 
 					return true
 				}
@@ -71,7 +71,7 @@ func renderTemplates(w http.ResponseWriter, templateData interface{}, templates.
 				chatId, _ := strconv.ParseInt(chatIdstr, 10, 64)
 				c, err := GetChat(currentAcc, chatId, false)
 				if err != nil {
-					user, err := GetUser(currentAcc, int32(chatId))
+					user, err := GetUser(currentAcc, chatId)
 					if err != nil {
 						return structs.ChatInfo{ChatId: chatId, ChatName: fmt.Sprintf("ERROR: %s", err.Error())}
 					}

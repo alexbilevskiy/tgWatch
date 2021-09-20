@@ -7,37 +7,37 @@ import (
 	"tgWatch/structs"
 )
 
-var Accounts map[int32]structs.Account
+var Accounts map[int64]structs.Account
 
 var mongoClient *mongo.Client
 var mongoContext context.Context
 var accountColl *mongo.Collection
 
-var updatesColl map[int32]*mongo.Collection
-var chatFiltersColl map[int32]*mongo.Collection
-var chatListColl map[int32]*mongo.Collection
-var settingsColl map[int32]*mongo.Collection
-var tdlibClient map[int32]*client.Client
-var tdlibOptions map[int32]map[string]structs.TdlibOption
-var chatFilters map[int32][]structs.ChatFilter
-var ignoreLists map[int32](structs.IgnoreLists)
-var localChats map[int32]map[int64]*client.Chat
-var me map[int32]*client.User
+var updatesColl map[int64]*mongo.Collection
+var chatFiltersColl map[int64]*mongo.Collection
+var chatListColl map[int64]*mongo.Collection
+var settingsColl map[int64]*mongo.Collection
+var tdlibClient map[int64]*client.Client
+var tdlibOptions map[int64]map[string]structs.TdlibOption
+var chatFilters map[int64][]structs.ChatFilter
+var ignoreLists map[int64](structs.IgnoreLists)
+var localChats map[int64]map[int64]*client.Chat
+var me map[int64]*client.User
 
 func InitSharedVars() {
-	updatesColl = make(map[int32]*mongo.Collection)
-	chatFiltersColl = make(map[int32]*mongo.Collection)
-	chatListColl = make(map[int32]*mongo.Collection)
-	settingsColl = make(map[int32]*mongo.Collection)
-	tdlibClient = make(map[int32]*client.Client)
-	tdlibOptions = make(map[int32]map[string]structs.TdlibOption)
-	chatFilters = make(map[int32][]structs.ChatFilter)
-	ignoreLists = make(map[int32](structs.IgnoreLists))
-	localChats = make(map[int32](map[int64]*client.Chat))
-	me = make(map[int32]*client.User)
+	updatesColl = make(map[int64]*mongo.Collection)
+	chatFiltersColl = make(map[int64]*mongo.Collection)
+	chatListColl = make(map[int64]*mongo.Collection)
+	settingsColl = make(map[int64]*mongo.Collection)
+	tdlibClient = make(map[int64]*client.Client)
+	tdlibOptions = make(map[int64]map[string]structs.TdlibOption)
+	chatFilters = make(map[int64][]structs.ChatFilter)
+	ignoreLists = make(map[int64](structs.IgnoreLists))
+	localChats = make(map[int64](map[int64]*client.Chat))
+	me = make(map[int64]*client.User)
 }
 
-func InitSharedSubVars(acc int32) {
+func InitSharedSubVars(acc int64) {
 	tdlibOptions[acc] = make(map[string]structs.TdlibOption)
 	localChats[acc] = make(map[int64]*client.Chat)
 }

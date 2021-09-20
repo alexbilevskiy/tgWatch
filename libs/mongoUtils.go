@@ -97,7 +97,7 @@ func InitGlobalMongo() {
 	accountColl = mongoClient.Database(config.Config.Mongo["db"]).Collection("accounts")
 }
 
-func InitMongo(acc int32) {
+func InitMongo(acc int64) {
 	db := Accounts[acc].DbPrefix + Accounts[acc].Phone
 	updatesColl[acc] = mongoClient.Database(db).Collection("updates")
 	chatFiltersColl[acc] = mongoClient.Database(db).Collection("chatFilters")
@@ -105,7 +105,7 @@ func InitMongo(acc int32) {
 	settingsColl[acc] = mongoClient.Database(db).Collection("settings")
 }
 
-func SaveUpdate(acc int32, t string, upd interface{}, timestamp int32) string {
+func SaveUpdate(acc int64, t string, upd interface{}, timestamp int32) string {
 	if timestamp == 0 {
 		timestamp = int32(time.Now().Unix())
 	}
@@ -126,7 +126,7 @@ func SaveUpdate(acc int32, t string, upd interface{}, timestamp int32) string {
 	return res.InsertedID.(primitive.ObjectID).String()
 }
 
-func FindUpdateNewMessage(acc int32, chatId int64, messageId int64) (*client.UpdateNewMessage, error) {
+func FindUpdateNewMessage(acc int64, chatId int64, messageId int64) (*client.UpdateNewMessage, error) {
 	msg := updatesColl[acc].FindOne(mongoContext, bson.D{{"t", "updateNewMessage"}, {"upd.message.id", messageId}, {"upd.message.chatid", chatId}})
 	if msg == nil {
 
@@ -156,7 +156,7 @@ func FindUpdateNewMessage(acc int32, chatId int64, messageId int64) (*client.Upd
 	return upd, nil
 }
 
-func FindAllMessageChanges(acc int32, chatId int64, messageId int64) ([][]byte, []string, []int32, error) {
+func FindAllMessageChanges(acc int64, chatId int64, messageId int64) ([][]byte, []string, []int32, error) {
 	crit := bson.D{
 		{"$or", []interface{}{
 			bson.D{{"t", "updateNewMessage"}, {"upd.message.id", messageId}, {"upd.message.chatid", chatId}},
@@ -170,7 +170,7 @@ func FindAllMessageChanges(acc int32, chatId int64, messageId int64) ([][]byte, 
 	return iterateCursor(acc, cur)
 }
 
-func MarkAsDeleted(acc int32, chatId int64, messageIds []int64) {
+func MarkAsDeleted(acc int64, chatId int64, messageIds []int64) {
 	crit := bson.D{{"t", "updateNewMessage"}, {"upd.message.id", bson.M{"$in": messageIds}}, {"upd.message.chatid", chatId}}
 	update := bson.D{{"$set", bson.M{"deleted": true}}}
 	_, err := updatesColl[acc].UpdateMany(mongoContext, crit, update)
@@ -179,19 +179,19 @@ func MarkAsDeleted(acc int32, chatId int64, messageIds []int64) {
 	}
 }
 
-func IsMessageEdited(acc int32, chatId int64, messageId int64) bool {
+func IsMessageEdited(acc int64, chatId int64, messageId int64) bool {
 	crit := bson.D{{"t", "updateMessageEdited"}, {"upd.messageid", messageId}, {"upd.chatid", chatId}}
 
 	return countBy(acc, crit) > 0
 }
 
-func IsMessageDeleted(acc int32, chatId int64, messageId int64) bool {
+func IsMessageDeleted(acc int64, chatId int64, messageId int64) bool {
 	crit := bson.D{{"t", "updateDeleteMessages"}, {"upd.messageids", messageId}, {"upd.chatid", chatId}}
 
 	return countBy(acc, crit) > 0
 }
 
-func countBy(acc int32, crit bson.D) int64 {
+func countBy(acc int64, crit bson.D) int64 {
 	count, err := updatesColl[acc].CountDocuments(mongoContext, crit)
 	if err != nil {
 		fmt.Printf("Failed to count edits for %s: %s", JsonMarshalStr(crit), err)
@@ -202,7 +202,7 @@ func countBy(acc int32, crit bson.D) int64 {
 	return count
 }
 
-func FindRecentChanges(acc int32, limit int64) ([][]byte, []string, []int32, error) {
+func FindRecentChanges(acc int64, limit int64) ([][]byte, []string, []int32, error) {
 	availableTypes := []string{
 		//"updateNewMessage",
 		"updateMessageContent",
@@ -216,7 +216,7 @@ func FindRecentChanges(acc int32, limit int64) ([][]byte, []string, []int32, err
 	return iterateCursor(acc, cur)
 }
 
-func GetChatsStats(acc int32, chats []int64) ([]structs.ChatCounters, error) {
+func GetChatsStats(acc int64, chats []int64) ([]structs.ChatCounters, error) {
 	basicCrit := bson.D{{
 		"t", bson.D{
 			{"$in", bson.A{
@@ -301,7 +301,7 @@ func GetChatsStats(acc int32, chats []int64) ([]structs.ChatCounters, error) {
 	return result, nil
 }
 
-func GetChatHistory(acc int32, chatId int64, limit int64, offset int64, deleted bool) ([][]byte, []string, []int32, error) {
+func GetChatHistory(acc int64, chatId int64, limit int64, offset int64, deleted bool) ([][]byte, []string, []int32, error) {
 	var crit bson.D
 	if !deleted {
 		crit = bson.D{{"t", "updateNewMessage"}, {"upd.message.chatid", chatId}}
@@ -317,7 +317,7 @@ func GetChatHistory(acc int32, chatId int64, limit int64, offset int64, deleted 
 	return iterateCursor(acc, cur)
 }
 
-func iterateCursor(acc int32, cur *mongo.Cursor) ([][]byte, []string, []int32, error) {
+func iterateCursor(acc int64, cur *mongo.Cursor) ([][]byte, []string, []int32, error) {
 	var updates []bson.M
 	err := cur.All(mongoContext, &updates);
 	if err != nil {
@@ -340,7 +340,7 @@ func iterateCursor(acc int32, cur *mongo.Cursor) ([][]byte, []string, []int32, e
 	return jsons, types, dates, nil
 }
 
-func SaveChatFilters(acc int32, chatFilters *client.UpdateChatFilters) {
+func SaveChatFilters(acc int64, chatFilters *client.UpdateChatFilters) {
 	fmt.Printf("Chat filters update! %s\n", chatFilters.Type)
 
 	for _, filterInfo := range chatFilters.ChatFilters {
@@ -382,7 +382,7 @@ const (
 	ClNotSubscribed int32 = -4
 )
 
-func saveAllChatPositions(acc int32, chatId int64, positions []*client.ChatPosition) {
+func saveAllChatPositions(acc int64, chatId int64, positions []*client.ChatPosition) {
 	if len(positions) == 0 {
 		return
 	}
@@ -391,7 +391,7 @@ func saveAllChatPositions(acc int32, chatId int64, positions []*client.ChatPosit
 	}
 }
 
-func saveChatPosition(acc int32, chatId int64, chatPosition *client.ChatPosition) {
+func saveChatPosition(acc int64, chatId int64, chatPosition *client.ChatPosition) {
 	var listId int32
 	clType := chatPosition.List.ChatListType()
 	switch clType {
@@ -424,7 +424,7 @@ func saveChatPosition(acc int32, chatId int64, chatPosition *client.ChatPosition
 	}
 }
 
-func getSavedChats(acc int32, listId int32) []structs.ChatPosition {
+func getSavedChats(acc int64, listId int32) []structs.ChatPosition {
 	crit := bson.D{{"listid", listId}}
 	opts := options.FindOptions{Sort: bson.M{"order": -1}}
 	cur, err := chatListColl[acc].Find(mongoContext, crit, &opts)
@@ -455,7 +455,7 @@ func getSavedChats(acc int32, listId int32) []structs.ChatPosition {
 	return chats
 }
 
-func LoadChatFilters(acc int32) {
+func LoadChatFilters(acc int64) {
 	cur, _ := chatFiltersColl[acc].Find(mongoContext, bson.M{})
 	fi := make([]structs.ChatFilter, 0)
 	err := cur.All(mongoContext, &fi)
@@ -469,7 +469,7 @@ func LoadChatFilters(acc int32) {
 	log.Printf("Loaded %d chat folders", len(chatFilters[acc]))
 }
 
-func LoadSettings(acc int32) {
+func LoadSettings(acc int64) {
 	crit := bson.D{{"t", "ignore_lists"}}
 	ignoreListsDoc := settingsColl[acc].FindOne(mongoContext, crit)
 	if ignoreListsDoc.Err() == mongo.ErrNoDocuments {
@@ -494,7 +494,7 @@ func LoadSettings(acc int32) {
 	log.Printf("Loaded settings OK!")
 }
 
-func saveSettings(acc int32) {
+func saveSettings(acc int64) {
 	crit := bson.D{{"t", "ignore_lists"}}
 	update := bson.D{{"$set", ignoreLists[acc]}}
 	t := true
@@ -517,12 +517,12 @@ func LoadAccounts() {
 		log.Fatalf("Accounts cursor error: %s", err.Error())
 		return
 	}
-	Accounts = make(map[int32]structs.Account)
+	Accounts = make(map[int64]structs.Account)
 	counter := 0
 	for _, accObj := range accountsBson {
 		counter++
 		acc := structs.Account{
-			Id: accObj["id"].(int32),
+			Id: int64(accObj["id"].(int32)),
 			Phone: accObj["phone"].(string),
 			DbPrefix: accObj["dbprefix"].(string),
 			DataDir: accObj["datadir"].(string),
