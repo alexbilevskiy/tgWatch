@@ -1,5 +1,5 @@
 {{define "overview_table"}}
-<table class="table table-hover table-sm">
+<table id="overview_table" class="table table-hover table-sm">
     <thead class="">
     <tr>
         <th scope="col">
@@ -11,23 +11,28 @@
         <th scope="col">
             Name
         </th>
-        <th scope="col">
+        <th scope="col" class="sort_by"  data-sort-by="total">
             Total
         </th>
-        <th scope="col">
+        <th scope="col" class="sort_by"  data-sort-by="messages">
             Messages
         </th>
-        <th scope="col">
+        <th scope="col" class="sort_by" data-sort-by="edits">
             Edits
         </th>
-        <th scope="col">
+        <th scope="col" class="sort_by" data-sort-by="deletes">
             Deletes
         </th>
     </tr>
     </thead>
     <tbody>
     {{range .Chats}}
-    <tr>
+    <tr
+        data-total="{{.CountTotal}}"
+        data-messages="{{.CountMessages}}"
+        data-edits="{{.CountEdits}}"
+        data-deletes="{{.CountDeletes}}"
+    >
         <td>
             {{.Type}}
         </td>
