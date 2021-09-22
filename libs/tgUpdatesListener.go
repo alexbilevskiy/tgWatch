@@ -44,6 +44,8 @@ func ListenUpdates(acc int64)  {
 			case client.TypeUpdateCall:
 			case client.TypeUpdateMessageContentOpened:
 			case client.TypeUpdateUserPrivacySettingRules:
+			case client.TypeUpdateChatVoiceChat:
+			case client.TypeUpdateGroupCall:
 
 			case client.TypeUpdateSupergroup:
 			case client.TypeUpdateSupergroupFullInfo:
@@ -85,7 +87,7 @@ func ListenUpdates(acc int64)  {
 				user, err := GetUser(acc, upd.UserId)
 				userName := "err_name"
 				if err != nil {
-					fmt.Printf("failed to get user %d: %s", upd.UserId, err)
+					fmt.Printf("failed to get user %d: %s\n", upd.UserId, err)
 				} else {
 					userName = getUserFullname(user)
 				}
