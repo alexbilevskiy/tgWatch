@@ -7,6 +7,7 @@ import (
 	"log"
 	"strconv"
 	"tgWatch/config"
+	"time"
 )
 
 func ListenUpdates(acc int64)  {
@@ -60,7 +61,14 @@ func ListenUpdates(acc int64)  {
 
 			case client.TypeUpdateChatTitle:
 				upd := update.(*client.UpdateChatTitle)
-				log.Printf("Renamed chat id:%d to `%s`", upd.ChatId, upd.Title)
+				if localChats[acc] == nil {
+					log.Fatalf("Local chats empty %d", acc)
+				}
+				if localChat, v := localChats[acc][upd.ChatId]; v {
+					log.Printf("Renamed chat id:%d from `%s` to `%s`", upd.ChatId, localChat.Title, upd.Title)
+				} else {
+					log.Printf("Renamed chat id:%d to `%s`", upd.ChatId, upd.Title)
+				}
 
 				break
 			case client.TypeUpdateNewChat:
@@ -84,14 +92,22 @@ func ListenUpdates(acc int64)  {
 					DLog(fmt.Sprintf("Skipping action in non-user chat %d: %s", upd.ChatId, upd.Action.ChatActionType()))
 					break
 				}
-				user, err := GetUser(acc, upd.UserId)
-				userName := "err_name"
-				if err != nil {
-					fmt.Printf("failed to get user %d: %s\n", upd.UserId, err)
+				if localChat, v := localChats[acc][upd.ChatId]; v {
+					if localChat.LastMessage.Date < int32(time.Now().Unix()) - int32((time.Hour * 6).Seconds()) {
+						log.Printf("User action in chat `%s`: %s", localChat.Title, upd.Action.ChatActionType())
+					} else {
+						DLog(fmt.Sprintf("Skipping action because its from fresh chat %d: %s", upd.ChatId, upd.Action.ChatActionType()))
+					}
 				} else {
-					userName = getUserFullname(user)
+					user, err := GetUser(acc, upd.UserId)
+					userName := "err_name"
+					if err != nil {
+						fmt.Printf("failed to get user %d: %s\n", upd.UserId, err)
+					} else {
+						userName = getUserFullname(user)
+					}
+					log.Printf("User action `%s`: %s", userName, upd.Action.ChatActionType())
 				}
-				log.Printf("User action `%s`: %s", userName, upd.Action.ChatActionType())
 
 				break
 			case client.TypeUpdateChatLastMessage:
