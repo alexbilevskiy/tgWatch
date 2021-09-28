@@ -262,7 +262,7 @@ func GetLink(acc int64, chatId int64, messageId int64) string {
 	linkReq := &client.GetMessageLinkRequest{ChatId: chatId, MessageId: messageId}
 	link, err := tdlibClient[acc].GetMessageLink(linkReq)
 	if err != nil {
-		if err.Error() != "400 Public message links are available only for messages in supergroups and channel chats" {
+		if err.Error() != "400 Message links are available only for messages in supergroups and channel chats" {
 			log.Printf("Failed to get msg link by chat id %d, msg id %d: %s", chatId, messageId, err)
 		}
 
