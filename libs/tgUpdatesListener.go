@@ -93,7 +93,8 @@ func ListenUpdates(acc int64)  {
 					break
 				}
 				if localChat, v := localChats[acc][upd.ChatId]; v {
-					if localChat.LastMessage.Date < int32(time.Now().Unix()) - int32((time.Hour * 6).Seconds()) {
+					//@TODO: seems to be not working
+					if localChat.LastMessage != nil && localChat.LastMessage.Date < int32(time.Now().Unix()) - int32((time.Hour * 6).Seconds()) {
 						log.Printf("User action in chat `%s`: %s", localChat.Title, upd.Action.ChatActionType())
 					} else {
 						DLog(fmt.Sprintf("Skipping action because its from fresh chat %d: %s", upd.ChatId, upd.Action.ChatActionType()))

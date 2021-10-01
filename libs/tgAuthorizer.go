@@ -90,6 +90,7 @@ func ClientAuthorizer() *clientAuthorizer {
 var state client.AuthorizationState
 var phoneSet bool = false
 var codeSet bool = false
+var passwordSet bool = false
 func CliInteractor(clientAuthorizer *clientAuthorizer, phone string, nextParams chan string) {
 	var ok bool
 	var param string
@@ -139,13 +140,26 @@ func CliInteractor(clientAuthorizer *clientAuthorizer, phone string, nextParams 
 			clientAuthorizer.Code <- param
 
 		case client.TypeAuthorizationStateWaitPassword:
-			fmt.Println("Enter password: ")
-			var password string
-			fmt.Scanln(&password)
+			if passwordSet == true {
+				continue
+			}
+			fmt.Printf("Waiting password...\n")
 
-			clientAuthorizer.Password <- password
+			select {
+			case param, ok = <-nextParams:
+				if !ok {
+					fmt.Printf("Invalid param!\n")
+					continue
+				}
+			}
+			fmt.Printf("Setting password...\n")
+			passwordSet = true
+
+			clientAuthorizer.Password <- param
 
 		case client.TypeAuthorizationStateReady:
+			state = nil
+
 			return
 		}
 

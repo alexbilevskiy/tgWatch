@@ -12,8 +12,11 @@
 
                 <label for="code" class="form-label"></label>
                 <input class="form-control" type="text" placeholder="code" id="code" name="code" {{if ne .State "code"}}disabled{{end}} value="{{.Code}}">
-                <label for="button" class="form-label"></label>
 
+                <label for="password" class="form-label"></label>
+                <input class="form-control" type="text" placeholder="password" id="password" name="password" {{if ne .State "password"}}disabled{{end}} value="{{.Password}}">
+
+                <label for="button" class="form-label"></label>
                 <input type="submit" class="form-control btn btn-primary" value="add" id="button">
             </div>
         </div>

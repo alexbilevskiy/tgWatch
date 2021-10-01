@@ -514,44 +514,60 @@ func processSettings(r *http.Request, w http.ResponseWriter) {
 	renderTemplates(w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/settings.tmpl`)
 }
 
+var st = structs.NewAccountState{}
 func processAddAccount(req *http.Request, w http.ResponseWriter) {
-	st := structs.NewAccountState{
-		T: "New account creation",
+
+	if currentAuthorizingAcc == nil && req.Method == "GET" {
+		st = structs.NewAccountState{}
 	}
-	if req.Method == "POST" {
-		if req.FormValue("phone") != "" && currentAuthorizingAcc == nil {
-			CreateAccount(req.FormValue("phone"))
-			if currentAuthorizingAcc.Status == AccStatusActive {
-				st.State = "already_authorized"
-				currentAuthorizingAcc = nil
-			} else {
-				st.State = "wait"
-			}
-			st.Phone = req.FormValue("phone")
-		} else if currentAuthorizingAcc == nil {
-			st.State = "ERROR! Account not in auth state"
-		} else if req.FormValue("code") != "" {
-			authParams <- req.FormValue("code")
-
-			st.State = "wait"
-			st.Phone = currentAuthorizingAcc.Phone
-			st.Code = req.FormValue("code")
-		} else {
-			st.State = "code"
-			st.Phone = currentAuthorizingAcc.Phone
-		}
-
-		renderTemplates(w, st, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/account_add.tmpl`)
+	if state == nil {
+		st.State = "start"
+	} else if state.AuthorizationStateType() == client.TypeAuthorizationStateWaitCode {
+		st.State = "code"
+		st.Phone = currentAuthorizingAcc.Phone
+	} else if state.AuthorizationStateType() == client.TypeAuthorizationStateWaitPassword {
+		st.State = "password"
+		st.Phone = currentAuthorizingAcc.Phone
 	} else {
-		if state == nil {
-			st.State = "start"
-		} else if state.AuthorizationStateType() == client.TypeAuthorizationStateWaitCode {
-			st.State = "code"
-			st.Phone = currentAuthorizingAcc.Phone
+		st.State = state.AuthorizationStateType()
+		st.Phone = currentAuthorizingAcc.Phone
+	}
+
+	if req.Method == "POST" {
+		if currentAuthorizingAcc == nil {
+			if req.FormValue("phone") != "" {
+				CreateAccount(req.FormValue("phone"))
+				if currentAuthorizingAcc.Status == AccStatusActive {
+					st.State = "already_authorized"
+					currentAuthorizingAcc = nil
+				} else {
+					st.State = "wait"
+				}
+				st.Phone = req.FormValue("phone")
+			} else {
+				st.State = "wtf no phone?"
+			}
 		} else {
-			st.State = state.AuthorizationStateType()
-			st.Phone = currentAuthorizingAcc.Phone
+			if req.FormValue("code") != "" && st.State == "code" {
+				authParams <- req.FormValue("code")
+
+				st.State = "wait"
+				st.Phone = currentAuthorizingAcc.Phone
+				st.Code = req.FormValue("code")
+			} else if req.FormValue("password") != "" && st.State == "password" {
+				authParams <- req.FormValue("password")
+
+				st.State = "wait"
+				st.Phone = currentAuthorizingAcc.Phone
+				st.Code = req.FormValue("code")
+				st.Password = req.FormValue("password")
+			} else {
+				st.State = "must refresh form without POST"
+			}
 		}
+		http.Redirect(w, req, "/new", 302)
+		return
+	} else {
 
 		renderTemplates(w, st, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/account_add.tmpl`)
 	}

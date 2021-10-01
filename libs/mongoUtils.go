@@ -522,7 +522,7 @@ func LoadAccounts() {
 	for _, accObj := range accountsBson {
 		counter++
 		acc := structs.Account{
-			Id: int64(accObj["id"].(int32)),
+			Id: accObj["id"].(int64),
 			Phone: accObj["phone"].(string),
 			DbPrefix: accObj["dbprefix"].(string),
 			DataDir: accObj["datadir"].(string),
