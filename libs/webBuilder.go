@@ -95,61 +95,85 @@ func buildChatInfoByLocalChat(chat *client.Chat, buildCounters bool) structs.Cha
 
 func renderText(text *client.FormattedText) string {
 	utfText := utf16.Encode([]rune(text.Text))
-	res := ""
-	var prevOffset int32 = 0
+	result := ""
+	var prevEntityEnd int32 = 0
 
-	for _, entity := range text.Entities {
-		if (entity.Offset - prevOffset > 0) || entity.Offset == 0 {
-			res += ut2hs(utfText[prevOffset:entity.Offset])
+	var wrapped string
+	for i, entity := range text.Entities {
+		if entity.Offset < prevEntityEnd {
+			//fmt.Printf("ENT IS SAME AS PREV\n")
+			wrapped = wrapEntity(entity, wrapped)
+			result += wrapped
+
+			continue
 		}
-		prevOffset = entity.Offset + entity.Length
-		if int32(len(utfText)) < entity.Offset + entity.Length {
-			res += "ERROR!"
-			break
+		//check if there is plain text between current entity and previous
+		if (entity.Offset - prevEntityEnd > 0) || entity.Offset == 0 {
+			result += ut2hs(utfText[prevEntityEnd:entity.Offset])
 		}
+		prevEntityEnd = entity.Offset + entity.Length
+
+		//extract clean string from message
 		repl := ut2hs(utfText[entity.Offset:entity.Offset + entity.Length])
+		//wrap in html tags according to entity
+		wrapped = wrapEntity(entity, repl)
 
-		switch entity.Type.TextEntityTypeType() {
-		case client.TypeTextEntityTypeBold:
-			res += "<b>" + repl + "</b>"
-		case client.TypeTextEntityTypeItalic:
-			res += "<i>" + repl + "</i>"
-		case client.TypeTextEntityTypeUnderline:
-			res += "<u>" + repl + "</u>"
-		case client.TypeTextEntityTypeStrikethrough:
-			res += "<s>" + repl + "</s>"
-		case client.TypeTextEntityTypeMention:
-			res += fmt.Sprintf(`<a href="https://t.me/%s">%s</a>`, repl[1:], repl)
-		case client.TypeTextEntityTypeMentionName:
-			t := entity.Type.(*client.TextEntityTypeMentionName)
-			res += fmt.Sprintf(`<a href="/h/%d">%s</a>`, t.UserId, repl)
-		case client.TypeTextEntityTypeCode:
-			res += "<code>" + repl + "</code>"
-		case client.TypeTextEntityTypeUrl:
-			res += fmt.Sprintf(`<a href="%s">%s</a>`, repl, repl)
-		case client.TypeTextEntityTypeTextUrl:
-			t := entity.Type.(*client.TextEntityTypeTextUrl)
-			res += fmt.Sprintf(`<a href="%s">%s</a>`, t.Url, repl)
-		case client.TypeTextEntityTypePre:
-			res += "<code>" + repl + "</code>"
-		case client.TypeTextEntityTypeBotCommand:
-			res += "<a>" + repl + "</a>"
-		case client.TypeTextEntityTypeHashtag:
-			res += "<a>" + repl + "</a>"
-		case client.TypeTextEntityTypeEmailAddress:
-			res += fmt.Sprintf(`<a href="mailto:%s">%s</a>`, repl, repl)
-		case client.TypeTextEntityTypePhoneNumber:
-			res += fmt.Sprintf(`<a href="tel:%s">%s</a>`, repl, repl)
-		default:
-			res += fmt.Sprintf(`<span title="%s" class="badge bg-danger">%s</span>`, entity.Type.TextEntityTypeType(), repl)
+		//if next entity has same offset and length as current, theses entities are nested
+		ne := i+1
+		if len(text.Entities) > ne && entity.Offset == text.Entities[ne].Offset && entity.Length == text.Entities[ne].Length {
+			//fmt.Printf("NEXT IS SAME AS CUR\n")
+			continue
 		}
+		result += wrapped
 	}
-	if int32(len(utfText)) > prevOffset {
-		res += ut2hs(utfText[prevOffset:])
-	}
-	res = strings.Replace(res, "\n", "<br>", -1)
 
-	return res
+	//check if there is plain text after last entity
+	if int32(len(utfText)) > prevEntityEnd {
+		result += ut2hs(utfText[prevEntityEnd:])
+	}
+	result = strings.Replace(result, "\n", "<br>", -1)
+
+	return result
+}
+
+func wrapEntity(entity *client.TextEntity, text string) string {
+	var wrapped string
+	switch entity.Type.TextEntityTypeType() {
+	case client.TypeTextEntityTypeBold:
+		wrapped = "<b>" + text + "</b>"
+	case client.TypeTextEntityTypeItalic:
+		wrapped = "<i>" + text + "</i>"
+	case client.TypeTextEntityTypeUnderline:
+		wrapped = "<u>" + text + "</u>"
+	case client.TypeTextEntityTypeStrikethrough:
+		wrapped = "<s>" + text + "</s>"
+	case client.TypeTextEntityTypeMention:
+		wrapped = fmt.Sprintf(`<a href="https://t.me/%s">%s</a>`, text[1:], text)
+	case client.TypeTextEntityTypeMentionName:
+		t := entity.Type.(*client.TextEntityTypeMentionName)
+		wrapped = fmt.Sprintf(`<a href="/h/%d">%s</a>`, t.UserId, text)
+	case client.TypeTextEntityTypeCode:
+		wrapped = "<code>" + text + "</code>"
+	case client.TypeTextEntityTypeUrl:
+		wrapped = fmt.Sprintf(`<a href="%s">%s</a>`, text, text)
+	case client.TypeTextEntityTypeTextUrl:
+		t := entity.Type.(*client.TextEntityTypeTextUrl)
+		wrapped = fmt.Sprintf(`<a href="%s">%s</a>`, t.Url, text)
+	case client.TypeTextEntityTypePre:
+		wrapped = "<code>" + text + "</code>"
+	case client.TypeTextEntityTypeBotCommand:
+		wrapped = "<a>" + text + "</a>"
+	case client.TypeTextEntityTypeHashtag:
+		wrapped = "<a>" + text + "</a>"
+	case client.TypeTextEntityTypeEmailAddress:
+		wrapped = fmt.Sprintf(`<a href="mailto:%s">%s</a>`, text, text)
+	case client.TypeTextEntityTypePhoneNumber:
+		wrapped = fmt.Sprintf(`<a href="tel:%s">%s</a>`, text, text)
+	default:
+		wrapped = fmt.Sprintf(`<span title="%s" class="badge bg-danger">%s</span>`, entity.Type.TextEntityTypeType(), text)
+	}
+
+	return wrapped
 }
 
 func ut2hs(r []uint16) string { //utf text to html string
