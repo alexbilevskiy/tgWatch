@@ -9,6 +9,7 @@ import (
 	"log"
 	"path/filepath"
 	"strconv"
+	"sync"
 	"tgWatch/config"
 	"tgWatch/structs"
 )
@@ -61,6 +62,9 @@ func InitTdlib(acc int64) {
 	if err != nil {
 		log.Fatalf("GetMe error: %s", err)
 	}
+	accLocal := Accounts[acc]
+	accLocal.Username = me[acc].Username
+	Accounts[acc] = accLocal
 
 	log.Printf("Me: %s %s [%s]", me[acc].FirstName, me[acc].LastName, me[acc].Username)
 
@@ -287,10 +291,12 @@ func GetChatName(acc int64, chatId int64) string {
 	return name
 }
 
+var m = sync.RWMutex{}
 func GetChat(acc int64, chatId int64, force bool) (*client.Chat, error) {
+	m.RLock()
 	fullChat, ok := localChats[acc][chatId]
+	m.RUnlock()
 	if !force && ok {
-		//fmt.Printf("Found local chat %d\n", chatId)
 
 		return fullChat, nil
 	}
@@ -298,10 +304,16 @@ func GetChat(acc int64, chatId int64, force bool) (*client.Chat, error) {
 	fullChat, err := tdlibClient[acc].GetChat(req)
 	if err == nil {
 		DLog(fmt.Sprintf("Caching local chat %d\n", chatId))
-		localChats[acc][chatId] = fullChat
+		CacheChat(acc, fullChat)
 	}
 
 	return fullChat, err
+}
+
+func CacheChat(acc int64, chat * client.Chat) {
+	m.Lock()
+	localChats[acc][chat.Id] = chat
+	m.Unlock()
 }
 
 func GetUser(acc int64, userId int64) (*client.User, error) {

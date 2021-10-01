@@ -527,6 +527,7 @@ func LoadAccounts() {
 			DbPrefix: accObj["dbprefix"].(string),
 			DataDir: accObj["datadir"].(string),
 			Status: accObj["status"].(string),
+			Username: "",
 		}
 		Accounts[acc.Id] = acc
 	}

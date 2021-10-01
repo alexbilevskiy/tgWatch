@@ -61,10 +61,8 @@ func ListenUpdates(acc int64)  {
 
 			case client.TypeUpdateChatTitle:
 				upd := update.(*client.UpdateChatTitle)
-				if localChats[acc] == nil {
-					log.Fatalf("Local chats empty %d", acc)
-				}
-				if localChat, v := localChats[acc][upd.ChatId]; v {
+				localChat, err := GetChat(acc, upd.ChatId, false)
+				if err == nil {
 					log.Printf("Renamed chat id:%d from `%s` to `%s`", upd.ChatId, localChat.Title, upd.Title)
 				} else {
 					log.Printf("Renamed chat id:%d to `%s`", upd.ChatId, upd.Title)
@@ -72,13 +70,11 @@ func ListenUpdates(acc int64)  {
 
 				break
 			case client.TypeUpdateNewChat:
-				upd := update.(*client.UpdateNewChat)
-				if localChats[acc] == nil {
-					log.Fatalf("Local chats empty %d", acc)
-				}
-				localChats[acc][upd.Chat.Id] = upd.Chat
-				DLog(fmt.Sprintf("New chat added: %d / %s", upd.Chat.Id, upd.Chat.Title))
-				saveAllChatPositions(acc, upd.Chat.Id, upd.Chat.Positions)
+				//dont need to cache chat here, because chat info is empty, @see case client.ClassChat below
+				//upd := update.(*client.UpdateNewChat)
+				//CacheChat(acc, upd.Chat)
+				//DLog(fmt.Sprintf("New chat added: %d / %s", upd.Chat.Id, upd.Chat.Title))
+				//saveAllChatPositions(acc, upd.Chat.Id, upd.Chat.Positions)
 
 				break
 			case client.TypeUpdateConnectionState:
@@ -92,12 +88,12 @@ func ListenUpdates(acc int64)  {
 					DLog(fmt.Sprintf("Skipping action in non-user chat %d: %s", upd.ChatId, upd.Action.ChatActionType()))
 					break
 				}
-				if localChat, v := localChats[acc][upd.ChatId]; v {
-					//@TODO: seems to be not working
+				localChat, err := GetChat(acc, upd.ChatId, false)
+				if err == nil {
 					if localChat.LastMessage != nil && localChat.LastMessage.Date < int32(time.Now().Unix()) - int32((time.Hour * 6).Seconds()) {
 						log.Printf("User action in chat `%s`: %s", localChat.Title, upd.Action.ChatActionType())
 					} else {
-						DLog(fmt.Sprintf("Skipping action because its from fresh chat %d: %s", upd.ChatId, upd.Action.ChatActionType()))
+						fmt.Printf("Skipping action because its from fresh chat %d `%s`: %s\n", upd.ChatId, localChat.Title, upd.Action.ChatActionType())
 					}
 				} else {
 					user, err := GetUser(acc, upd.UserId)
@@ -273,6 +269,8 @@ func ListenUpdates(acc int64)  {
 		case client.ClassError:
 		case client.ClassUser:
 		case client.ClassChat:
+			upd := update.(*client.Chat)
+			CacheChat(acc, upd)
 		case client.ClassSupergroup:
 		case client.ClassChats:
 		case client.ClassMessageLink:

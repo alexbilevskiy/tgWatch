@@ -60,12 +60,13 @@ func renderTemplates(w http.ResponseWriter, templateData interface{}, templates.
 			},
 			"chatInfoLocal": func(chatIdstr string) structs.ChatInfo {
 				chatId, _ := strconv.ParseInt(chatIdstr, 10, 64)
-				if _, ok := localChats[currentAcc][chatId]; !ok {
+				localChat, err := GetChat(currentAcc, chatId, false)
+				if err == nil {
 
 					return structs.ChatInfo{ChatId: chatId, ChatName: "_NOT_FOUND_"}
 				}
 
-				return buildChatInfoByLocalChat(localChats[currentAcc][chatId], false)
+				return buildChatInfoByLocalChat(localChat, false)
 			},
 			"chatInfo": func(chatIdstr string) structs.ChatInfo {
 				chatId, _ := strconv.ParseInt(chatIdstr, 10, 64)

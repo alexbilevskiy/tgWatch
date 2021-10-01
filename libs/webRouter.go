@@ -201,7 +201,7 @@ func detectAccount(req *http.Request, res http.ResponseWriter) bool {
 		return false
 	}
 
-	cookie := http.Cookie{Name: "acc", Value: strconv.FormatInt(currentAcc, 10)}
+	cookie := http.Cookie{Name: "acc", Value: strconv.FormatInt(currentAcc, 10), Path: "/"}
 	http.SetCookie(res, &cookie)
 
 	return true

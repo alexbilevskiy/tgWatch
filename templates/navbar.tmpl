@@ -34,7 +34,7 @@
                 <select class="form-select me-2" id="acc" name="acc" aria-describedby="phone-icon" onchange="changePhone(this);">
                     {{$sel := false}}
                     {{range accountsList}}
-                        <option value="{{.Id}}" {{if isCurrentAcc .Id}} {{$sel = true}} selected{{end}}>{{.Phone}}</option>
+                        <option value="{{.Id}}" {{if isCurrentAcc .Id}} {{$sel = true}} selected{{end}}>{{.Phone}} {{.Username}}</option>
                     {{end}}
                     {{if eq $sel false}}
                         <option value=""selected></option>
