@@ -1,7 +1,7 @@
 # TgWatch
 
 Initially this client was intended for logging and viewing deleted and updated messages in telegram chats.   
-Now it's more like a telegram explorer - view raw messages and chats, files downloader, etc.
+Now it's more like a telegram explorer - view raw messages and chats, files, etc.
 
 Features:
 * chats list (folders included) with message counters 
@@ -10,7 +10,7 @@ Features:
 * multi-account support (beta!)
 * files downloader
 
-Next ideas: 
+Next ideas:
 * mute chats by conditions (how to define rules?)
 * merge multiple outgoing one-line messages into one
 * auto-respond
@@ -18,6 +18,10 @@ Next ideas:
 * load remote chat history
 * replies
 
+BUGS:
+* uses custom go-tdlib fork to support multiple clients
+* new account log-in process is kinda tricky and requires restart after successful login
+* refresh chat list button probably works not as expected
 
 ### install:
 `go build`
