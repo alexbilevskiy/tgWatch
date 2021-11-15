@@ -91,9 +91,9 @@ func ListenUpdates(acc int64)  {
 				localChat, err := GetChat(acc, upd.ChatId, false)
 				if err == nil {
 					if localChat.LastMessage != nil && localChat.LastMessage.Date < int32(time.Now().Unix()) - int32((time.Hour * 6).Seconds()) {
-						log.Printf("User action in chat `%s`: %s", localChat.Title, upd.Action.ChatActionType())
+						DLog(fmt.Sprintf("User action in chat `%s`: %s", localChat.Title, upd.Action.ChatActionType()))
 					} else {
-						fmt.Printf("Skipping action because its from fresh chat %d `%s`: %s\n", upd.ChatId, localChat.Title, upd.Action.ChatActionType())
+						DLog(fmt.Sprintf("Skipping action because its from fresh chat %d `%s`: %s\n", upd.ChatId, localChat.Title, upd.Action.ChatActionType()))
 					}
 				} else {
 					user, err := GetUser(acc, upd.UserId)
@@ -103,7 +103,7 @@ func ListenUpdates(acc int64)  {
 					} else {
 						userName = getUserFullname(user)
 					}
-					log.Printf("User action `%s`: %s", userName, upd.Action.ChatActionType())
+					DLog(fmt.Sprintf("User action `%s`: %s", userName, upd.Action.ChatActionType()))
 				}
 
 				break
@@ -260,6 +260,10 @@ func ListenUpdates(acc int64)  {
 				}
 
 				break
+			case client.TypeUpdateChatMessageTtlSetting:
+				upd := update.(*client.UpdateChatMessageTtlSetting)
+				chatName := GetChatName(acc, upd.ChatId)
+				log.Printf("Message TTL updated for chat `%s` %d: %ds", chatName, upd.ChatId, upd.MessageTtlSetting)
 			default:
 				j, _ := json.Marshal(update)
 				log.Printf("Unknown update %s : %s", t, string(j))
