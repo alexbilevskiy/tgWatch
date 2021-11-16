@@ -137,23 +137,6 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 		return
 
-	case "v":
-		r := regexp.MustCompile(`^/v/([\w\-_]+)$`)
-		m := r.FindStringSubmatch(req.URL.Path)
-		if m == nil || m[1] == "" {
-			errorResponse(structs.WebError{T: "Not found", Error: req.URL.Path}, 404, req, res)
-
-			return
-		}
-		text, err := RecognizeByFileId(m[1])
-		if err != nil {
-			errorResponse(structs.WebError{T: "recognize error", Error: err.Error()}, 504, req, res)
-
-			return
-		}
-		errorResponse(structs.WebError{T: "not error", Error: text}, 200, req, res)
-
-		return
 	case "s":
 		processSettings(req, res)
 		return
