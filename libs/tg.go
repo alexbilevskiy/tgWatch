@@ -95,8 +95,10 @@ func InitTdlib(acc int64) {
 
 const AccStatusActive = "active"
 const AccStatusNew = "new"
+
 var authParams chan string
 var currentAuthorizingAcc *structs.Account
+
 func CreateAccount(phone string) {
 	currentAuthorizingAcc = GetSavedAccount(phone)
 	if currentAuthorizingAcc == nil {
@@ -168,8 +170,6 @@ func CreateAccount(phone string) {
 
 		log.Printf("TDLib version: %s", optionValue.(*client.OptionValueString).Value)
 
-
-
 		meLocal, err = tdlibClientLocal.GetMe()
 		if err != nil {
 			log.Fatalf("GetMe error: %s", err)
@@ -179,11 +179,11 @@ func CreateAccount(phone string) {
 
 		log.Printf("NEW Me: %s %s [%s]", meLocal.FirstName, meLocal.LastName, meLocal.Username)
 
-		state = nil
+		//state = nil
 		currentAuthorizingAcc.Id = meLocal.Id
 		currentAuthorizingAcc.Status = AccStatusActive
 		SaveAccount(currentAuthorizingAcc)
-		LoadAccounts()
+		//LoadAccounts()
 		currentAuthorizingAcc = nil
 	}()
 }
@@ -292,6 +292,7 @@ func GetChatName(acc int64, chatId int64) string {
 }
 
 var m = sync.RWMutex{}
+
 func GetChat(acc int64, chatId int64, force bool) (*client.Chat, error) {
 	m.RLock()
 	fullChat, ok := localChats[acc][chatId]
@@ -310,7 +311,7 @@ func GetChat(acc int64, chatId int64, force bool) (*client.Chat, error) {
 	return fullChat, err
 }
 
-func CacheChat(acc int64, chat * client.Chat) {
+func CacheChat(acc int64, chat *client.Chat) {
 	m.Lock()
 	localChats[acc][chat.Id] = chat
 	m.Unlock()

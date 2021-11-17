@@ -87,10 +87,12 @@ func ClientAuthorizer() *clientAuthorizer {
 		Password:        make(chan string, 1),
 	}
 }
+
 var state client.AuthorizationState
 var phoneSet bool = false
 var codeSet bool = false
 var passwordSet bool = false
+
 func CliInteractor(clientAuthorizer *clientAuthorizer, phone string, nextParams chan string) {
 	var ok bool
 	var param string
@@ -159,6 +161,9 @@ func CliInteractor(clientAuthorizer *clientAuthorizer, phone string, nextParams 
 
 		case client.TypeAuthorizationStateReady:
 			state = nil
+			phoneSet = false
+			codeSet = false
+			passwordSet = false
 
 			return
 		}

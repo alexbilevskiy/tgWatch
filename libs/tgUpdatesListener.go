@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func ListenUpdates(acc int64)  {
+func ListenUpdates(acc int64) {
 	listener := tdlibClient[acc].GetListener()
 	defer listener.Close()
 
@@ -20,6 +20,7 @@ func ListenUpdates(acc int64)  {
 			t := update.GetType()
 			switch t {
 			case client.TypeUpdateChatActionBar:
+			case client.TypeUpdateChatThemes:
 			case client.TypeUpdateFavoriteStickers:
 			case client.TypeUpdateInstalledStickerSets:
 			case client.TypeUpdateRecentStickers:
@@ -79,7 +80,7 @@ func ListenUpdates(acc int64)  {
 				break
 			case client.TypeUpdateConnectionState:
 				upd := update.(*client.UpdateConnectionState)
-				log.Printf("Connection state changed: %s", upd.State.ConnectionStateType())
+				DLog(fmt.Sprintf("Connection state changed: %s", upd.State.ConnectionStateType()))
 
 				break
 			case client.TypeUpdateUserChatAction:
@@ -90,7 +91,7 @@ func ListenUpdates(acc int64)  {
 				}
 				localChat, err := GetChat(acc, upd.ChatId, false)
 				if err == nil {
-					if localChat.LastMessage != nil && localChat.LastMessage.Date < int32(time.Now().Unix()) - int32((time.Hour * 6).Seconds()) {
+					if localChat.LastMessage != nil && localChat.LastMessage.Date < int32(time.Now().Unix())-int32((time.Hour*6).Seconds()) {
 						DLog(fmt.Sprintf("User action in chat `%s`: %s", localChat.Title, upd.Action.ChatActionType()))
 					} else {
 						DLog(fmt.Sprintf("Skipping action because its from fresh chat %d `%s`: %s\n", upd.ChatId, localChat.Title, upd.Action.ChatActionType()))

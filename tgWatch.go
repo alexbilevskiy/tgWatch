@@ -8,7 +8,6 @@ import (
 
 func main() {
 	config.InitConfiguration()
-	libs.InitWeb()
 
 	libs.InitSharedVars()
 	libs.InitGlobalMongo()
@@ -31,8 +30,7 @@ func main() {
 		go libs.ListenUpdates(accId)
 	}
 
-	select {
+	libs.InitWeb()
 
-	}
+	select {}
 }
-
