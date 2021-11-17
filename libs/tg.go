@@ -104,10 +104,10 @@ func CreateAccount(phone string) {
 	if currentAuthorizingAcc == nil {
 		log.Printf("Starting new account creation for phone %s", phone)
 		currentAuthorizingAcc = &structs.Account{
-			Phone: phone,
-			DataDir: ".tdlib" + phone,
+			Phone:    phone,
+			DataDir:  ".tdlib" + phone,
 			DbPrefix: "tg",
-			Status: AccStatusNew,
+			Status:   AccStatusNew,
 		}
 		SaveAccount(currentAuthorizingAcc)
 	} else {
@@ -469,7 +469,7 @@ func GetContentAttachments(content client.MessageContent) []structs.MessageAttac
 	case client.TypeMessagePhoto:
 		msg := content.(*client.MessagePhoto)
 		s := structs.MessageAttachment{
-			T: msg.Photo.Type,
+			T:  msg.Photo.Type,
 			Id: msg.Photo.Sizes[len(msg.Photo.Sizes)-1].Photo.Remote.Id,
 		}
 		if msg.Photo.Minithumbnail != nil {
@@ -484,8 +484,8 @@ func GetContentAttachments(content client.MessageContent) []structs.MessageAttac
 	case client.TypeMessageVideo:
 		msg := content.(*client.MessageVideo)
 		s := structs.MessageAttachment{
-			T: msg.Video.Type,
-			Id: msg.Video.Video.Remote.Id,
+			T:    msg.Video.Type,
+			Id:   msg.Video.Video.Remote.Id,
 			Link: append(make([]string, 0), fmt.Sprintf("http://%s/f/%s", config.Config.WebListen, msg.Video.Video.Remote.Id)),
 		}
 		if msg.Video.Minithumbnail != nil {
@@ -497,8 +497,8 @@ func GetContentAttachments(content client.MessageContent) []structs.MessageAttac
 	case client.TypeMessageAnimation:
 		msg := content.(*client.MessageAnimation)
 		s := structs.MessageAttachment{
-			T: msg.Animation.Type,
-			Id: msg.Animation.Animation.Remote.Id,
+			T:    msg.Animation.Type,
+			Id:   msg.Animation.Animation.Remote.Id,
 			Link: append(make([]string, 0), fmt.Sprintf("http://%s/f/%s", config.Config.WebListen, msg.Animation.Animation.Remote.Id)),
 		}
 		if msg.Animation.Minithumbnail != nil {
@@ -511,8 +511,8 @@ func GetContentAttachments(content client.MessageContent) []structs.MessageAttac
 	case client.TypeMessageSticker:
 		msg := content.(*client.MessageSticker)
 		s := structs.MessageAttachment{
-			T: msg.Sticker.Type,
-			Id: msg.Sticker.Sticker.Remote.Id,
+			T:    msg.Sticker.Type,
+			Id:   msg.Sticker.Sticker.Remote.Id,
 			Link: append(make([]string, 0), fmt.Sprintf("http://%s/f/%s", config.Config.WebListen, msg.Sticker.Sticker.Remote.Id)),
 		}
 		cnt = append(cnt, s)
@@ -521,8 +521,8 @@ func GetContentAttachments(content client.MessageContent) []structs.MessageAttac
 	case client.TypeMessageVoiceNote:
 		msg := content.(*client.MessageVoiceNote)
 		s := structs.MessageAttachment{
-			T: msg.VoiceNote.Type,
-			Id: msg.VoiceNote.Voice.Remote.Id,
+			T:    msg.VoiceNote.Type,
+			Id:   msg.VoiceNote.Voice.Remote.Id,
 			Name: fmt.Sprintf("Voice (%ds.)", msg.VoiceNote.Duration),
 			Link: append(make([]string, 0), fmt.Sprintf("http://%s/v/%s", config.Config.WebListen, msg.VoiceNote.Voice.Remote.Id)),
 		}
@@ -532,8 +532,8 @@ func GetContentAttachments(content client.MessageContent) []structs.MessageAttac
 	case client.TypeMessageDocument:
 		msg := content.(*client.MessageDocument)
 		s := structs.MessageAttachment{
-			T: msg.Document.Type,
-			Id: msg.Document.Document.Remote.Id,
+			T:    msg.Document.Type,
+			Id:   msg.Document.Document.Remote.Id,
 			Name: msg.Document.FileName,
 			Link: append(make([]string, 0), fmt.Sprintf("http://%s/f/%s", config.Config.WebListen, msg.Document.Document.Remote.Id)),
 		}

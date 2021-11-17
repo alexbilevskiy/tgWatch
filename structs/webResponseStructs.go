@@ -30,7 +30,7 @@ type Index struct {
 	T string
 }
 type Overview struct {
-	T string
+	T     string
 	Chats []ChatInfo
 }
 type JSON struct {
@@ -51,7 +51,7 @@ type SingleMessage struct {
 	T       string
 	Chat    ChatInfo
 	Message MessageInfo
-	Edits[] MessageEditedInfo
+	Edits   []MessageEditedInfo
 }
 
 type ChatFullInfo struct {
@@ -61,7 +61,7 @@ type ChatFullInfo struct {
 }
 
 type Messages struct {
-	T          string
+	T           string
 	Messages    interface{}
 	MessagesRaw string
 }

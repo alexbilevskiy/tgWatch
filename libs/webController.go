@@ -10,7 +10,7 @@ import (
 	"tgWatch/structs"
 )
 
-func processTgJournal(req *http.Request, w http.ResponseWriter)  {
+func processTgJournal(req *http.Request, w http.ResponseWriter) {
 	limit := int64(50)
 	if req.FormValue("limit") != "" {
 		limit, _ = strconv.ParseInt(req.FormValue("limit"), 10, 64)
@@ -35,7 +35,7 @@ func processTgJournal(req *http.Request, w http.ResponseWriter)  {
 				Link:    GetLink(currentAcc, upd.Message.ChatId, upd.Message.Id),
 				IntLink: fmt.Sprintf("/m/%d/%d", upd.Message.ChatId, upd.Message.Id), //@TODO: link shoud be /m
 				Chat: structs.ChatInfo{
-					ChatId: upd.Message.ChatId,
+					ChatId:   upd.Message.ChatId,
 					ChatName: GetChatName(currentAcc, upd.Message.ChatId),
 				},
 			}
@@ -55,7 +55,7 @@ func processTgJournal(req *http.Request, w http.ResponseWriter)  {
 				Link:    GetLink(currentAcc, upd.ChatId, upd.MessageId),
 				IntLink: fmt.Sprintf("/m/%d/%d", upd.ChatId, upd.MessageId),
 				Chat: structs.ChatInfo{
-					ChatId: upd.ChatId,
+					ChatId:   upd.ChatId,
 					ChatName: GetChatName(currentAcc, upd.ChatId),
 				},
 			}
@@ -71,7 +71,7 @@ func processTgJournal(req *http.Request, w http.ResponseWriter)  {
 				Link:    GetLink(currentAcc, upd.ChatId, upd.MessageId),
 				IntLink: fmt.Sprintf("/m/%d/%d", upd.ChatId, upd.MessageId),
 				Chat: structs.ChatInfo{
-					ChatId: upd.ChatId,
+					ChatId:   upd.ChatId,
 					ChatName: GetChatName(currentAcc, upd.ChatId),
 				},
 			}
@@ -98,7 +98,7 @@ func processTgJournal(req *http.Request, w http.ResponseWriter)  {
 				Date:    FormatDateTime(dates[i]),
 				IntLink: fmt.Sprintf("/h/%d/?ids=%s", upd.ChatId, ImplodeInt(upd.MessageIds)),
 				Chat: structs.ChatInfo{
-					ChatId: upd.ChatId,
+					ChatId:   upd.ChatId,
 					ChatName: GetChatName(currentAcc, upd.ChatId),
 				},
 				MessageId: upd.MessageIds,
@@ -147,7 +147,7 @@ func processTgActiveSessions(req *http.Request, w http.ResponseWriter) {
 		fmt.Printf("Get sessions error: %s", err)
 		return
 	}
-	data := structs.SessionsList{T:"Sessions", Sessions: sessions}
+	data := structs.SessionsList{T: "Sessions", Sessions: sessions}
 	if !verbose {
 		data.SessionsRaw = jsonMarshalPretty(sessions)
 	}
@@ -184,10 +184,10 @@ func processTgSingleMessage(chatId int64, messageId int64, w http.ResponseWriter
 	}
 	chat, _ := GetChat(currentAcc, upd.Message.ChatId, false)
 	res := structs.SingleMessage{
-		T: "Message",
+		T:       "Message",
 		Message: msg,
-		Edits: make([]structs.MessageEditedInfo, 0),
-		Chat: buildChatInfoByLocalChat(chat, false),
+		Edits:   make([]structs.MessageEditedInfo, 0),
+		Chat:    buildChatInfoByLocalChat(chat, false),
 	}
 
 	updates, updateTypes, dates, err := FindAllMessageChanges(currentAcc, chatId, messageId)
@@ -211,7 +211,7 @@ func processTgSingleMessage(chatId int64, messageId int64, w http.ResponseWriter
 		case client.TypeUpdateMessageContent:
 			upd, _ := client.UnmarshalUpdateMessageContent(rawJsonBytes)
 			ct = GetContentWithText(upd.NewContent, upd.ChatId)
-			edit = structs.MessageEditedInfo{T:"MessageEdited"}
+			edit = structs.MessageEditedInfo{T: "MessageEdited"}
 			edit.FormattedText = ct.FormattedText
 			edit.SimpleText = ct.Text
 			edit.Attachments = GetContentAttachments(upd.NewContent)
@@ -227,15 +227,13 @@ func processTgSingleMessage(chatId int64, messageId int64, w http.ResponseWriter
 		}
 	}
 
-
-
 	renderTemplates(w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/single_message.tmpl`, `templates/message.tmpl`)
 }
 
 func processTgMessagesByIds(chatId int64, req *http.Request, w http.ResponseWriter) {
 	messageIds := ExplodeInt(req.FormValue("ids"))
 	res := structs.ChatHistory{
-		T: "ChatHistory-filtered",
+		T:        "ChatHistory-filtered",
 		Messages: make([]structs.MessageInfo, 0),
 	}
 
@@ -259,7 +257,7 @@ func processTgChatInfo(chatId int64, w http.ResponseWriter) {
 	var err error
 	if chatId > 0 {
 		chat, err = GetUser(currentAcc, chatId)
-	} else{
+	} else {
 		chat, err = GetChat(currentAcc, chatId, false)
 	}
 	if err != nil {
@@ -268,7 +266,7 @@ func processTgChatInfo(chatId int64, w http.ResponseWriter) {
 	}
 
 	res := structs.ChatFullInfo{
-		T: "ChatFullInfo",
+		T:    "ChatFullInfo",
 		Chat: chat,
 	}
 	var data interface{}
@@ -303,10 +301,10 @@ func processTgChatHistory(chatId int64, req *http.Request, w http.ResponseWriter
 	}
 	chat, _ := GetChat(currentAcc, chatId, false)
 	res := structs.ChatHistory{
-		T: "ChatHistory",
-		Chat: buildChatInfoByLocalChat(chat, false),
-		Limit:  limit,
-		Offset: offset,
+		T:          "ChatHistory",
+		Chat:       buildChatInfoByLocalChat(chat, false),
+		Limit:      limit,
+		Offset:     offset,
 		NextOffset: offset + limit,
 		PrevOffset: offset - limit,
 	}
@@ -496,10 +494,10 @@ func processSettings(r *http.Request, w http.ResponseWriter) {
 			}
 		}
 		ignoreLists[currentAcc] = structs.IgnoreLists{
-			T: "ignore_lists",
-			IgnoreChatIds: IgnoreChatIds,
+			T:               "ignore_lists",
+			IgnoreChatIds:   IgnoreChatIds,
 			IgnoreAuthorIds: IgnoreAuthorIds,
-			IgnoreFolders: IgnoreFolders,
+			IgnoreFolders:   IgnoreFolders,
 		}
 		saveSettings(currentAcc)
 		res = ignoreLists[currentAcc]
@@ -515,6 +513,7 @@ func processSettings(r *http.Request, w http.ResponseWriter) {
 }
 
 var st = structs.NewAccountState{}
+
 func processAddAccount(req *http.Request, w http.ResponseWriter) {
 
 	if currentAuthorizingAcc == nil && req.Method == "GET" {

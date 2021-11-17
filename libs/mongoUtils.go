@@ -22,6 +22,7 @@ import (
 //@TODO: this is an attempt to make direct unmarshall from mongo BSON to telegram structs, but it doesn't work.
 //Luckily though, unmarshalling from JSON works fine, so as temporary solution we just store raw JSON in mongo and unmarshal it instead.
 type messageSenderDecoder struct{}
+
 func (n messageSenderDecoder) DecodeValue(decodeContext bsoncodec.DecodeContext, reader bsonrw.ValueReader, value reflect.Value) error {
 
 	fmt.Printf("UPD DEC TYPE: %s, %s\n", reader.Type(), value.Type())
@@ -61,7 +62,6 @@ func (n messageSenderDecoder) DecodeValue(decodeContext bsoncodec.DecodeContext,
 		//fmt.Print("CS3:", reflect.ValueOf(&ms).Elem().CanAddr(), "\n")
 		//value.Addr().Elem().Set(reflect.ValueOf(&ms).Elem())
 		//value.Set(reflect.ValueOf(ms.(client.MessageSender)))
-
 
 	} else {
 		fmt.Printf("UPD DEC ELEM: %s, %s\n", elem, vr.Type())
@@ -319,7 +319,7 @@ func GetChatHistory(acc int64, chatId int64, limit int64, offset int64, deleted 
 
 func iterateCursor(acc int64, cur *mongo.Cursor) ([][]byte, []string, []int32, error) {
 	var updates []bson.M
-	err := cur.All(mongoContext, &updates);
+	err := cur.All(mongoContext, &updates)
 	if err != nil {
 		errmsg := fmt.Sprintf("ERROR mongo select: %s", err)
 		fmt.Printf(errmsg)
@@ -475,10 +475,10 @@ func LoadSettings(acc int64) {
 	if ignoreListsDoc.Err() == mongo.ErrNoDocuments {
 		log.Printf("No ignore lists in DB!")
 		ignoreLists[acc] = structs.IgnoreLists{
-			T: "ignore_lists",
+			T:               "ignore_lists",
 			IgnoreAuthorIds: make(map[string]bool),
-			IgnoreChatIds: make(map[string]bool),
-			IgnoreFolders: make(map[string]bool),
+			IgnoreChatIds:   make(map[string]bool),
+			IgnoreFolders:   make(map[string]bool),
 		}
 
 		return
@@ -522,11 +522,11 @@ func LoadAccounts() {
 	for _, accObj := range accountsBson {
 		counter++
 		acc := structs.Account{
-			Id: accObj["id"].(int64),
-			Phone: accObj["phone"].(string),
+			Id:       accObj["id"].(int64),
+			Phone:    accObj["phone"].(string),
 			DbPrefix: accObj["dbprefix"].(string),
-			DataDir: accObj["datadir"].(string),
-			Status: accObj["status"].(string),
+			DataDir:  accObj["datadir"].(string),
+			Status:   accObj["status"].(string),
 			Username: "",
 		}
 		Accounts[acc.Id] = acc

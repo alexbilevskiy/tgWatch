@@ -36,7 +36,7 @@ type MessageEditedInfo struct {
 type MessageError struct {
 	T         string
 	MessageId int64
-	Error	  string
+	Error     string
 }
 
 type MessageAttachment struct {
@@ -67,10 +67,10 @@ type ChatList struct {
 }
 type MessageTextContent struct {
 	FormattedText *client.FormattedText
-	Text string
+	Text          string
 }
 
 type WebError struct {
-	T         string
-	Error	  string
+	T     string
+	Error string
 }

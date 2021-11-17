@@ -25,7 +25,6 @@ func ExplodeInt(a string) []int64 {
 	return intsArr
 }
 
-
 func JsonMarshalStr(j interface{}) string {
 	m, err := json.Marshal(j)
 	if err != nil {

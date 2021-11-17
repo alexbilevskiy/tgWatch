@@ -108,18 +108,18 @@ func renderText(text *client.FormattedText) string {
 			continue
 		}
 		//check if there is plain text between current entity and previous
-		if (entity.Offset - prevEntityEnd > 0) || entity.Offset == 0 {
+		if (entity.Offset-prevEntityEnd > 0) || entity.Offset == 0 {
 			result += ut2hs(utfText[prevEntityEnd:entity.Offset])
 		}
 		prevEntityEnd = entity.Offset + entity.Length
 
 		//extract clean string from message
-		repl := ut2hs(utfText[entity.Offset:entity.Offset + entity.Length])
+		repl := ut2hs(utfText[entity.Offset : entity.Offset+entity.Length])
 		//wrap in html tags according to entity
 		wrapped = wrapEntity(entity, repl)
 
 		//if next entity has same offset and length as current, theses entities are nested
-		ne := i+1
+		ne := i + 1
 		if len(text.Entities) > ne && entity.Offset == text.Entities[ne].Offset && entity.Length == text.Entities[ne].Length {
 			//fmt.Printf("NEXT IS SAME AS CUR\n")
 			continue

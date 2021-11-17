@@ -7,11 +7,9 @@ import (
 	"strconv"
 )
 
-
 func main() {
 	fmt.Printf("Hello world!\n")
 }
-
 
 func getGID() uint64 {
 	b := make([]byte, 64)
