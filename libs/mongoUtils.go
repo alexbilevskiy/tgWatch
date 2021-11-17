@@ -505,8 +505,15 @@ func saveSettings(acc int64) {
 	}
 }
 
-func LoadAccounts() {
-	accountsCursor, err := accountColl.Find(mongoContext, bson.M{})
+func GetAccountsFilter(phone *string) bson.M {
+	if phone == nil {
+		return bson.M{}
+	}
+	return bson.M{"phone": phone}
+}
+
+func LoadAccounts(crit bson.M) {
+	accountsCursor, err := accountColl.Find(mongoContext, crit)
 	if err != nil {
 		log.Fatalf("Accounts load error: %s", err.Error())
 		return

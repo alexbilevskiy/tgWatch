@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 	"tgWatch/config"
 	"tgWatch/libs"
 )
@@ -11,7 +12,16 @@ func main() {
 
 	libs.InitSharedVars()
 	libs.InitGlobalMongo()
-	libs.LoadAccounts()
+
+	args := os.Args
+	if len(args) == 1 {
+		libs.LoadAccounts(libs.GetAccountsFilter(nil))
+	} else if len(args) == 2 {
+		log.Printf("Using single account %s", args[1])
+		libs.LoadAccounts(libs.GetAccountsFilter(&args[1]))
+	} else {
+		log.Fatalf("Invalid argument")
+	}
 
 	//go libs.InitVoskModel()
 
