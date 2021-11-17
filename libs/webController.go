@@ -378,10 +378,9 @@ func processTgChatList(req *http.Request, w http.ResponseWriter) {
 			}
 		}
 	} else if refresh {
-		chatList := getChatsList(currentAcc, folder)
-		for _, chat := range chatList {
-			res.Chats = append(res.Chats, buildChatInfoByLocalChat(chat, false))
-		}
+		loadChatsList(currentAcc, folder)
+		http.Redirect(w, req, fmt.Sprintf("/l?folder=%d", folder), 302)
+		return
 	} else {
 		chatList := getSavedChats(currentAcc, folder)
 		for _, chatPos := range chatList {
@@ -396,6 +395,7 @@ func processTgChatList(req *http.Request, w http.ResponseWriter) {
 			res.Chats = append(res.Chats, chatInfo)
 		}
 	}
+
 	renderTemplates(w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/overview_table.tmpl`, `templates/chatlist.tmpl`)
 }
 

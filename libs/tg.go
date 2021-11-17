@@ -560,9 +560,7 @@ func GetContentAttachments(content client.MessageContent) []structs.MessageAttac
 	return nil
 }
 
-func getChatsList(acc int64, listId int32) []*client.Chat {
-	var fullList []*client.Chat
-
+func loadChatsList(acc int64, listId int32) {
 	var chatList client.ChatList
 	switch listId {
 	case ClMain:
@@ -575,25 +573,22 @@ func getChatsList(acc int64, listId int32) []*client.Chat {
 	crit := bson.D{{"listid", listId}}
 	d, err := chatListColl[acc].DeleteMany(mongoContext, crit)
 	if err != nil {
-		fmt.Printf("Failed to delete chats by list %d: %s\n", listId, err.Error())
+		log.Printf("Failed to delete chats by list %d: %s\n", listId, err.Error())
 	} else {
-		fmt.Printf("Deleted %d chats by listid %d\n", d.DeletedCount, listId)
+		log.Printf("Deleted %d chats by listid %d because refresh was called\n", d.DeletedCount, listId)
 	}
 
-	page := 0
-	offsetChatId := int64(0)
-	//maxChatId := client.JsonInt64(int64((^uint64(0)) >> 1))
-	//offsetOrder := maxChatId
-	//log.Printf("Requesting chats with max id: %d", maxChatId)
-
-	log.Printf("GetChats requesting page %d, offset %d", page, offsetChatId)
-	chatsRequest := &client.LoadChatsRequest{ChatList: chatList, Limit: 100}
+	log.Printf("Requesting LoadChats for list %s id:%d", chatList.ChatListType(), listId)
+	chatsRequest := &client.LoadChatsRequest{ChatList: chatList, Limit: 500}
 	_, err = tdlibClient[acc].LoadChats(chatsRequest)
 	if err != nil {
-		log.Fatalf("[ERROR] LoadChats: %s", err)
+		//@see https://github.com/tdlib/td/blob/fb39e5d74667db915a75a5e58065c59af8e7d8d6/td/generate/scheme/td_api.tl#L4171
+		if err.Error() == "404 Not Found" {
+			log.Printf("All chats already loaded")
+		} else {
+			log.Fatalf("[ERROR] LoadChats: %s", err)
+		}
 	}
-
-	return fullList
 }
 
 func checkSkippedChat(acc int64, chatId string) bool {

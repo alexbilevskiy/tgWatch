@@ -20,6 +20,7 @@ func ListenUpdates(acc int64) {
 			t := update.GetType()
 			switch t {
 			case client.TypeUpdateChatActionBar:
+			case client.TypeUpdateSuggestedActions:
 			case client.TypeUpdateChatThemes:
 			case client.TypeUpdateFavoriteStickers:
 			case client.TypeUpdateInstalledStickerSets:
