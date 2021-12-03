@@ -21,7 +21,6 @@ Next ideas:
 BUGS:
 * uses custom go-tdlib fork to support multiple clients
 * new account log-in process is kinda tricky and requires restart after successful login
-* refresh chat list button probably works not as expected
 
 ### install:
 `go build`
