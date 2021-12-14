@@ -10,7 +10,7 @@ import (
 )
 
 func parseUpdateNewMessage(upd *client.UpdateNewMessage) structs.MessageInfo {
-	senderChatId := GetChatIdBySender(upd.Message.Sender)
+	senderChatId := GetChatIdBySender(upd.Message.SenderId)
 	ct := GetContentWithText(upd.Message.Content, upd.Message.ChatId)
 	msg := structs.MessageInfo{
 		T:             "NewMessage",
@@ -22,7 +22,7 @@ func parseUpdateNewMessage(upd *client.UpdateNewMessage) structs.MessageInfo {
 		ChatId:        upd.Message.ChatId,
 		ChatName:      GetChatName(currentAcc, upd.Message.ChatId),
 		SenderId:      senderChatId,
-		SenderName:    GetSenderName(currentAcc, upd.Message.Sender),
+		SenderName:    GetSenderName(currentAcc, upd.Message.SenderId),
 		MediaAlbumId:  int64(upd.Message.MediaAlbumId),
 		SimpleText:    ct.Text,
 		FormattedText: ct.FormattedText,

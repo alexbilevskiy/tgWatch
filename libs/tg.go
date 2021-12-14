@@ -611,7 +611,7 @@ func checkSkippedSenderBySavedMessage(acc int64, chatId int64, messageId int64) 
 		return false
 	}
 
-	if checkSkippedChat(acc, strconv.FormatInt(GetChatIdBySender(savedMessage.Message.Sender), 10)) {
+	if checkSkippedChat(acc, strconv.FormatInt(GetChatIdBySender(savedMessage.Message.SenderId), 10)) {
 
 		return true
 	}

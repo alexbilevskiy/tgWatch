@@ -39,9 +39,9 @@ func processTgJournal(req *http.Request, w http.ResponseWriter) {
 					ChatName: GetChatName(currentAcc, upd.Message.ChatId),
 				},
 			}
-			if upd.Message.Sender.MessageSenderType() == "messageSenderChat" {
+			if upd.Message.SenderId.MessageSenderType() == "messageSenderChat" {
 			} else {
-				item.From = structs.ChatInfo{ChatId: GetChatIdBySender(upd.Message.Sender), ChatName: GetSenderName(currentAcc, upd.Message.Sender)}
+				item.From = structs.ChatInfo{ChatId: GetChatIdBySender(upd.Message.SenderId), ChatName: GetSenderName(currentAcc, upd.Message.SenderId)}
 			}
 			data.J = append(data.J, item)
 
@@ -83,9 +83,9 @@ func processTgJournal(req *http.Request, w http.ResponseWriter) {
 				break
 			}
 
-			if m.Message.Sender.MessageSenderType() == "messageSenderChat" {
+			if m.Message.SenderId.MessageSenderType() == "messageSenderChat" {
 			} else {
-				item.From = structs.ChatInfo{ChatId: GetChatIdBySender(m.Message.Sender), ChatName: GetSenderName(currentAcc, m.Message.Sender)}
+				item.From = structs.ChatInfo{ChatId: GetChatIdBySender(m.Message.SenderId), ChatName: GetSenderName(currentAcc, m.Message.SenderId)}
 			}
 			data.J = append(data.J, item)
 
@@ -164,7 +164,7 @@ func processTgSingleMessage(chatId int64, messageId int64, w http.ResponseWriter
 		return
 	}
 
-	senderChatId := GetChatIdBySender(upd.Message.Sender)
+	senderChatId := GetChatIdBySender(upd.Message.SenderId)
 	ct := GetContentWithText(upd.Message.Content, upd.Message.ChatId)
 	msg := structs.MessageInfo{
 		T:             "NewMessage",
@@ -173,7 +173,7 @@ func processTgSingleMessage(chatId int64, messageId int64, w http.ResponseWriter
 		ChatId:        upd.Message.ChatId,
 		ChatName:      GetChatName(currentAcc, upd.Message.ChatId),
 		SenderId:      senderChatId,
-		SenderName:    GetSenderName(currentAcc, upd.Message.Sender),
+		SenderName:    GetSenderName(currentAcc, upd.Message.SenderId),
 		MediaAlbumId:  int64(upd.Message.MediaAlbumId),
 		SimpleText:    ct.Text,
 		FormattedText: ct.FormattedText,

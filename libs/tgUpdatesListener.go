@@ -47,7 +47,6 @@ func ListenUpdates(acc int64) {
 			case client.TypeUpdateCall:
 			case client.TypeUpdateMessageContentOpened:
 			case client.TypeUpdateUserPrivacySettingRules:
-			case client.TypeUpdateChatVoiceChat:
 			case client.TypeUpdateGroupCall:
 
 			case client.TypeUpdateSupergroup:
@@ -84,8 +83,8 @@ func ListenUpdates(acc int64) {
 				DLog(fmt.Sprintf("Connection state changed: %s", upd.State.ConnectionStateType()))
 
 				break
-			case client.TypeUpdateUserChatAction:
-				upd := update.(*client.UpdateUserChatAction)
+			case client.TypeUpdateChatAction:
+				upd := update.(*client.UpdateChatAction)
 				if upd.ChatId < 0 {
 					DLog(fmt.Sprintf("Skipping action in non-user chat %d: %s", upd.ChatId, upd.Action.ChatActionType()))
 					break
@@ -98,10 +97,11 @@ func ListenUpdates(acc int64) {
 						DLog(fmt.Sprintf("Skipping action because its from fresh chat %d `%s`: %s\n", upd.ChatId, localChat.Title, upd.Action.ChatActionType()))
 					}
 				} else {
-					user, err := GetUser(acc, upd.UserId)
+					//@NOTE: sender could not be "channel" here, because we only log private chats
+					user, err := GetUser(acc, GetChatIdBySender(upd.SenderId))
 					userName := "err_name"
 					if err != nil {
-						fmt.Printf("failed to get user %d: %s\n", upd.UserId, err)
+						fmt.Printf("failed to get user %d: %s\n", user.Id, err)
 					} else {
 						userName = getUserFullname(user)
 					}
@@ -154,19 +154,19 @@ func ListenUpdates(acc int64) {
 
 						continue
 					}
-					if checkSkippedChat(acc, strconv.FormatInt(GetChatIdBySender(savedMessage.Message.Sender), 10)) {
-						DLog(fmt.Sprintf("Skip deleted message %d from sender %d, `%s`", messageId, GetChatIdBySender(savedMessage.Message.Sender), GetSenderName(acc, savedMessage.Message.Sender)))
+					if checkSkippedChat(acc, strconv.FormatInt(GetChatIdBySender(savedMessage.Message.SenderId), 10)) {
+						DLog(fmt.Sprintf("Skip deleted message %d from sender %d, `%s`", messageId, GetChatIdBySender(savedMessage.Message.SenderId), GetSenderName(acc, savedMessage.Message.SenderId)))
 						skipUpdate++
 
 						continue
 					}
 					if savedMessage.Message.Content == nil {
-						log.Printf("Skip deleted message %d with unknown content from %d", messageId, GetChatIdBySender(savedMessage.Message.Sender))
+						log.Printf("Skip deleted message %d with unknown content from %d", messageId, GetChatIdBySender(savedMessage.Message.SenderId))
 
 						continue
 					}
 					if savedMessage.Message.Content.MessageContentType() == client.TypeMessageChatAddMembers {
-						DLog(fmt.Sprintf("Skip deleted message %d (chat join of user %d)", messageId, GetChatIdBySender(savedMessage.Message.Sender)))
+						DLog(fmt.Sprintf("Skip deleted message %d (chat join of user %d)", messageId, GetChatIdBySender(savedMessage.Message.SenderId)))
 						skipUpdate++
 
 						continue
@@ -189,7 +189,7 @@ func ListenUpdates(acc int64) {
 
 			case client.TypeUpdateNewMessage:
 				upd := update.(*client.UpdateNewMessage)
-				if checkSkippedChat(acc, strconv.FormatInt(upd.Message.ChatId, 10)) || checkSkippedChat(acc, strconv.FormatInt(GetChatIdBySender(upd.Message.Sender), 10)) || checkChatFilter(acc, upd.Message.ChatId) {
+				if checkSkippedChat(acc, strconv.FormatInt(upd.Message.ChatId, 10)) || checkSkippedChat(acc, strconv.FormatInt(GetChatIdBySender(upd.Message.SenderId), 10)) || checkChatFilter(acc, upd.Message.ChatId) {
 
 					break
 				}
