@@ -340,38 +340,25 @@ func iterateCursor(acc int64, cur *mongo.Cursor) ([][]byte, []string, []int32, e
 	return jsons, types, dates, nil
 }
 
-func SaveChatFilters(acc int64, chatFilters *client.UpdateChatFilters) {
-	fmt.Printf("Chat filters update! %s\n", chatFilters.Type)
+func saveChatFilter(acc int64, chatFilter *client.ChatFilter, filterInfo *client.ChatFilterInfo) {
 
-	for _, filterInfo := range chatFilters.ChatFilters {
-		fmt.Printf("New chat filter: id: %d, n: %s\n", filterInfo.Id, filterInfo.Title)
-		//@TODO: tg request logic shoud be in tg.go
-		req := &client.GetChatFilterRequest{ChatFilterId: filterInfo.Id}
-		chatFilter, err := tdlibClient[acc].GetChatFilter(req)
-		if err != nil {
-			fmt.Printf("Failed to load chat filter: id: %d, n: %s\n", filterInfo.Id, filterInfo.Title)
-
-			continue
-		}
-		filStr := structs.ChatFilter{Id: filterInfo.Id, Title: filterInfo.Title, IncludedChats: chatFilter.IncludedChatIds}
-		crit := bson.D{{"id", filterInfo.Id}}
-		update := bson.D{{"$set", filStr}}
-		t := true
-		opts := &options.UpdateOptions{Upsert: &t}
-		_, err = chatFiltersColl[acc].UpdateOne(mongoContext, crit, update, opts)
-		if err != nil {
-			fmt.Printf("Failed to save chat filter: id: %d, n: %s, err: %s\n", filterInfo.Id, filterInfo.Title, err)
-		}
-
-		crit = bson.D{{"chatid", bson.M{"$nin": chatFilter.IncludedChatIds}}, {"listid", filterInfo.Id}}
-		dr, err := chatListColl[acc].DeleteMany(mongoContext, crit)
-		if err != nil {
-			fmt.Printf("Failed to delete chats from folder id: %d, n: %s, err: %s\n", filterInfo.Id, filterInfo.Title, err)
-		} else if dr.DeletedCount > 0 {
-			fmt.Printf("Deleted %d chats from folder id: %d, name: %s\n", dr.DeletedCount, filterInfo.Id, filterInfo.Title)
-		}
+	filStr := structs.ChatFilter{Id: filterInfo.Id, Title: filterInfo.Title, IncludedChats: chatFilter.IncludedChatIds}
+	crit := bson.D{{"id", filterInfo.Id}}
+	update := bson.D{{"$set", filStr}}
+	t := true
+	opts := &options.UpdateOptions{Upsert: &t}
+	_, err := chatFiltersColl[acc].UpdateOne(mongoContext, crit, update, opts)
+	if err != nil {
+		fmt.Printf("Failed to save chat filter: id: %d, n: %s, err: %s\n", filterInfo.Id, filterInfo.Title, err)
 	}
-	LoadChatFilters(acc)
+
+	crit = bson.D{{"chatid", bson.M{"$nin": chatFilter.IncludedChatIds}}, {"listid", filterInfo.Id}}
+	dr, err := chatListColl[acc].DeleteMany(mongoContext, crit)
+	if err != nil {
+		fmt.Printf("Failed to delete chats from folder id: %d, n: %s, err: %s\n", filterInfo.Id, filterInfo.Title, err)
+	} else if dr.DeletedCount > 0 {
+		fmt.Printf("Deleted %d chats from folder id: %d, name: %s\n", dr.DeletedCount, filterInfo.Id, filterInfo.Title)
+	}
 }
 
 const (

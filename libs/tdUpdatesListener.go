@@ -48,6 +48,7 @@ func ListenUpdates(acc int64) {
 			case client.TypeUpdateMessageContentOpened:
 			case client.TypeUpdateUserPrivacySettingRules:
 			case client.TypeUpdateGroupCall:
+			case client.TypeUpdateChatDefaultMessageSenderId:
 
 			case client.TypeUpdateSupergroup:
 			case client.TypeUpdateSupergroupFullInfo:
@@ -198,7 +199,7 @@ func ListenUpdates(acc int64) {
 				//log.Printf("[%s] New Message from chat: %d, `%s`, %s, %s", mongoId, upd.Message.ChatId, chatName, link, intLink)
 				if upd.Message.Content.MessageContentType() == client.TypeMessageChatAddMembers ||
 					upd.Message.Content.MessageContentType() == client.TypeMessageChatJoinByLink {
-					MarkAsReadMessage(acc, upd.Message.ChatId, upd.Message.Id)
+					MarkJoinAsRead(acc, upd.Message.ChatId, upd.Message.Id)
 				}
 
 				break

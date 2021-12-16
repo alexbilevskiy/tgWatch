@@ -93,7 +93,7 @@ var phoneSet bool = false
 var codeSet bool = false
 var passwordSet bool = false
 
-func CliInteractor(clientAuthorizer *clientAuthorizer, phone string, nextParams chan string) {
+func ChanInteractor(clientAuthorizer *clientAuthorizer, phone string, nextParams chan string) {
 	var ok bool
 	var param string
 	for {
