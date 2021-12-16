@@ -62,12 +62,8 @@ func ListenUpdates(acc int64) {
 
 			case client.TypeUpdateChatTitle:
 				upd := update.(*client.UpdateChatTitle)
-				localChat, err := GetChat(acc, upd.ChatId, false)
-				if err == nil {
-					log.Printf("Renamed chat id:%d from `%s` to `%s`", upd.ChatId, localChat.Title, upd.Title)
-				} else {
-					log.Printf("Renamed chat id:%d to `%s`", upd.ChatId, upd.Title)
-				}
+				//@TODO: where to get old name?
+				log.Printf("Renamed chat id:%d to `%s`", upd.ChatId, upd.Title)
 
 				break
 			case client.TypeUpdateNewChat:

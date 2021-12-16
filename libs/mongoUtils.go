@@ -366,9 +366,9 @@ func SaveChatFilters(acc int64, chatFilters *client.UpdateChatFilters) {
 		crit = bson.D{{"chatid", bson.M{"$nin": chatFilter.IncludedChatIds}}, {"listid", filterInfo.Id}}
 		dr, err := chatListColl[acc].DeleteMany(mongoContext, crit)
 		if err != nil {
-			fmt.Printf("Failed to delete non-matching chats for filter: id: %d, n: %s, err: %s\n", filterInfo.Id, filterInfo.Title, err)
-		} else {
-			fmt.Printf("Deleted %d non matching chats, id: %d, name: %s\n", dr.DeletedCount, filterInfo.Id, filterInfo.Title)
+			fmt.Printf("Failed to delete chats from folder id: %d, n: %s, err: %s\n", filterInfo.Id, filterInfo.Title, err)
+		} else if dr.DeletedCount > 0 {
+			fmt.Printf("Deleted %d chats from folder id: %d, name: %s\n", dr.DeletedCount, filterInfo.Id, filterInfo.Title)
 		}
 	}
 	LoadChatFilters(acc)
