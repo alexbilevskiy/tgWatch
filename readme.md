@@ -16,14 +16,13 @@ Next ideas:
 * auto-respond
 * decode voice messages in private chats (send recognized text as response)
 * load remote chat history
-* replies
 
 BUGS:
 * uses custom go-tdlib fork to support multiple clients
 * new account log-in process is kinda tricky and requires restart after successful login
 
 ### install:
-`go build`
+`CGO_CFLAGS="-I/opt/src/td/tdlib/include" CGO_LDFLAGS="-L/opt/src/td/tdlib/lib" go build src/tgWatch/tgWatch.go && ./tgWatch`
 ### dependencies:
 * [tdlib](https://tdlib.github.io/td/build.html?language=Go)
 * [golang mongo driver](https://pkg.go.dev/go.mongodb.org/mongo-driver)
