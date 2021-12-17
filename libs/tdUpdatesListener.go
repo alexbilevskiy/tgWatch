@@ -48,6 +48,7 @@ func ListenUpdates(acc int64) {
 			case client.TypeUpdateMessageContentOpened:
 			case client.TypeUpdateUserPrivacySettingRules:
 			case client.TypeUpdateGroupCall:
+			case client.TypeUpdateChatVideoChat:
 			case client.TypeUpdateChatDefaultMessageSenderId:
 
 			case client.TypeUpdateSupergroup:
