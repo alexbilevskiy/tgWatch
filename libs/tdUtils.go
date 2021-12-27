@@ -177,7 +177,7 @@ func MarkJoinAsRead(acc int64, chatId int64, messageId int64) {
 		DLog(fmt.Sprintf("Chat `%s` %d unread count: %d>1, not marking as read\n", name, chatId, chat.UnreadCount))
 		return
 	}
-	fmt.Printf("Chat `%s` %d unread count: %d, marking join as read\n", name, chatId, chat.UnreadCount)
+	DLog(fmt.Sprintf("Chat `%s` %d unread count: %d, marking join as read\n", name, chatId, chat.UnreadCount))
 
 	err = markAsRead(acc, chatId, messageId)
 	if err != nil {
@@ -374,9 +374,9 @@ func checkChatFilter(acc int64, chatId int64) bool {
 }
 
 func SaveChatFilters(acc int64, chatFilters *client.UpdateChatFilters) {
-	fmt.Printf("Chat filters update! %s\n", chatFilters.Type)
+	DLog(fmt.Sprintf("Chat filters update! %s\n", chatFilters.Type))
 	for _, filterInfo := range chatFilters.ChatFilters {
-		fmt.Printf("New chat filter: id: %d, n: %s\n", filterInfo.Id, filterInfo.Title)
+		DLog(fmt.Sprintf("New chat filter: id: %d, n: %s\n", filterInfo.Id, filterInfo.Title))
 		chatFilter, err := getChatFilter(acc, filterInfo.Id)
 		if err != nil {
 			fmt.Printf("Failed to load chat filter: id: %d, n: %s\n", filterInfo.Id, filterInfo.Title)
