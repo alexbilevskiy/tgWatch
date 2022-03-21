@@ -11,8 +11,8 @@ import (
 func createTdlibParameters(dataDir string) *client.TdlibParameters {
 	return &client.TdlibParameters{
 		UseTestDc:              false,
-		DatabaseDirectory:      filepath.Join(dataDir, "database"),
-		FilesDirectory:         filepath.Join(dataDir, "files"),
+		DatabaseDirectory:      filepath.Join(config.Config.TDataDir, dataDir, "database"),
+		FilesDirectory:         filepath.Join(config.Config.TDataDir, dataDir, "files"),
 		UseFileDatabase:        true,
 		UseChatInfoDatabase:    true,
 		UseMessageDatabase:     true,
