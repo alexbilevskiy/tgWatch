@@ -1,4 +1,5 @@
 .idea/
+.tdlib
 config.json
 test
 tgWatch
