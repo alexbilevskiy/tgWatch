@@ -49,7 +49,8 @@ func ListenUpdates(acc int64) {
 			case client.TypeUpdateUserPrivacySettingRules:
 			case client.TypeUpdateGroupCall:
 			case client.TypeUpdateChatVideoChat:
-			case client.TypeUpdateChatDefaultMessageSenderId:
+			case client.TypeUpdateChatMessageSender:
+			case client.TypeUpdateReactions:
 
 			case client.TypeUpdateSupergroup:
 			case client.TypeUpdateSupergroupFullInfo:
@@ -263,10 +264,14 @@ func ListenUpdates(acc int64) {
 				}
 
 				break
-			case client.TypeUpdateChatMessageTtlSetting:
-				upd := update.(*client.UpdateChatMessageTtlSetting)
+			case client.TypeUpdateChatMessageTtl:
+				upd := update.(*client.UpdateChatMessageTtl)
 				chatName := GetChatName(acc, upd.ChatId)
-				log.Printf("Message TTL updated for chat `%s` %d: %ds", chatName, upd.ChatId, upd.MessageTtlSetting)
+				log.Printf("Message TTL updated for chat `%s` %d: %ds", chatName, upd.ChatId, upd.MessageTtl)
+			case client.TypeUpdateChatAvailableReactions:
+				upd := update.(*client.UpdateChatAvailableReactions)
+				chatName := GetChatName(acc, upd.ChatId)
+				log.Printf("Available reactions updated for chat `%s` %d: %s", chatName, upd.ChatId, JsonMarshalStr(upd.AvailableReactions))
 			default:
 				j, _ := json.Marshal(update)
 				log.Printf("Unknown update %s : %s", t, string(j))
