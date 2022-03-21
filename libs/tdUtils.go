@@ -252,7 +252,7 @@ func GetContentAttachments(content client.MessageContent) []structs.MessageAttac
 	case client.TypeMessageSticker:
 		msg := content.(*client.MessageSticker)
 		s := structs.MessageAttachment{
-			T:    msg.Sticker.Type,
+			T:    msg.Sticker.Type.StickerTypeType(),
 			Id:   msg.Sticker.Sticker.Remote.Id,
 			Link: append(make([]string, 0), fmt.Sprintf("http://%s/f/%s", config.Config.WebListen, msg.Sticker.Sticker.Remote.Id)),
 		}
