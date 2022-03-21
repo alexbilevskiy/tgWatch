@@ -6,4 +6,5 @@ type ConfigFileStruct struct {
 	WebListen string            `json:"WebListen"`
 	Mongo     map[string]string `json:"Mongo"`
 	Debug     bool              `json:"Debug"`
+	TDataDir  string            `json:"TDataDir"`
 }

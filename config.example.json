@@ -6,5 +6,6 @@
     "uri": "mongodb://localhost:27017",
     "db": "tg"
   },
+  "TDataDir": ".tdlib",
   "Debug": false
 }
