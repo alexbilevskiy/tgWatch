@@ -137,6 +137,8 @@ func GetContentWithText(content client.MessageContent, chatId int64) structs.Mes
 		msg := content.(*client.MessageVoiceNote)
 
 		return structs.MessageTextContent{FormattedText: msg.Caption}
+	case client.TypeMessageVideoNote:
+		return structs.MessageTextContent{Text: ""}
 	case client.TypeMessageDocument:
 		msg := content.(*client.MessageDocument)
 
@@ -270,6 +272,20 @@ func GetContentAttachments(content client.MessageContent) []structs.MessageAttac
 		cnt = append(cnt, s)
 
 		return cnt
+	case client.TypeMessageVideoNote:
+		msg := content.(*client.MessageVideoNote)
+		s := structs.MessageAttachment{
+			T:    msg.VideoNote.Type,
+			Id:   msg.VideoNote.Video.Remote.Id,
+			Name: fmt.Sprintf("Video note (%ds.)", msg.VideoNote.Duration),
+			Link: append(make([]string, 0), fmt.Sprintf("http://%s/v/%s", config.Config.WebListen, msg.VideoNote.Video.Remote.Id)),
+		}
+		if msg.VideoNote.Minithumbnail != nil {
+			s.Thumb = base64.StdEncoding.EncodeToString(msg.VideoNote.Minithumbnail.Data)
+		}
+		cnt = append(cnt, s)
+
+		return cnt
 	case client.TypeMessageDocument:
 		msg := content.(*client.MessageDocument)
 		s := structs.MessageAttachment{
@@ -287,7 +303,6 @@ func GetContentAttachments(content client.MessageContent) []structs.MessageAttac
 	case client.TypeMessageChatJoinByLink:
 	case client.TypeMessageBasicGroupChatCreate:
 	case client.TypeMessagePinMessage:
-	case client.TypeMessageVideoNote:
 	case client.TypeMessageAudio:
 	case client.TypeMessageContact:
 	case client.TypeMessageInvoice:

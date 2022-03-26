@@ -169,6 +169,8 @@ func wrapEntity(entity *client.TextEntity, text string) string {
 		wrapped = fmt.Sprintf(`<a href="mailto:%s">%s</a>`, text, text)
 	case client.TypeTextEntityTypePhoneNumber:
 		wrapped = fmt.Sprintf(`<a href="tel:%s">%s</a>`, text, text)
+	case client.TypeTextEntityTypeSpoiler:
+		wrapped = fmt.Sprintf(`<span class="spoiler">%s</span>`, text)
 	default:
 		wrapped = fmt.Sprintf(`<span title="%s" class="badge bg-danger">%s</span>`, entity.Type.TextEntityTypeType(), text)
 	}
