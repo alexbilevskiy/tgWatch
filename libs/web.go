@@ -82,6 +82,9 @@ func renderTemplates(w http.ResponseWriter, templateData interface{}, templates 
 
 				return buildChatInfoByLocalChat(c, false)
 			},
+			"GetLink": func(chatId int64, messageId int64) string {
+				return GetLink(currentAcc, chatId, messageId)
+			},
 			"DateTime": func(date int32) string {
 				return FormatDateTime(date)
 			},

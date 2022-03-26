@@ -67,6 +67,10 @@
             <span title="{{.parent.Date | DateTime}}">
                 <a class="link-secondary" href="/m/{{.chat.ChatId}}/{{.parent.MessageId}}">{{.parent.Date | Time}}</a>
             </span>
+            {{$pubLink := GetLink .chat.ChatId .parent.MessageId}}
+            {{if ne $pubLink ""}}
+                <a class="link-secondary" href="{{$pubLink}}">t.me</a>
+            {{end}}
         </div>
     {{end}}
 
