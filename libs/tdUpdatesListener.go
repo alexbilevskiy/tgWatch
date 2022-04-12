@@ -51,6 +51,7 @@ func ListenUpdates(acc int64) {
 			case client.TypeUpdateChatVideoChat:
 			case client.TypeUpdateChatMessageSender:
 			case client.TypeUpdateReactions:
+			case client.TypeUpdateMessageUnreadReactions:
 
 			case client.TypeUpdateSupergroup:
 			case client.TypeUpdateSupergroupFullInfo:
@@ -271,7 +272,7 @@ func ListenUpdates(acc int64) {
 			case client.TypeUpdateChatAvailableReactions:
 				upd := update.(*client.UpdateChatAvailableReactions)
 				chatName := GetChatName(acc, upd.ChatId)
-				log.Printf("Available reactions updated for chat `%s` %d: %s", chatName, upd.ChatId, JsonMarshalStr(upd.AvailableReactions))
+				DLog(fmt.Sprintf("Available reactions updated for chat `%s` %d: %s", chatName, upd.ChatId, JsonMarshalStr(upd.AvailableReactions)))
 			default:
 				j, _ := json.Marshal(update)
 				log.Printf("Unknown update %s : %s", t, string(j))
