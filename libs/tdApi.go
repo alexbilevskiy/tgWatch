@@ -104,6 +104,23 @@ func GetLink(acc int64, chatId int64, messageId int64) string {
 	return link.Link
 }
 
+func SendMessage(acc int64, text string, chatId int64, replyToMessageId *int64) {
+	mtext := &client.FormattedText{Text: text}
+	content := &client.InputMessageText{Text: mtext}
+	var req *client.SendMessageRequest
+	if replyToMessageId == nil {
+		req = &client.SendMessageRequest{ChatId: chatId, InputMessageContent: content}
+	} else {
+		req = &client.SendMessageRequest{ChatId: chatId, ReplyToMessageId: *replyToMessageId, InputMessageContent: content}
+	}
+	message, err := tdlibClient[acc].SendMessage(req)
+	if err != nil {
+		log.Printf("Failed to send message to chat %d: %s", chatId, err.Error())
+	} else {
+		log.Printf("Sent message to chat %d! new (virtual) message id: %d", chatId, message.Id)
+	}
+}
+
 func loadChats(acc int64, chatList client.ChatList) error {
 	chatsRequest := &client.LoadChatsRequest{ChatList: chatList, Limit: 500}
 	_, err := tdlibClient[acc].LoadChats(chatsRequest)
