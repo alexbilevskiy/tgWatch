@@ -208,17 +208,17 @@ func ListenUpdates(acc int64) {
 					MarkJoinAsRead(acc, upd.Message.ChatId, upd.Message.Id)
 				}
 
-				if upd.Message.ChatId == acc { //"saved messages"
-					if upd.Message.Content.MessageContentType() == client.TypeMessageVoiceNote {
-						ct := upd.Message.Content.(*client.MessageVoiceNote)
-						text, err := RecognizeByFileId(acc, ct.VoiceNote.Voice.Remote.Id)
-						if err != nil {
-							text = "error: " + err.Error()
-						} else {
-							text = "recognized: " + text
-						}
-						SendMessage(acc, text, upd.Message.ChatId, &upd.Message.Id)
+				//"saved messages"
+				if upd.Message.ChatId == acc &&
+					upd.Message.Content.MessageContentType() == client.TypeMessageVoiceNote {
+					ct := upd.Message.Content.(*client.MessageVoiceNote)
+					text, err := RecognizeByFileId(acc, ct.VoiceNote.Voice.Remote.Id)
+					if err != nil {
+						text = "error: " + err.Error()
+					} else {
+						text = "recognized: " + text
 					}
+					SendMessage(acc, text, upd.Message.ChatId, &upd.Message.Id)
 				}
 
 				break
