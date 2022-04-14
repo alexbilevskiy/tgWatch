@@ -2,6 +2,7 @@ package libs
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"go-tdlib/client"
@@ -409,4 +410,37 @@ func loadOptionsList(acc int64) {
 	opts = make(map[string]structs.TdlibOption)
 	config.UnmarshalJsonFile("tdlib_options.json", &opts)
 	tdlibOptions[acc] = opts
+}
+
+func RecognizeByFileId(acc int64, remoteId string) (string, error) {
+	file, err := DownloadFileByRemoteId(acc, remoteId)
+	if err != nil {
+
+		return "", errors.New("cannot download file: " + err.Error())
+
+	}
+
+	if file.Local.Path == "" {
+
+		return "", errors.New("no local path for file " + remoteId)
+	}
+	text, err := Recognize(file.Local.Path)
+
+	if err != nil {
+
+		return "", errors.New("cannot recognize: " + err.Error())
+	}
+
+	type recStruct struct {
+		Text string `json:"text"`
+	}
+	decoded := recStruct{}
+	errDecode := json.Unmarshal([]byte(text), &decoded)
+	if errDecode != nil {
+		return "", errors.New("cannot recognize: " + err.Error())
+	} else {
+		log.Printf("recognized: %s", decoded.Text)
+	}
+
+	return text, nil
 }

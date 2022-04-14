@@ -99,25 +99,3 @@ func Recognize(filename string) (string, error) {
 
 	return res, err
 }
-
-func RecognizeByFileId(acc int64, remoteId string) (string, error) {
-	file, err := DownloadFileByRemoteId(acc, remoteId)
-	if err != nil {
-
-		return "", errors.New("cannot download file: " + err.Error())
-
-	}
-
-	if file.Local.Path == "" {
-
-		return "", errors.New("no local path for file " + remoteId)
-	}
-	text, err := Recognize(file.Local.Path)
-
-	if err != nil {
-
-		return "", errors.New("cannot recognize: " + err.Error())
-	}
-
-	return text, nil
-}
