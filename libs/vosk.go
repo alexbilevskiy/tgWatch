@@ -38,7 +38,7 @@ func InitVoskModel() {
 
 var busy bool = false
 
-func Reconize(filename string) (string, error) {
+func Recognize(filename string) (string, error) {
 	var err error
 
 	if model == nil {
@@ -112,7 +112,7 @@ func RecognizeByFileId(acc int64, remoteId string) (string, error) {
 
 		return "", errors.New("no local path for file " + remoteId)
 	}
-	text, err := Reconize(file.Local.Path)
+	text, err := Recognize(file.Local.Path)
 
 	if err != nil {
 
