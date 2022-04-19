@@ -109,7 +109,7 @@ func processTgJournal(req *http.Request, w http.ResponseWriter) {
 			//fc += fmt.Sprintf("[%s] Unknown update type \"%s\"<br>", FormatDateTime(dates[i]), updateTypes[i])
 		}
 	}
-	renderTemplates(w, data, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/journal.tmpl`)
+	renderTemplates(req, w, data, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/journal.tmpl`)
 }
 
 func processTdlibOptions(req *http.Request, w http.ResponseWriter) {
@@ -138,7 +138,7 @@ func processTdlibOptions(req *http.Request, w http.ResponseWriter) {
 		actualOptions[optionName] = optionValue
 	}
 	data := structs.OptionsList{T: "OptionsLists", Options: actualOptions}
-	renderTemplates(w, data, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/tdlib_options.tmpl`)
+	renderTemplates(req, w, data, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/tdlib_options.tmpl`)
 }
 
 func processTgActiveSessions(req *http.Request, w http.ResponseWriter) {
@@ -152,14 +152,14 @@ func processTgActiveSessions(req *http.Request, w http.ResponseWriter) {
 		data.SessionsRaw = jsonMarshalPretty(sessions)
 	}
 
-	renderTemplates(w, data, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/sessions_list.tmpl`)
+	renderTemplates(req, w, data, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/sessions_list.tmpl`)
 }
 
-func processTgSingleMessage(chatId int64, messageId int64, w http.ResponseWriter) {
+func processTgSingleMessage(chatId int64, messageId int64, req *http.Request, w http.ResponseWriter) {
 	upd, err := FindUpdateNewMessage(currentAcc, chatId, messageId)
 	if err != nil {
 		m := structs.MessageError{T: "Error", MessageId: messageId, Error: fmt.Sprintf("Error: %s", err)}
-		renderTemplates(w, m, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/error.tmpl`)
+		renderTemplates(req, w, m, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/error.tmpl`)
 
 		return
 	}
@@ -193,7 +193,7 @@ func processTgSingleMessage(chatId int64, messageId int64, w http.ResponseWriter
 	updates, updateTypes, dates, err := FindAllMessageChanges(currentAcc, chatId, messageId)
 	if err != nil {
 		m := structs.MessageError{T: "Error", MessageId: messageId, Error: fmt.Sprintf("Error: %s", err)}
-		renderTemplates(w, m, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/error.tmpl`)
+		renderTemplates(req, w, m, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/error.tmpl`)
 		return
 	}
 
@@ -227,7 +227,7 @@ func processTgSingleMessage(chatId int64, messageId int64, w http.ResponseWriter
 		}
 	}
 
-	renderTemplates(w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/single_message.tmpl`, `templates/message.tmpl`)
+	renderTemplates(req, w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/single_message.tmpl`, `templates/message.tmpl`)
 }
 
 func processTgMessagesByIds(chatId int64, req *http.Request, w http.ResponseWriter) {
@@ -249,10 +249,10 @@ func processTgMessagesByIds(chatId int64, req *http.Request, w http.ResponseWrit
 		res.Messages = append(res.Messages, parseUpdateNewMessage(upd))
 	}
 
-	renderTemplates(w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/chat_history_filtered.tmpl`, `templates/messages_list.tmpl`, `templates/message.tmpl`)
+	renderTemplates(req, w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/chat_history_filtered.tmpl`, `templates/messages_list.tmpl`, `templates/message.tmpl`)
 }
 
-func processTgChatInfo(chatId int64, w http.ResponseWriter) {
+func processTgChatInfo(chatId int64, req *http.Request, w http.ResponseWriter) {
 	var chat interface{}
 	var err error
 	if chatId > 0 {
@@ -276,7 +276,7 @@ func processTgChatInfo(chatId int64, w http.ResponseWriter) {
 		res.ChatRaw = jsonMarshalPretty(chat)
 		data = res
 	}
-	renderTemplates(w, data, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/chat_info.tmpl`)
+	renderTemplates(req, w, data, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/chat_info.tmpl`)
 }
 
 func processTgChatHistory(chatId int64, req *http.Request, w http.ResponseWriter) {
@@ -319,7 +319,7 @@ func processTgChatHistory(chatId int64, req *http.Request, w http.ResponseWriter
 		res.Messages = append([]structs.MessageInfo{msg}, res.Messages...)
 	}
 
-	renderTemplates(w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/chat_history.tmpl`, `templates/messages_list.tmpl`, `templates/message.tmpl`)
+	renderTemplates(req, w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/chat_history.tmpl`, `templates/messages_list.tmpl`, `templates/message.tmpl`)
 }
 
 func processTgChatList(req *http.Request, w http.ResponseWriter) {
@@ -396,7 +396,7 @@ func processTgChatList(req *http.Request, w http.ResponseWriter) {
 		}
 	}
 
-	renderTemplates(w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/overview_table.tmpl`, `templates/chatlist.tmpl`)
+	renderTemplates(req, w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/overview_table.tmpl`, `templates/chatlist.tmpl`)
 }
 
 func processTgDelete(chatId int64, req *http.Request, w http.ResponseWriter) {
@@ -462,13 +462,13 @@ func processTgDelete(chatId int64, req *http.Request, w http.ResponseWriter) {
 	w.Write(data)
 }
 
-func processSettings(r *http.Request, w http.ResponseWriter) {
+func processSettings(req *http.Request, w http.ResponseWriter) {
 	var res structs.IgnoreLists
-	if r.Method == "POST" {
+	if req.Method == "POST" {
 		//@TODO: VALIDATE FORM DATA!! Only int acceptable as chat ID, only valid names for folders
 		IgnoreChatIds := make(map[string]bool, 0)
-		if _, ok := r.PostForm["ignoreChatIds"]; ok {
-			for _, chatId := range r.PostForm["ignoreChatIds"] {
+		if _, ok := req.PostForm["ignoreChatIds"]; ok {
+			for _, chatId := range req.PostForm["ignoreChatIds"] {
 				if chatId == "" {
 					continue
 				}
@@ -476,8 +476,8 @@ func processSettings(r *http.Request, w http.ResponseWriter) {
 			}
 		}
 		IgnoreAuthorIds := make(map[string]bool, 0)
-		if _, ok := r.PostForm["ignoreAuthorIds"]; ok {
-			for _, authorId := range r.PostForm["ignoreAuthorIds"] {
+		if _, ok := req.PostForm["ignoreAuthorIds"]; ok {
+			for _, authorId := range req.PostForm["ignoreAuthorIds"] {
 				if authorId == "" {
 					continue
 				}
@@ -485,8 +485,8 @@ func processSettings(r *http.Request, w http.ResponseWriter) {
 			}
 		}
 		IgnoreFolders := make(map[string]bool, 0)
-		if _, ok := r.PostForm["ignoreFolders"]; ok {
-			for _, folder := range r.PostForm["ignoreFolders"] {
+		if _, ok := req.PostForm["ignoreFolders"]; ok {
+			for _, folder := range req.PostForm["ignoreFolders"] {
 				if folder == "" {
 					continue
 				}
@@ -502,14 +502,14 @@ func processSettings(r *http.Request, w http.ResponseWriter) {
 		saveSettings(currentAcc)
 		res = ignoreLists[currentAcc]
 		res.T = "Settings"
-		http.Redirect(w, r, "/s", 302)
+		http.Redirect(w, req, "/s", 302)
 		return
 	} else {
 		res = ignoreLists[currentAcc]
 		res.T = "Settings"
 	}
 
-	renderTemplates(w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/settings.tmpl`)
+	renderTemplates(req, w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/settings.tmpl`)
 }
 
 var st = structs.NewAccountState{}
@@ -568,13 +568,37 @@ func processAddAccount(req *http.Request, w http.ResponseWriter) {
 		return
 	} else {
 
-		renderTemplates(w, st, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/account_add.tmpl`)
+		renderTemplates(req, w, st, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/account_add.tmpl`)
 	}
+}
+
+func processTgLink(req *http.Request, w http.ResponseWriter) {
+	var link string
+	if req.FormValue("link") != "" {
+		link = req.FormValue("link")
+	} else {
+		errorResponse(structs.WebError{T: "Bad request", Error: "Invalid link"}, 400, req, w)
+		return
+	}
+
+	linkInfo, LinkData, err := GetLinkInfo(currentAcc, link)
+	if err != nil {
+		errorResponse(structs.WebError{T: "Bad request", Error: err.Error()}, 400, req, w)
+		return
+	}
+	respStruct := struct {
+		T           string
+		SourceLink  string
+		LinkInfoRaw string
+		LinkDataRaw string
+	}{T: "Link info", SourceLink: link, LinkInfoRaw: jsonMarshalPretty(linkInfo), LinkDataRaw: jsonMarshalPretty(LinkData)}
+
+	renderTemplates(req, w, respStruct, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/link_info.tmpl`)
 }
 
 func errorResponse(error structs.WebError, code int, req *http.Request, w http.ResponseWriter) {
 	w.WriteHeader(code)
-	renderTemplates(w, error, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/error.tmpl`)
+	renderTemplates(req, w, error, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/error.tmpl`)
 }
 
 func tryFile(req *http.Request, w http.ResponseWriter) bool {

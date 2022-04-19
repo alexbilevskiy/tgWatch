@@ -122,7 +122,9 @@ func ListenUpdates(acc int64) {
 				break
 			case client.TypeUpdateOption:
 				upd := update.(*client.UpdateOption)
-				log.Printf("Update option %s: %s", upd.Name, JsonMarshalStr(upd.Value))
+				if upd.Name != "unix_time" {
+					log.Printf("Update option %s: %s", upd.Name, JsonMarshalStr(upd.Value))
+				}
 
 				break
 			case client.TypeUpdateChatPosition:
@@ -306,6 +308,9 @@ func ListenUpdates(acc int64) {
 		case client.ClassChatMember:
 		case client.ClassSessions:
 		case client.ClassMessage:
+		case client.ClassInternalLinkType:
+		case client.ClassChatInviteLinkInfo:
+		case client.ClassMessageLinkInfo:
 			break
 		default:
 			log.Printf("WAAAT? update who??? %s, %v", update.GetClass(), update)

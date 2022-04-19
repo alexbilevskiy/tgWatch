@@ -21,12 +21,21 @@
                         <li><a class="dropdown-item disabled" href="/c">Chat info</a></li>
                         <li><a class="dropdown-item disabled" href="/m">Single message</a></li>
                         <li><a class="dropdown-item disabled" href="/f">File</a></li>
+                        <li><a class="dropdown-item disabled" href="/li">Link info</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="/s">Settings</a></li>
                     </ul>
                 </li>
             </ul>
         </div>
+        <form class="d-flex" action="/li">
+            {{$activeLink := "link" | formValue}}
+            <input class="form-control" type="text" placeholder="Any link" aria-label="Any link" name="link"
+            {{if ne $activeLink ""}} value="{{$activeLink}}"{{end}}
+            >
+            <button class="btn btn-outline-secondary me-2 btn-sm" type="submit">Go</button>
+        </form>
+
         <div class="d-flex">
             <div class="input-group">
                 <span class="input-group-text" id="phone-icon"><a href="/new" class="text-decoration-none">📞</a></span>
