@@ -26,9 +26,9 @@ func renderTemplates(req *http.Request, w http.ResponseWriter, templateData inte
 	var t *template.Template
 	var errParse error
 	if verbose {
-		t, errParse = template.New(`json.tmpl`).ParseFiles(`templates/json.tmpl`)
+		t, errParse = template.New(`json.gohtml`).ParseFiles(`templates/json.gohtml`)
 	} else {
-		t, errParse = template.New(`base.tmpl`).Funcs(template.FuncMap{
+		t, errParse = template.New(`base.gohtml`).Funcs(template.FuncMap{
 			"formValue": func(key string) string {
 				return template.HTMLEscapeString(req.FormValue(key))
 			},
