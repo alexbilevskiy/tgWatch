@@ -97,7 +97,9 @@ func GetLink(acc int64, chatId int64, messageId int64) string {
 	linkReq := &client.GetMessageLinkRequest{ChatId: chatId, MessageId: messageId}
 	link, err := tdlibClient[acc].GetMessageLink(linkReq)
 	if err != nil {
-		log.Printf("Failed to get msg link by chat id %d, msg id %d: %s", chatId, messageId, err)
+		if err.Error() != "400 Message not found" {
+			log.Printf("Failed to get msg link by chat id %d, msg id %d: %s", chatId, messageId, err)
+		}
 
 		return ""
 	}
