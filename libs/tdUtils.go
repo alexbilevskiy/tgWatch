@@ -206,10 +206,6 @@ func GetContentAttachments(content client.MessageContent) []structs.MessageAttac
 	cType := content.MessageContentType()
 	var cnt []structs.MessageAttachment
 	switch cType {
-	case client.TypeMessageText:
-	case client.TypeMessageCall:
-
-		return nil
 	case client.TypeMessagePhoto:
 		msg := content.(*client.MessagePhoto)
 		s := structs.MessageAttachment{
@@ -254,14 +250,19 @@ func GetContentAttachments(content client.MessageContent) []structs.MessageAttac
 		return cnt
 	case client.TypeMessageSticker:
 		msg := content.(*client.MessageSticker)
-		s := structs.MessageAttachment{
-			T:    msg.Sticker.Type.StickerTypeType(),
-			Id:   msg.Sticker.Sticker.Remote.Id,
-			Link: append(make([]string, 0), fmt.Sprintf("http://%s/f/%s", config.Config.WebListen, msg.Sticker.Sticker.Remote.Id)),
-		}
-		cnt = append(cnt, s)
+		if msg.Sticker.Type != nil {
+			s := structs.MessageAttachment{
+				T:    msg.Sticker.Type.StickerTypeType(),
+				Id:   msg.Sticker.Sticker.Remote.Id,
+				Link: append(make([]string, 0), fmt.Sprintf("http://%s/f/%s", config.Config.WebListen, msg.Sticker.Sticker.Remote.Id)),
+			}
+			cnt = append(cnt, s)
 
-		return cnt
+			return cnt
+		}
+		log.Printf("Invalid sticker in messsage (probably it's webp photo): %s", JsonMarshalStr(msg))
+
+		return nil
 	case client.TypeMessageVoiceNote:
 		msg := content.(*client.MessageVoiceNote)
 		s := structs.MessageAttachment{
@@ -298,6 +299,9 @@ func GetContentAttachments(content client.MessageContent) []structs.MessageAttac
 		cnt = append(cnt, s)
 
 		return cnt
+
+	case client.TypeMessageText:
+	case client.TypeMessageCall:
 	case client.TypeMessagePoll:
 	case client.TypeMessageLocation:
 	case client.TypeMessageChatAddMembers:
@@ -307,6 +311,11 @@ func GetContentAttachments(content client.MessageContent) []structs.MessageAttac
 	case client.TypeMessageAudio:
 	case client.TypeMessageContact:
 	case client.TypeMessageInvoice:
+	case client.TypeMessageVideoChatEnded:
+	case client.TypeMessageVideoChatStarted:
+
+	case client.TypeMessageChatSetTtl:
+	case client.TypeMessageChatSetTheme:
 
 	default:
 		log.Printf("Unknown content type: %s", cType)
