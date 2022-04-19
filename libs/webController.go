@@ -109,7 +109,7 @@ func processTgJournal(req *http.Request, w http.ResponseWriter) {
 			//fc += fmt.Sprintf("[%s] Unknown update type \"%s\"<br>", FormatDateTime(dates[i]), updateTypes[i])
 		}
 	}
-	renderTemplates(req, w, data, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/journal.tmpl`)
+	renderTemplates(req, w, data, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/journal.gohtml`)
 }
 
 func processTdlibOptions(req *http.Request, w http.ResponseWriter) {
@@ -138,7 +138,7 @@ func processTdlibOptions(req *http.Request, w http.ResponseWriter) {
 		actualOptions[optionName] = optionValue
 	}
 	data := structs.OptionsList{T: "OptionsLists", Options: actualOptions}
-	renderTemplates(req, w, data, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/tdlib_options.tmpl`)
+	renderTemplates(req, w, data, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/tdlib_options.gohtml`)
 }
 
 func processTgActiveSessions(req *http.Request, w http.ResponseWriter) {
@@ -152,14 +152,14 @@ func processTgActiveSessions(req *http.Request, w http.ResponseWriter) {
 		data.SessionsRaw = jsonMarshalPretty(sessions)
 	}
 
-	renderTemplates(req, w, data, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/sessions_list.tmpl`)
+	renderTemplates(req, w, data, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/sessions_list.gohtml`)
 }
 
 func processTgSingleMessage(chatId int64, messageId int64, req *http.Request, w http.ResponseWriter) {
 	upd, err := FindUpdateNewMessage(currentAcc, chatId, messageId)
 	if err != nil {
 		m := structs.MessageError{T: "Error", MessageId: messageId, Error: fmt.Sprintf("Error: %s", err)}
-		renderTemplates(req, w, m, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/error.tmpl`)
+		renderTemplates(req, w, m, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/error.gohtml`)
 
 		return
 	}
@@ -193,7 +193,7 @@ func processTgSingleMessage(chatId int64, messageId int64, req *http.Request, w 
 	updates, updateTypes, dates, err := FindAllMessageChanges(currentAcc, chatId, messageId)
 	if err != nil {
 		m := structs.MessageError{T: "Error", MessageId: messageId, Error: fmt.Sprintf("Error: %s", err)}
-		renderTemplates(req, w, m, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/error.tmpl`)
+		renderTemplates(req, w, m, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/error.gohtml`)
 		return
 	}
 
@@ -227,7 +227,7 @@ func processTgSingleMessage(chatId int64, messageId int64, req *http.Request, w 
 		}
 	}
 
-	renderTemplates(req, w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/single_message.tmpl`, `templates/message.tmpl`)
+	renderTemplates(req, w, res, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/single_message.gohtml`, `templates/message.gohtml`)
 }
 
 func processTgMessagesByIds(chatId int64, req *http.Request, w http.ResponseWriter) {
@@ -249,7 +249,7 @@ func processTgMessagesByIds(chatId int64, req *http.Request, w http.ResponseWrit
 		res.Messages = append(res.Messages, parseUpdateNewMessage(upd))
 	}
 
-	renderTemplates(req, w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/chat_history_filtered.tmpl`, `templates/messages_list.tmpl`, `templates/message.tmpl`)
+	renderTemplates(req, w, res, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/chat_history_filtered.gohtml`, `templates/messages_list.gohtml`, `templates/message.gohtml`)
 }
 
 func processTgChatInfo(chatId int64, req *http.Request, w http.ResponseWriter) {
@@ -276,7 +276,7 @@ func processTgChatInfo(chatId int64, req *http.Request, w http.ResponseWriter) {
 		res.ChatRaw = jsonMarshalPretty(chat)
 		data = res
 	}
-	renderTemplates(req, w, data, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/chat_info.tmpl`)
+	renderTemplates(req, w, data, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/chat_info.gohtml`)
 }
 
 func processTgChatHistory(chatId int64, req *http.Request, w http.ResponseWriter) {
@@ -319,7 +319,7 @@ func processTgChatHistory(chatId int64, req *http.Request, w http.ResponseWriter
 		res.Messages = append([]structs.MessageInfo{msg}, res.Messages...)
 	}
 
-	renderTemplates(req, w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/chat_history.tmpl`, `templates/messages_list.tmpl`, `templates/message.tmpl`)
+	renderTemplates(req, w, res, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/chat_history.gohtml`, `templates/messages_list.gohtml`, `templates/message.gohtml`)
 }
 
 func processTgChatList(req *http.Request, w http.ResponseWriter) {
@@ -396,7 +396,7 @@ func processTgChatList(req *http.Request, w http.ResponseWriter) {
 		}
 	}
 
-	renderTemplates(req, w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/overview_table.tmpl`, `templates/chatlist.tmpl`)
+	renderTemplates(req, w, res, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/overview_table.gohtml`, `templates/chatlist.gohtml`)
 }
 
 func processTgDelete(chatId int64, req *http.Request, w http.ResponseWriter) {
@@ -509,7 +509,7 @@ func processSettings(req *http.Request, w http.ResponseWriter) {
 		res.T = "Settings"
 	}
 
-	renderTemplates(req, w, res, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/settings.tmpl`)
+	renderTemplates(req, w, res, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/settings.gohtml`)
 }
 
 var st = structs.NewAccountState{}
@@ -568,7 +568,7 @@ func processAddAccount(req *http.Request, w http.ResponseWriter) {
 		return
 	} else {
 
-		renderTemplates(req, w, st, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/account_add.tmpl`)
+		renderTemplates(req, w, st, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/account_add.gohtml`)
 	}
 }
 
@@ -593,12 +593,12 @@ func processTgLink(req *http.Request, w http.ResponseWriter) {
 		LinkDataRaw string
 	}{T: "Link info", SourceLink: link, LinkInfoRaw: jsonMarshalPretty(linkInfo), LinkDataRaw: jsonMarshalPretty(LinkData)}
 
-	renderTemplates(req, w, respStruct, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/link_info.tmpl`)
+	renderTemplates(req, w, respStruct, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/link_info.gohtml`)
 }
 
 func errorResponse(error structs.WebError, code int, req *http.Request, w http.ResponseWriter) {
 	w.WriteHeader(code)
-	renderTemplates(req, w, error, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/error.tmpl`)
+	renderTemplates(req, w, error, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/error.gohtml`)
 }
 
 func tryFile(req *http.Request, w http.ResponseWriter) bool {

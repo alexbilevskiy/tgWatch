@@ -47,7 +47,7 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 	switch action[1] {
 	case "":
-		renderTemplates(req, res, nil, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/index.tmpl`)
+		renderTemplates(req, res, nil, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/index.gohtml`)
 		return
 	case "m":
 		r := regexp.MustCompile(`^/m/(-?\d+)/(\d+)$`)
@@ -171,7 +171,7 @@ func detectAccount(req *http.Request, res http.ResponseWriter) bool {
 		log.Printf("Cookie errror: %s", err.Error())
 
 		currentAcc = -1
-		renderTemplates(req, res, nil, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/account_select.tmpl`)
+		renderTemplates(req, res, nil, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/account_select.gohtml`)
 
 		return false
 	}
