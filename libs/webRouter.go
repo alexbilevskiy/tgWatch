@@ -47,7 +47,7 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 	switch action[1] {
 	case "":
-		renderTemplates(res, nil, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/index.tmpl`)
+		renderTemplates(req, res, nil, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/index.tmpl`)
 		return
 	case "m":
 		r := regexp.MustCompile(`^/m/(-?\d+)/(\d+)$`)
@@ -59,13 +59,16 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		}
 		chatId, _ := strconv.ParseInt(m[1], 10, 64)
 		messageId, _ := strconv.ParseInt(m[2], 10, 64)
-		processTgSingleMessage(chatId, messageId, res)
+		processTgSingleMessage(chatId, messageId, req, res)
 		return
 	case "j":
 		processTgJournal(req, res)
 		return
 	case "l":
 		processTgChatList(req, res)
+		return
+	case "li":
+		processTgLink(req, res)
 		return
 	case "to":
 		processTdlibOptions(req, res)
@@ -82,7 +85,7 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 			return
 		}
 		chatId, _ := strconv.ParseInt(m[1], 10, 64)
-		processTgChatInfo(chatId, res)
+		processTgChatInfo(chatId, req, res)
 
 		return
 	case "h":
@@ -123,7 +126,7 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 			return
 		}
 		if verbose {
-			renderTemplates(res, file)
+			renderTemplates(req, res, file)
 
 			return
 		}
@@ -168,7 +171,7 @@ func detectAccount(req *http.Request, res http.ResponseWriter) bool {
 		log.Printf("Cookie errror: %s", err.Error())
 
 		currentAcc = -1
-		renderTemplates(res, nil, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/account_select.tmpl`)
+		renderTemplates(req, res, nil, `templates/base.tmpl`, `templates/navbar.tmpl`, `templates/account_select.tmpl`)
 
 		return false
 	}

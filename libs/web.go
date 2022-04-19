@@ -22,13 +22,16 @@ func InitWeb() {
 	go server.ListenAndServe()
 }
 
-func renderTemplates(w http.ResponseWriter, templateData interface{}, templates ...string) {
+func renderTemplates(req *http.Request, w http.ResponseWriter, templateData interface{}, templates ...string) {
 	var t *template.Template
 	var errParse error
 	if verbose {
 		t, errParse = template.New(`json.tmpl`).ParseFiles(`templates/json.tmpl`)
 	} else {
 		t, errParse = template.New(`base.tmpl`).Funcs(template.FuncMap{
+			"formValue": func(key string) string {
+				return template.HTMLEscapeString(req.FormValue(key))
+			},
 			"safeHTML": func(b string) template.HTML {
 				return template.HTML(b)
 			},

@@ -1,6 +1,7 @@
 package libs
 
 import (
+	"errors"
 	"fmt"
 	"go-tdlib/client"
 	"log"
@@ -102,6 +103,65 @@ func GetLink(acc int64, chatId int64, messageId int64) string {
 	}
 
 	return link.Link
+}
+
+func SendMessage(acc int64, text string, chatId int64, replyToMessageId *int64) {
+	mtext := &client.FormattedText{Text: text}
+	content := &client.InputMessageText{Text: mtext}
+	var req *client.SendMessageRequest
+	if replyToMessageId == nil {
+		req = &client.SendMessageRequest{ChatId: chatId, InputMessageContent: content}
+	} else {
+		req = &client.SendMessageRequest{ChatId: chatId, ReplyToMessageId: *replyToMessageId, InputMessageContent: content}
+	}
+	message, err := tdlibClient[acc].SendMessage(req)
+	if err != nil {
+		log.Printf("Failed to send message to chat %d: %s", chatId, err.Error())
+	} else {
+		log.Printf("Sent message to chat %d! new (virtual) message id: %d", chatId, message.Id)
+	}
+}
+
+func GetLinkInfo(acc int64, link string) (client.InternalLinkType, interface{}, error) {
+	linkTypeReq := &client.GetInternalLinkTypeRequest{Link: link}
+	linkType, err := tdlibClient[acc].GetInternalLinkType(linkTypeReq)
+	if err != nil {
+		return nil, nil, errors.New(fmt.Sprintf("get link type error: %s", err.Error()))
+	}
+	switch linkType.InternalLinkTypeType() {
+	case client.TypeInternalLinkTypeMessage:
+		linkType := linkType.(*client.InternalLinkTypeMessage)
+		messageLinkInfoReq := &client.GetMessageLinkInfoRequest{Url: link}
+		messageLinkInfo, err := tdlibClient[acc].GetMessageLinkInfo(messageLinkInfoReq)
+		if err == nil {
+			return linkType, messageLinkInfo.Message, nil
+		}
+
+		return linkType, err, nil
+
+	case client.TypeInternalLinkTypePublicChat:
+		linkType := linkType.(*client.InternalLinkTypePublicChat)
+		publicChatReq := &client.SearchPublicChatRequest{Username: linkType.ChatUsername}
+		publicChat, err := tdlibClient[acc].SearchPublicChat(publicChatReq)
+		if err == nil {
+			return linkType, publicChat, nil
+		}
+
+		return linkType, err, nil
+
+	case client.TypeInternalLinkTypeChatInvite:
+		linkType := linkType.(*client.InternalLinkTypeChatInvite)
+		chatInviteLinkReq := &client.CheckChatInviteLinkRequest{InviteLink: linkType.InviteLink}
+		chatInviteLink, err := tdlibClient[acc].CheckChatInviteLink(chatInviteLinkReq)
+		if err == nil {
+			return linkType, chatInviteLink, nil
+		}
+
+		return linkType, err, nil
+
+	default:
+		return linkType, errors.New(fmt.Sprintf("unknown link type: %s", linkType.InternalLinkTypeType())), nil
+	}
 }
 
 func loadChats(acc int64, chatList client.ChatList) error {
