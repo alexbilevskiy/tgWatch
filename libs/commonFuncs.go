@@ -62,9 +62,6 @@ func FormatDate(timestamp int32) string {
 
 func DLog(format string) {
 	if config.Config.Debug {
-		log.Print(format)
+		log.Printf(format)
 	}
-}
-func NDLog(format string) {
-	log.Print(format)
 }

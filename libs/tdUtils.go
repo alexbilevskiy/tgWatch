@@ -132,7 +132,7 @@ func GetContentWithText(content client.MessageContent, chatId int64) structs.Mes
 	case client.TypeMessageSticker:
 		msg := content.(*client.MessageSticker)
 
-		return structs.MessageTextContent{Text: fmt.Sprintf("Sticker, %s", msg.Sticker.Emoji)}
+		return structs.MessageTextContent{Text: fmt.Sprintf("%s sticker", msg.Sticker.Emoji)}
 	case client.TypeMessageVoiceNote:
 		msg := content.(*client.MessageVoiceNote)
 
@@ -160,7 +160,22 @@ func GetContentWithText(content client.MessageContent, chatId int64) structs.Mes
 		msg := content.(*client.MessageCall)
 
 		return structs.MessageTextContent{Text: fmt.Sprintf("Call (%ds)", msg.Duration)}
+	case client.TypeMessageAnimatedEmoji:
+		msg := content.(*client.MessageAnimatedEmoji)
+
+		return structs.MessageTextContent{Text: fmt.Sprintf("%s (animated)", msg.AnimatedEmoji.Sticker.Emoji)}
+	case client.TypeMessageChatChangeTitle:
+		msg := content.(*client.MessageChatChangeTitle)
+
+		return structs.MessageTextContent{Text: fmt.Sprintf("Chat name was changed to '%s'", msg.Title)}
+	case client.TypeMessageChatJoinByLink:
+
+		return structs.MessageTextContent{Text: fmt.Sprintf("joined by invite link")}
+	case client.TypeMessageChatDeleteMember:
+		msg := content.(*client.MessageChatDeleteMember)
+		return structs.MessageTextContent{Text: fmt.Sprintf("deleted `%s` from chat", GetChatName(currentAcc, msg.UserId))}
 	default:
+		log.Printf("unknown text type: %s", content.MessageContentType())
 
 		return structs.MessageTextContent{Text: JsonMarshalStr(content)}
 	}
@@ -254,6 +269,10 @@ func GetContentAttachments(content client.MessageContent) []structs.MessageAttac
 				T:    msg.Sticker.Type.StickerTypeType(),
 				Id:   msg.Sticker.Sticker.Remote.Id,
 				Link: append(make([]string, 0), fmt.Sprintf("http://%s/f/%s", config.Config.WebListen, msg.Sticker.Sticker.Remote.Id)),
+				Name: msg.Sticker.Type.StickerTypeType(),
+			}
+			if msg.Sticker.Thumbnail != nil {
+				s.ThumbLink = fmt.Sprintf("http://%s/f/%s", config.Config.WebListen, msg.Sticker.Thumbnail.File.Remote.Id)
 			}
 			cnt = append(cnt, s)
 
@@ -298,13 +317,26 @@ func GetContentAttachments(content client.MessageContent) []structs.MessageAttac
 		cnt = append(cnt, s)
 
 		return cnt
+	case client.TypeMessageAnimatedEmoji:
+	//	msg := content.(*client.MessageAnimatedEmoji)
+	//	s := structs.MessageAttachment{
+	//		T:    msg.AnimatedEmoji.Type,
+	//		Id:   msg.AnimatedEmoji.Sticker.Sticker.Remote.Id,
+	//		Name: msg.AnimatedEmoji.Sticker.Emoji,
+	//		Link: append(make([]string, 0), fmt.Sprintf("http://%s/f/%s", config.Config.WebListen, msg.AnimatedEmoji.Sticker.Thumbnail.File.Remote)),
+	//	}
+	//	cnt = append(cnt, s)
+	//
+	//	return cnt
 
 	case client.TypeMessageText:
+	case client.TypeMessageChatChangeTitle:
 	case client.TypeMessageCall:
 	case client.TypeMessagePoll:
 	case client.TypeMessageLocation:
 	case client.TypeMessageChatAddMembers:
 	case client.TypeMessageChatJoinByLink:
+	case client.TypeMessageChatDeleteMember:
 	case client.TypeMessageBasicGroupChatCreate:
 	case client.TypeMessagePinMessage:
 	case client.TypeMessageAudio:
@@ -398,12 +430,13 @@ func checkChatFilter(acc int64, chatId int64) bool {
 }
 
 func SaveChatFilters(acc int64, chatFilters *client.UpdateChatFilters) {
-	DLog(fmt.Sprintf("Chat filters update! %s\n", chatFilters.Type))
+	log.Printf("Chat filters update! %s", chatFilters.Type)
+	ClearChatFilters(acc)
 	for _, filterInfo := range chatFilters.ChatFilters {
-		DLog(fmt.Sprintf("New chat filter: id: %d, n: %s\n", filterInfo.Id, filterInfo.Title))
+		DLog(fmt.Sprintf("New chat filter: id: %d, n: %s", filterInfo.Id, filterInfo.Title))
 		chatFilter, err := getChatFilter(acc, filterInfo.Id)
 		if err != nil {
-			fmt.Printf("Failed to load chat filter: id: %d, n: %s\n", filterInfo.Id, filterInfo.Title)
+			log.Printf("Failed to load chat filter: id: %d, n: %s, reason: %s", filterInfo.Id, filterInfo.Title, err.Error())
 
 			continue
 		}
