@@ -442,6 +442,15 @@ func getSavedChats(acc int64, listId int32) []structs.ChatPosition {
 	return chats
 }
 
+func ClearChatFilters(acc int64) {
+	removed, err := chatFiltersColl[acc].DeleteMany(mongoContext, bson.M{})
+	if err != nil {
+		log.Printf("Failed to remove chat folders from db: %s", err.Error())
+		return
+	}
+	log.Printf("Removed %d chat folders from db", removed.DeletedCount)
+}
+
 func LoadChatFilters(acc int64) {
 	cur, _ := chatFiltersColl[acc].Find(mongoContext, bson.M{})
 	fi := make([]structs.ChatFilter, 0)
@@ -453,7 +462,7 @@ func LoadChatFilters(acc int64) {
 		return
 	}
 	chatFilters[acc] = fi
-	log.Printf("Loaded %d chat folders", len(chatFilters[acc]))
+	log.Printf("Loaded %d chat folders from db", len(chatFilters[acc]))
 }
 
 func LoadSettings(acc int64) {

@@ -71,7 +71,7 @@ func ListenUpdates(acc int64) {
 
 			case client.TypeUpdateChatHasProtectedContent:
 				upd := update.(*client.UpdateChatHasProtectedContent)
-				fmt.Printf("Chat id:%d `%s` has protected content: %s", upd.ChatId, GetChatName(acc, upd.ChatId), JsonMarshalStr(upd.HasProtectedContent))
+				log.Printf("Chat id:%d `%s` now has protected content: %s", upd.ChatId, GetChatName(acc, upd.ChatId), JsonMarshalStr(upd.HasProtectedContent))
 
 			case client.TypeUpdateNewChat:
 				//dont need to cache chat here, because chat info is empty, @see case client.ClassChat below

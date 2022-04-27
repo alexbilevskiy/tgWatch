@@ -40,11 +40,12 @@ type MessageError struct {
 }
 
 type MessageAttachment struct {
-	T     string
-	Id    string
-	Link  []string
-	Thumb string
-	Name  string
+	T         string
+	Id        string
+	Link      []string
+	Thumb     string
+	ThumbLink string
+	Name      string
 }
 
 type MessageAttachmentError struct {
