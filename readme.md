@@ -27,3 +27,6 @@ BUGS:
 * [tdlib](https://tdlib.github.io/td/build.html?language=Go)
 * [golang mongo driver](https://pkg.go.dev/go.mongodb.org/mongo-driver)
 * [golang tdlib wrapper](https://github.com/zelenin/go-tdlib)
+* [vosk api](https://github.com/alphacep/vosk-api)
+* [silero text enhancements](https://github.com/snakers4/silero-models)
+* python3 with pytorch

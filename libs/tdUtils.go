@@ -483,6 +483,10 @@ func RecognizeByFileId(acc int64, remoteId string) (string, error) {
 	} else {
 		log.Printf("recognized: %s", decoded.Text)
 	}
+	repunc, err := Repunc(decoded.Text)
+	if err != nil {
+		return "", errors.New("cannot repunctuate: " + err.Error())
+	}
 
-	return text, nil
+	return repunc, nil
 }
