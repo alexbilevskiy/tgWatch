@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"tgWatch/config"
 	"tgWatch/modules/vosk"
 )
 
@@ -21,7 +22,7 @@ func InitVoskModel() {
 	}
 	log.Printf("VOSK INIT")
 
-	model, err = vosk.NewModel("/opt/vosk-models/vosk-model-small-ru-0.22")
+	model, err = vosk.NewModel(config.Config.Vosk["Model"])
 	if err != nil {
 		fmt.Printf("Error init model: %s\n", err.Error())
 
