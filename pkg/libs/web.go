@@ -3,12 +3,12 @@ package libs
 import (
 	"errors"
 	"fmt"
-	"go-tdlib/client"
+	"github.com/alexbilevskiy/tgWatch/pkg/config"
+	"github.com/alexbilevskiy/tgWatch/pkg/structs"
+	"github.com/zelenin/go-tdlib/client"
 	"html/template"
 	"net/http"
 	"strconv"
-	"tgWatch/config"
-	"tgWatch/structs"
 )
 
 var verbose bool = false

@@ -1,10 +1,10 @@
 package main
 
 import (
+	"github.com/alexbilevskiy/tgWatch/pkg/config"
+	"github.com/alexbilevskiy/tgWatch/pkg/libs"
 	"log"
 	"os"
-	"tgWatch/config"
-	"tgWatch/libs"
 )
 
 func main() {

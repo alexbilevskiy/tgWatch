@@ -3,7 +3,7 @@ package libs
 import (
 	"errors"
 	"fmt"
-	"go-tdlib/client"
+	"github.com/zelenin/go-tdlib/client"
 	"log"
 	"sync"
 )
@@ -56,9 +56,9 @@ func DownloadFile(acc int64, id int32) (*client.File, error) {
 	req := client.DownloadFileRequest{FileId: id, Priority: 1, Synchronous: true}
 	file, err := tdlibClient[acc].DownloadFile(&req)
 	if err != nil {
-		log.Printf("Cannot download file: %s %d", err, id)
+		//log.Printf("Cannot download file: %s %d", err, id)
 
-		return nil, err
+		return nil, errors.New("downloading error: " + err.Error())
 	}
 
 	return file, nil
@@ -68,9 +68,14 @@ func DownloadFileByRemoteId(acc int64, id string) (*client.File, error) {
 	remoteFileReq := client.GetRemoteFileRequest{RemoteFileId: id}
 	remoteFile, err := tdlibClient[acc].GetRemoteFile(&remoteFileReq)
 	if err != nil {
-		log.Printf("Cannot download remote file: %s %s", err, id)
+		//log.Printf("cannot get remote file info: %s %s", err, id)
 
-		return nil, err
+		return nil, errors.New("remoteFile request error: " + err.Error())
+	}
+	if remoteFile.Local.IsDownloadingCompleted {
+		log.Printf("Not dowloading file again: %s", remoteFile.Local.Path)
+
+		return remoteFile, nil
 	}
 
 	return DownloadFile(acc, remoteFile.Id)

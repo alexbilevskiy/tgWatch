@@ -2,12 +2,12 @@ package libs
 
 import (
 	"fmt"
-	"go-tdlib/client"
+	"github.com/alexbilevskiy/tgWatch/pkg/structs"
+	"github.com/zelenin/go-tdlib/client"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
-	"tgWatch/structs"
 )
 
 func processTgJournal(req *http.Request, w http.ResponseWriter) {
@@ -236,6 +236,12 @@ func processTgMessagesByIds(chatId int64, req *http.Request, w http.ResponseWrit
 		T:        "ChatHistory-filtered",
 		Messages: make([]structs.MessageInfo, 0),
 	}
+	chat, err := GetChat(currentAcc, chatId, false)
+	if err != nil {
+
+	} else {
+		res.Chat = buildChatInfoByLocalChat(chat, false)
+	}
 
 	for _, messageId := range messageIds {
 		upd, err := FindUpdateNewMessage(currentAcc, chatId, messageId)
@@ -384,7 +390,7 @@ func processTgChatList(req *http.Request, w http.ResponseWriter) {
 	} else {
 		chatList := getSavedChats(currentAcc, folder)
 		for _, chatPos := range chatList {
-			chat, err := GetChat(currentAcc, chatPos.ChatId, false)
+			chat, err := GetChat(currentAcc, chatPos.ChatId, true)
 			var chatInfo structs.ChatInfo
 			if err != nil {
 				chatInfo = structs.ChatInfo{ChatId: chatPos.ChatId, ChatName: GetChatName(currentAcc, chatPos.ChatId), Username: "ERROR " + err.Error()}

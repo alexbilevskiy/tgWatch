@@ -2,10 +2,10 @@ package libs
 
 import (
 	"fmt"
-	"go-tdlib/client"
+	"github.com/alexbilevskiy/tgWatch/pkg/structs"
+	"github.com/zelenin/go-tdlib/client"
 	"html"
 	"strings"
-	"tgWatch/structs"
 	"unicode/utf16"
 )
 
@@ -78,6 +78,7 @@ func buildChatInfoByLocalChat(chat *client.Chat, buildCounters bool) structs.Cha
 	default:
 		info.Type = chat.Type.ChatTypeType()
 	}
+	info.CountUnread = chat.UnreadCount
 	if buildCounters {
 		chatStats, err := GetChatsStats(currentAcc, append(make([]int64, 0), chat.Id))
 		if err != nil {

@@ -3,10 +3,10 @@ package libs
 import (
 	"encoding/json"
 	"fmt"
-	"go-tdlib/client"
+	"github.com/alexbilevskiy/tgWatch/pkg/config"
+	"github.com/zelenin/go-tdlib/client"
 	"log"
 	"strconv"
-	"tgWatch/config"
 	"time"
 )
 
@@ -52,6 +52,7 @@ func ListenUpdates(acc int64) {
 			case client.TypeUpdateChatMessageSender:
 			case client.TypeUpdateReactions:
 			case client.TypeUpdateMessageUnreadReactions:
+			case client.TypeUpdateAnimatedEmojiMessageClicked:
 
 			case client.TypeUpdateSupergroup:
 			case client.TypeUpdateSupergroupFullInfo:
@@ -177,6 +178,21 @@ func ListenUpdates(acc int64) {
 						continue
 					}
 					realUpdates = append(realUpdates, messageId)
+					attachments := GetContentAttachments(savedMessage.Message.Content)
+					for _, attachment := range attachments {
+						if attachment.Id == "" {
+							continue
+						}
+						link := fmt.Sprintf("http://%s/m/%d/%d", config.Config.WebListen, savedMessage.Message.ChatId, savedMessage.Message.Id)
+						DLog(fmt.Sprintf("Downloading file from deleted message (%s): %s", attachment.T, attachment.Id))
+						file, err := DownloadFileByRemoteId(acc, attachment.Id)
+						if err != nil {
+							log.Printf("Failed to download deleted file: %s, %s", link, err.Error())
+						} else {
+							log.Printf("Successfully downloaded file from deleted message: %s, %s", link, file.Local.Path)
+						}
+					}
+
 				}
 				if len(realUpdates) <= 0 {
 
