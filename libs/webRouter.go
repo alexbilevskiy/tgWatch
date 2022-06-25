@@ -1,6 +1,7 @@
 package libs
 
 import (
+	"encoding/base64"
 	"log"
 	"net/http"
 	"regexp"
@@ -131,7 +132,7 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 			return
 		}
 		if file.Local.Path != "" {
-			//res.Header().Add("Content-Type", "file/jpeg")
+			res.Header().Add("X-Local-path", base64.StdEncoding.EncodeToString([]byte(file.Local.Path)))
 			http.ServeFile(res, req, file.Local.Path)
 
 			return

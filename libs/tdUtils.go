@@ -168,9 +168,12 @@ func GetContentWithText(content client.MessageContent, chatId int64) structs.Mes
 		msg := content.(*client.MessageChatChangeTitle)
 
 		return structs.MessageTextContent{Text: fmt.Sprintf("Chat name was changed to '%s'", msg.Title)}
+	case client.TypeMessageScreenshotTaken:
+
+		return structs.MessageTextContent{Text: "has taken screenshot!"}
 	case client.TypeMessageChatJoinByLink:
 
-		return structs.MessageTextContent{Text: fmt.Sprintf("joined by invite link")}
+		return structs.MessageTextContent{Text: "joined by invite link"}
 	case client.TypeMessageChatDeleteMember:
 		msg := content.(*client.MessageChatDeleteMember)
 		return structs.MessageTextContent{Text: fmt.Sprintf("deleted `%s` from chat", GetChatName(currentAcc, msg.UserId))}
@@ -344,6 +347,7 @@ func GetContentAttachments(content client.MessageContent) []structs.MessageAttac
 	case client.TypeMessageInvoice:
 	case client.TypeMessageVideoChatEnded:
 	case client.TypeMessageVideoChatStarted:
+	case client.TypeMessageScreenshotTaken:
 
 	case client.TypeMessageChatSetTtl:
 	case client.TypeMessageChatSetTheme:

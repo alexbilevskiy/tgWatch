@@ -11,6 +11,9 @@
         <th scope="col">
             Name
         </th>
+        <th scope="col" class="sort_by"  data-sort-by="unread">
+            Unread
+        </th>
         <th scope="col" class="sort_by"  data-sort-by="total">
             Total
         </th>
@@ -28,6 +31,7 @@
     <tbody>
     {{range .Chats}}
     <tr
+        data-unread="{{.CountUnread}}"
         data-total="{{.CountTotal}}"
         data-messages="{{.CountMessages}}"
         data-edits="{{.CountEdits}}"
@@ -48,6 +52,11 @@
         <td>
             {{if gt .CountTotal 0}}
             <span class="badge bg-secondary">{{.CountTotal}}</span>
+            {{end}}
+        </td>
+        <td>
+            {{if gt .CountUnread 0}}
+            <span class="badge bg-secondary">{{.CountUnread}}</span>
             {{end}}
         </td>
         <td>
