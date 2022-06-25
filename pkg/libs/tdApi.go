@@ -3,7 +3,7 @@ package libs
 import (
 	"errors"
 	"fmt"
-	"go-tdlib/client"
+	"github.com/zelenin/go-tdlib/client"
 	"log"
 	"sync"
 )

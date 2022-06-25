@@ -2,11 +2,11 @@ package libs
 
 import (
 	"encoding/base64"
+	"github.com/alexbilevskiy/tgWatch/pkg/structs"
 	"log"
 	"net/http"
 	"regexp"
 	"strconv"
-	"tgWatch/structs"
 )
 
 type HttpHandler struct{}

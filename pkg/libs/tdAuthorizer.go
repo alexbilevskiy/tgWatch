@@ -2,7 +2,7 @@ package libs
 
 import (
 	"fmt"
-	"go-tdlib/client"
+	"github.com/zelenin/go-tdlib/client"
 	"time"
 )
 

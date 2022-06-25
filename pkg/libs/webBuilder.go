@@ -2,10 +2,10 @@ package libs
 
 import (
 	"fmt"
-	"go-tdlib/client"
+	"github.com/alexbilevskiy/tgWatch/pkg/structs"
+	"github.com/zelenin/go-tdlib/client"
 	"html"
 	"strings"
-	"tgWatch/structs"
 	"unicode/utf16"
 )
 

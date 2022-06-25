@@ -3,10 +3,10 @@ package libs
 import (
 	"encoding/json"
 	"fmt"
-	"go-tdlib/client"
+	"github.com/alexbilevskiy/tgWatch/pkg/config"
+	"github.com/zelenin/go-tdlib/client"
 	"log"
 	"strconv"
-	"tgWatch/config"
 	"time"
 )
 

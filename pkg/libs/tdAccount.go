@@ -1,11 +1,11 @@
 package libs
 
 import (
-	"go-tdlib/client"
+	"github.com/alexbilevskiy/tgWatch/pkg/config"
+	"github.com/alexbilevskiy/tgWatch/pkg/structs"
+	"github.com/zelenin/go-tdlib/client"
 	"log"
 	"path/filepath"
-	"tgWatch/config"
-	"tgWatch/structs"
 )
 
 func createTdlibParameters(dataDir string) *client.TdlibParameters {

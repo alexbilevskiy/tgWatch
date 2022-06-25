@@ -1,6 +1,6 @@
 package structs
 
-import "go-tdlib/client"
+import "github.com/zelenin/go-tdlib/client"
 
 type MessageInfo struct {
 	T             string

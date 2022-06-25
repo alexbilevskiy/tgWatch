@@ -2,9 +2,9 @@ package libs
 
 import (
 	"context"
-	"go-tdlib/client"
+	"github.com/alexbilevskiy/tgWatch/pkg/structs"
+	"github.com/zelenin/go-tdlib/client"
 	"go.mongodb.org/mongo-driver/mongo"
-	"tgWatch/structs"
 )
 
 var Accounts map[int64]structs.Account

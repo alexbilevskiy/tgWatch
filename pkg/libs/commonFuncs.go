@@ -3,10 +3,10 @@ package libs
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/alexbilevskiy/tgWatch/pkg/config"
 	"log"
 	"strconv"
 	"strings"
-	"tgWatch/config"
 	"time"
 )
 

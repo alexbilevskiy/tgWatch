@@ -4,12 +4,12 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"go-tdlib/client"
+	"github.com/alexbilevskiy/tgWatch/pkg/config"
+	"github.com/alexbilevskiy/tgWatch/pkg/structs"
+	"github.com/zelenin/go-tdlib/client"
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
 	"strconv"
-	"tgWatch/config"
-	"tgWatch/structs"
 )
 
 func GetChatIdBySender(sender client.MessageSender) int64 {

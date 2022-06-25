@@ -2,12 +2,12 @@ package libs
 
 import (
 	"fmt"
-	"go-tdlib/client"
+	"github.com/alexbilevskiy/tgWatch/pkg/structs"
+	"github.com/zelenin/go-tdlib/client"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
-	"tgWatch/structs"
 )
 
 func processTgJournal(req *http.Request, w http.ResponseWriter) {
