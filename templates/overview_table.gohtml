@@ -50,13 +50,13 @@
             <a href="/h/{{.ChatId}}">{{.ChatName}}</a>
         </td>
         <td>
-            {{if gt .CountTotal 0}}
-            <span class="badge bg-secondary">{{.CountTotal}}</span>
+            {{if gt .CountUnread 0}}
+                <span class="badge bg-secondary">{{.CountUnread}}</span>
             {{end}}
         </td>
         <td>
-            {{if gt .CountUnread 0}}
-            <span class="badge bg-secondary">{{.CountUnread}}</span>
+            {{if gt .CountTotal 0}}
+            <span class="badge bg-secondary">{{.CountTotal}}</span>
             {{end}}
         </td>
         <td>
