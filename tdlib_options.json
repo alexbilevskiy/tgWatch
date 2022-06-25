@@ -310,5 +310,35 @@
     "Type": "String",
     "Writable": false,
     "Description": "TDLib version. This options is guaranteed to come before all other updates since TDLib 1.4.0"
+  },
+  "is_premium": {
+    "Name": "is_premium",
+    "Type": "Boolean",
+    "Writable": false,
+    "Description": ""
+  },
+  "is_premium_available": {
+    "Name": "is_premium_available",
+    "Type": "Boolean",
+    "Writable": false,
+    "Description": ""
+  },
+  "chat_filter_chosen_chat_count_max": {
+    "Name": "chat_filter_chosen_chat_count_max",
+    "Type": "Integer",
+    "Writable": false,
+    "Description": ""
+  },
+  "chat_filter_count_max": {
+    "Name": "chat_filter_count_max",
+    "Type": "Integer",
+    "Writable": false,
+    "Description": ""
+  },
+  "bio_length_max": {
+    "Name": "bio_length_max",
+    "Type": "Integer",
+    "Writable": false,
+    "Description": ""
   }
 }

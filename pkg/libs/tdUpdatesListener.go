@@ -53,6 +53,9 @@ func ListenUpdates(acc int64) {
 			case client.TypeUpdateReactions:
 			case client.TypeUpdateMessageUnreadReactions:
 			case client.TypeUpdateAnimatedEmojiMessageClicked:
+			case client.TypeUpdateScopeNotificationSettings:
+			case client.TypeUpdateStickerSet:
+			case client.TypeUpdateSavedNotificationSounds:
 
 			case client.TypeUpdateSupergroup:
 			case client.TypeUpdateSupergroupFullInfo:
