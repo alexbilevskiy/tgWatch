@@ -11,6 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
 	"strconv"
+	"sync"
 )
 
 func GetChatIdBySender(sender client.MessageSender) int64 {
@@ -434,19 +435,56 @@ func checkChatFilter(acc int64, chatId int64) bool {
 	return false
 }
 
-func SaveChatFilters(acc int64, chatFilters *client.UpdateChatFilters) {
-	log.Printf("Chat filters update! %s", chatFilters.Type)
-	ClearChatFilters(acc)
-	for _, filterInfo := range chatFilters.ChatFilters {
-		DLog(fmt.Sprintf("New chat filter: id: %d, n: %s", filterInfo.Id, filterInfo.Title))
-		chatFilter, err := getChatFilter(acc, filterInfo.Id)
-		if err != nil {
-			log.Printf("Failed to load chat filter: id: %d, n: %s, reason: %s", filterInfo.Id, filterInfo.Title, err.Error())
+func SaveChatFilters(acc int64, chatFiltersUpdate *client.UpdateChatFilters) {
+	log.Printf("Chat filters update! %s", chatFiltersUpdate.Type)
+	//ClearChatFilters(acc)
+	var wg sync.WaitGroup
 
+	for _, filterInfo := range chatFiltersUpdate.ChatFilters {
+		existed := false
+		for _, existningFilter := range chatFilters[acc] {
+			if existningFilter.Id == filterInfo.Id {
+				existed = true
+				break
+			}
+		}
+		if existed {
+			log.Printf("Existing chat filter: id: %d, n: %s", filterInfo.Id, filterInfo.Title)
 			continue
 		}
-		saveChatFilter(acc, chatFilter, filterInfo)
+		log.Printf("New chat filter: id: %d, n: %s", filterInfo.Id, filterInfo.Title)
+
+		wg.Add(1)
+		go func(filterInfo *client.ChatFilterInfo, wg *sync.WaitGroup) {
+			defer wg.Done()
+			chatFilter, err := getChatFilter(acc, filterInfo.Id)
+			if err != nil {
+				log.Printf("Failed to load chat filter: id: %d, n: %s, reason: %s", filterInfo.Id, filterInfo.Title, err.Error())
+
+				return
+			}
+			saveChatFilter(acc, chatFilter, filterInfo)
+			log.Printf("Chat filter LOADED: id: %d, n: %s", filterInfo.Id, filterInfo.Title)
+		}(filterInfo, &wg)
+		//time.Sleep(time.Second * 2)
 	}
+	wg.Wait()
+
+	for _, existningFilter := range chatFilters[acc] {
+		deleted := true
+		for _, filterInfo := range chatFiltersUpdate.ChatFilters {
+			if filterInfo.Id == existningFilter.Id {
+				deleted = false
+				continue
+			}
+		}
+		if !deleted {
+			continue
+		}
+		log.Printf("Deleted chat filter: id: %d, n: %s", existningFilter.Id, existningFilter.Title)
+		//@TODO: delete it
+	}
+
 	LoadChatFilters(acc)
 
 }

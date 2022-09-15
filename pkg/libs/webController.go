@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/alexbilevskiy/tgWatch/pkg/structs"
 	"github.com/zelenin/go-tdlib/client"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -118,7 +119,7 @@ func processTdlibOptions(req *http.Request, w http.ResponseWriter) {
 		req := client.GetOptionRequest{Name: optionName}
 		res, err := tdlibClient[currentAcc].GetOption(&req)
 		if err != nil {
-			fmt.Printf("Failed to get option %s: %s", optionName, err)
+			log.Printf("Failed to get option %s: %s", optionName, err)
 			continue
 		}
 
@@ -346,6 +347,7 @@ func processTgChatList(req *http.Request, w http.ResponseWriter) {
 	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: ClCached, Title: "Cached"})
 	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: ClMy, Title: "Owned chats"})
 	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: ClNotSubscribed, Title: "Not subscribed chats"})
+	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: ClNotAssigned, Title: "Chats not in any folder"})
 	for _, filter := range chatFilters[currentAcc] {
 		folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: filter.Id, Title: filter.Title})
 	}
@@ -379,6 +381,25 @@ func processTgChatList(req *http.Request, w http.ResponseWriter) {
 	} else if folder == ClNotSubscribed {
 		for _, chat := range localChats[currentAcc] {
 			if chat.LastMessage == nil && chat.LastReadInboxMessageId == 0 {
+				info := buildChatInfoByLocalChat(chat, true)
+				res.Chats = append(res.Chats, info)
+			}
+		}
+	} else if folder == ClNotAssigned {
+		for _, chat := range localChats[currentAcc] {
+			saved := false
+			for _, filter := range chatFilters[currentAcc] {
+				savedChats := getSavedChats(currentAcc, filter.Id)
+				for _, pos := range savedChats {
+					if pos.ChatId == chat.Id {
+						saved = true
+					}
+				}
+			}
+			if !saved {
+				if chat.Type.ChatTypeType() == client.TypeChatTypePrivate {
+					continue
+				}
 				info := buildChatInfoByLocalChat(chat, true)
 				res.Chats = append(res.Chats, info)
 			}

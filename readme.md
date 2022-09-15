@@ -22,7 +22,8 @@ BUGS:
 * new account log-in process is kinda tricky and requires restart after successful login
 
 ### install:
-`CGO_CFLAGS="-I/opt/src/td/tdlib/include" CGO_LDFLAGS="-L/opt/src/td/tdlib/lib" go build src/tgWatch/tgWatch.go && ./tgWatch`
+* install [tdlib](https://tdlib.github.io/td/build.html?language=Go), compile with `-stdlib=libstdc++`
+* `run.sh`
 ### dependencies:
 * [tdlib](https://tdlib.github.io/td/build.html?language=Go)
 * [golang mongo driver](https://pkg.go.dev/go.mongodb.org/mongo-driver)

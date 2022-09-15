@@ -367,6 +367,7 @@ const (
 	ClArchive       int32 = -2
 	ClMy            int32 = -3
 	ClNotSubscribed int32 = -4
+	ClNotAssigned   int32 = -5
 )
 
 func saveAllChatPositions(acc int64, chatId int64, positions []*client.ChatPosition) {
