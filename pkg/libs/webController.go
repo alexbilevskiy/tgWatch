@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/alexbilevskiy/tgWatch/pkg/structs"
 	"github.com/zelenin/go-tdlib/client"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -118,7 +119,7 @@ func processTdlibOptions(req *http.Request, w http.ResponseWriter) {
 		req := client.GetOptionRequest{Name: optionName}
 		res, err := tdlibClient[currentAcc].GetOption(&req)
 		if err != nil {
-			fmt.Printf("Failed to get option %s: %s", optionName, err)
+			log.Printf("Failed to get option %s: %s", optionName, err)
 			continue
 		}
 
