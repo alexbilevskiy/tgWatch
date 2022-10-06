@@ -22,18 +22,8 @@
             {{end}}
         {{end}}
         {{$cardPadding := 2}}
-        {{if eq .parent.Deleted true}}
-            {{$cardPadding = 0}}
-            <a class="link-secondary fw-lighter small" data-bs-toggle="collapse" href="#m{{.parent.MessageId}}" role="button">
-                ❌
-                <span title="{{.parent.Date | DateTime}}">
-                {{.parent.Date | Time}}
-            </span>
-            </a>
-
-        {{end}}
         <div class="d-flex {{$flexRow}} my-{{$cardPadding}}">
-        <div class="card border {{$borderColor}} {{if eq .parent.Deleted true}}collapse{{end}}" style="max-width: {{$cardWidth}}%; min-width: 10%;" id="m{{.parent.MessageId}}">
+        <div class="card border {{$borderColor}}" style="max-width: {{$cardWidth}}%; min-width: 10%;" id="m{{.parent.MessageId}}">
         <div class="card-body p-1">
     {{end}}
 
@@ -76,6 +66,7 @@
         {{end}}
         <div class="align-bottom text-end fw-lighter small position-absolute bottom-0 end-0">
             {{if .parent.Edited}}📝{{end}}
+            {{if .parent.Deleted}}❌{{end}}
             <span title="{{.parent.Date | DateTime}}">
                 <a class="link-secondary" href="/m/{{.chat.ChatId}}/{{.parent.MessageId}}">{{.parent.Date | Time}}</a>
             </span>
