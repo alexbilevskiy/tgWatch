@@ -299,6 +299,11 @@ func processTgChatHistory(chatId int64, req *http.Request, w http.ResponseWriter
 	if req.FormValue("offset") != "" {
 		offset, _ = strconv.ParseInt(req.FormValue("offset"), 10, 64)
 	}
+	if req.FormValue("message") != "" && req.Method == "POST" {
+		SendMessage(currentAcc, req.FormValue("message"), chatId, nil)
+		http.Redirect(w, req, fmt.Sprintf("/h/%d", chatId), 302)
+		return
+	}
 
 	updates, _, _, errSelect := GetChatHistory(currentAcc, chatId, limit, offset, deleted)
 	if errSelect != nil {
