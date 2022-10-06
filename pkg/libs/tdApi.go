@@ -81,6 +81,16 @@ func DownloadFileByRemoteId(acc int64, id string) (*client.File, error) {
 	return DownloadFile(acc, remoteFile.Id)
 }
 
+func GetCustomEmoji(customEmojisIds []client.JsonInt64) (*client.Stickers, error) {
+	customEmojisReq := client.GetCustomEmojiStickersRequest{CustomEmojiIds: customEmojisIds}
+	customEmojis, err := tdlibClient[currentAcc].GetCustomEmojiStickers(&customEmojisReq)
+	if err != nil {
+		return nil, errors.New("custom emoji error: " + err.Error())
+	}
+
+	return customEmojis, nil
+}
+
 func markAsRead(acc int64, chatId int64, messageId int64) error {
 	req := &client.ViewMessagesRequest{ChatId: chatId, MessageIds: append(make([]int64, 0), messageId), ForceRead: true}
 	_, err := tdlibClient[acc].ViewMessages(req)

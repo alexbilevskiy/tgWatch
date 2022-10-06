@@ -178,6 +178,9 @@ func GetContentWithText(content client.MessageContent, chatId int64) structs.Mes
 	case client.TypeMessageChatDeleteMember:
 		msg := content.(*client.MessageChatDeleteMember)
 		return structs.MessageTextContent{Text: fmt.Sprintf("deleted `%s` from chat", GetChatName(currentAcc, msg.UserId))}
+	case client.TypeMessageUnsupported:
+		//msg := content.(*client.MessageUnsupported)
+		return structs.MessageTextContent{Text: ">unsupported message<"}
 	default:
 		log.Printf("unknown text type: %s", content.MessageContentType())
 
@@ -352,6 +355,8 @@ func GetContentAttachments(content client.MessageContent) []structs.MessageAttac
 
 	case client.TypeMessageChatSetTtl:
 	case client.TypeMessageChatSetTheme:
+
+	case client.TypeMessageUnsupported:
 
 	default:
 		log.Printf("Unknown content type: %s", cType)

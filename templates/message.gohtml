@@ -56,7 +56,7 @@
     {{if gt $attachmentsCount 0}}
         {{if eq .needHeader true}}{{if ne $rendered ""}}<br data-type="a1">{{end}}{{end}}
         {{range .parent.Attachments}}
-            <a href="/f/{{.Id}}">
+            <a class="text-reset" href="/f/{{.Id}}">
                 {{if .Thumb}}
                     <img src="data:image/png;base64, {{.Thumb}}" title="{{.Name}}" alt=""/>
                 {{else if .ThumbLink}}

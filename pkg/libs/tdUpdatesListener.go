@@ -317,6 +317,7 @@ func ListenUpdates(acc int64) {
 		case client.ClassInternalLinkType:
 		case client.ClassChatInviteLinkInfo:
 		case client.ClassMessageLinkInfo:
+		case client.ClassStickers:
 			break
 		default:
 			log.Printf("WAAAT? update who??? %s, %v", update.GetClass(), update)

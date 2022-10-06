@@ -172,6 +172,21 @@ func wrapEntity(entity *client.TextEntity, text string) string {
 		wrapped = fmt.Sprintf(`<a href="tel:%s">%s</a>`, text, text)
 	case client.TypeTextEntityTypeSpoiler:
 		wrapped = fmt.Sprintf(`<span class="spoiler">%s</span>`, text)
+	case client.TypeTextEntityTypeCustomEmoji:
+		t := entity.Type.(*client.TextEntityTypeCustomEmoji)
+		customEmojisIds := append(make([]client.JsonInt64, 1), t.CustomEmojiId)
+		customEmojis, err := GetCustomEmoji(customEmojisIds)
+		if err != nil {
+			wrapped = fmt.Sprintf(`<span title="%s" class="badge bg-warning">%s</span>`, entity.Type.TextEntityTypeType(), text)
+			break
+		}
+		if customEmojis.Stickers[0].Thumbnail != nil {
+			thumbLink := fmt.Sprintf("/f/%s", customEmojis.Stickers[0].Thumbnail.File.Remote.Id)
+			wrapped = fmt.Sprintf(`<img width=20 src="%s" alt="%s" title="%s">`, thumbLink, text, text)
+			break
+		}
+		wrapped = fmt.Sprintf(`<span title="%s" class="badge bg-info">%s</span>`, entity.Type.TextEntityTypeType(), text)
+
 	default:
 		wrapped = fmt.Sprintf(`<span title="%s" class="badge bg-danger">%s</span>`, entity.Type.TextEntityTypeType(), text)
 	}
