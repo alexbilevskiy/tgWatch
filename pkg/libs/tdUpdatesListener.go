@@ -50,7 +50,7 @@ func ListenUpdates(acc int64) {
 			case client.TypeUpdateGroupCall:
 			case client.TypeUpdateChatVideoChat:
 			case client.TypeUpdateChatMessageSender:
-			case client.TypeUpdateReactions:
+			//case client.TypeUpdateReactions:
 			case client.TypeUpdateMessageUnreadReactions:
 			case client.TypeUpdateAnimatedEmojiMessageClicked:
 			case client.TypeUpdateScopeNotificationSettings:
