@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 )
 
-func createTdlibParameters(dataDir string) *client.TdlibParameters {
-	return &client.TdlibParameters{
+func createTdlibParameters(dataDir string) *client.SetTdlibParametersRequest {
+	return &client.SetTdlibParametersRequest{
 		UseTestDc:              false,
 		DatabaseDirectory:      filepath.Join(config.Config.TDataDir, dataDir, "database"),
 		FilesDirectory:         filepath.Join(config.Config.TDataDir, dataDir, "files"),

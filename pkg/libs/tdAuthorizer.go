@@ -7,7 +7,7 @@ import (
 )
 
 type clientAuthorizer struct {
-	TdlibParameters chan *client.TdlibParameters
+	TdlibParameters chan *client.SetTdlibParametersRequest
 	PhoneNumber     chan string
 	Code            chan string
 	State           chan client.AuthorizationState
@@ -19,13 +19,7 @@ func (stateHandler *clientAuthorizer) Handle(tdcl *client.Client, state client.A
 
 	switch state.AuthorizationStateType() {
 	case client.TypeAuthorizationStateWaitTdlibParameters:
-		_, err := tdcl.SetTdlibParameters(&client.SetTdlibParametersRequest{
-			Parameters: <-stateHandler.TdlibParameters,
-		})
-		return err
-
-	case client.TypeAuthorizationStateWaitEncryptionKey:
-		_, err := tdcl.CheckDatabaseEncryptionKey(&client.CheckDatabaseEncryptionKeyRequest{})
+		_, err := tdcl.SetTdlibParameters(<-stateHandler.TdlibParameters)
 		return err
 
 	case client.TypeAuthorizationStateWaitPhoneNumber:
@@ -38,6 +32,13 @@ func (stateHandler *clientAuthorizer) Handle(tdcl *client.Client, state client.A
 			},
 		})
 		return err
+
+	case client.TypeAuthorizationStateWaitEmailAddress:
+		panic("unsupported authorization state TypeAuthorizationStateWaitEmailAddress")
+	case client.TypeAuthorizationStateWaitEmailCode:
+		panic("unsupported authorization state TypeAuthorizationStateWaitEmailCode")
+	case client.TypeAuthorizationStateWaitOtherDeviceConfirmation:
+		panic("unsupported authorization state TypeAuthorizationStateWaitOtherDeviceConfirmation")
 
 	case client.TypeAuthorizationStateWaitCode:
 		_, err := tdcl.CheckAuthenticationCode(&client.CheckAuthenticationCodeRequest{
@@ -80,7 +81,7 @@ func (stateHandler *clientAuthorizer) Close() {
 
 func ClientAuthorizer() *clientAuthorizer {
 	return &clientAuthorizer{
-		TdlibParameters: make(chan *client.TdlibParameters, 1),
+		TdlibParameters: make(chan *client.SetTdlibParametersRequest, 1),
 		PhoneNumber:     make(chan string, 1),
 		Code:            make(chan string, 1),
 		State:           make(chan client.AuthorizationState, 10),
