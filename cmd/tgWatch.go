@@ -23,7 +23,7 @@ func main() {
 		log.Fatalf("Invalid argument")
 	}
 
-	//go libs.InitVoskModel()
+	go libs.InitVoskModel()
 
 	//@TODO: check if goroutine with specific account is alive
 	//@TODO: reload list when new account added

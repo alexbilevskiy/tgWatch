@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export CGO_CFLAGS="-I/opt/src/td/tdlib/include" CGO_LDFLAGS="-L/opt/src/td/tdlib/lib"
+export CGO_CFLAGS="-I/opt/src/td/tdlib/include -I/opt/src/vosk-api/src" CGO_LDFLAGS="-L/opt/src/td/tdlib/lib -L/opt/src/vosk-api/src -L/opt/src/kaldi/tools/openfst/src -L/opt/src/kaldi/tools/OpenBLAS/install/lib"
 if [[ $1 ]]
 then
   echo "single account: $1";

@@ -7,4 +7,5 @@ type ConfigFileStruct struct {
 	Mongo     map[string]string `json:"Mongo"`
 	Debug     bool              `json:"Debug"`
 	TDataDir  string            `json:"TDataDir"`
+	Vosk      map[string]string `json:"Vosk"`
 }
