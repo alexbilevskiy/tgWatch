@@ -117,7 +117,7 @@ func processTdlibOptions(req *http.Request, w http.ResponseWriter) {
 	actualOptions := make(map[string]structs.TdlibOption, len(tdlibOptions))
 	for optionName, optionValue := range tdlibOptions[currentAcc] {
 		req := client.GetOptionRequest{Name: optionName}
-		res, err := tdlibClient[currentAcc].GetOption(&req)
+		res, err := tdlibClient[currentAcc].GetOptionAsync(&req)
 		if err != nil {
 			log.Printf("Failed to get option %s: %s", optionName, err)
 			continue
