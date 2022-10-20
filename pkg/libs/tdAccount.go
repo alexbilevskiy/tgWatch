@@ -36,7 +36,7 @@ func InitTdlib(acc int64) {
 
 	authorizer.TdlibParameters <- createTdlibParameters(Accounts[acc].DataDir)
 	logVerbosity := client.WithLogVerbosity(&client.SetLogVerbosityLevelRequest{
-		NewVerbosityLevel: 0,
+		NewVerbosityLevel: 2,
 	})
 
 	var err error

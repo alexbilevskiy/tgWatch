@@ -338,11 +338,13 @@ func GetContentAttachments(content client.MessageContent) []structs.MessageAttac
 
 	case client.TypeMessageText:
 	case client.TypeMessageChatChangeTitle:
+	case client.TypeMessageChatChangePhoto:
 	case client.TypeMessageCall:
 	case client.TypeMessagePoll:
 	case client.TypeMessageLocation:
 	case client.TypeMessageChatAddMembers:
 	case client.TypeMessageChatJoinByLink:
+	case client.TypeMessageChatJoinByRequest:
 	case client.TypeMessageChatDeleteMember:
 	case client.TypeMessageBasicGroupChatCreate:
 	case client.TypeMessagePinMessage:

@@ -33,6 +33,7 @@ func ListenUpdates(acc int64) {
 			case client.TypeUpdateChatReadInbox:
 			case client.TypeUpdateChatReadOutbox:
 			case client.TypeUpdateUnreadMessageCount:
+			case client.TypeUpdateChatUnreadReactionCount:
 			case client.TypeUpdateUnreadChatCount:
 			case client.TypeUpdateChatIsMarkedAsUnread:
 			case client.TypeUpdateChatUnreadMentionCount:
@@ -50,7 +51,6 @@ func ListenUpdates(acc int64) {
 			case client.TypeUpdateGroupCall:
 			case client.TypeUpdateChatVideoChat:
 			case client.TypeUpdateChatMessageSender:
-			//case client.TypeUpdateReactions:
 			case client.TypeUpdateMessageUnreadReactions:
 			case client.TypeUpdateAnimatedEmojiMessageClicked:
 			case client.TypeUpdateScopeNotificationSettings:
@@ -65,8 +65,6 @@ func ListenUpdates(acc int64) {
 			case client.TypeUpdateUserFullInfo:
 			case client.TypeUpdateChatPhoto:
 			case client.TypeUpdateMessageSendSucceeded:
-				//break
-				//golang WTF? U dont need break??
 
 			case client.TypeUpdateChatTitle:
 				upd := update.(*client.UpdateChatTitle)
