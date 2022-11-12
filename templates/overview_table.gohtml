@@ -6,6 +6,9 @@
             Type
         </th>
         <th scope="col">
+            T
+        </th>
+        <th scope="col">
             Username
         </th>
         <th scope="col">
@@ -40,6 +43,9 @@
         <td>
             {{.Type}}
         </td>
+            <td>
+                {{if .HasTopics}}yes{{end}}
+            </td>
         <td>
             {{if ne .Username ""}}
                 <a href="https://t.me/{{.Username}}">@{{.Username}}</a>

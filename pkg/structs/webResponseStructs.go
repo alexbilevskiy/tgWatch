@@ -5,6 +5,7 @@ type ChatInfo struct {
 	ChatName      string
 	Username      string
 	Type          string
+	HasTopics     bool
 	CountUnread   int32
 	CountTotal    int32
 	CountMessages int32

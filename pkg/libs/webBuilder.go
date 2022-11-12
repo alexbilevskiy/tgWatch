@@ -62,6 +62,7 @@ func buildChatInfoByLocalChat(chat *client.Chat, buildCounters bool) structs.Cha
 				info.Username = un
 			}
 		}
+		info.HasTopics = sg.IsForum
 	case client.TypeChatTypePrivate:
 		t := chat.Type.(*client.ChatTypePrivate)
 		info.Type = "User"
