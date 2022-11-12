@@ -59,10 +59,10 @@ func InitTdlib(acc int64) {
 		log.Fatalf("GetMe error: %s", err)
 	}
 	accLocal := Accounts[acc]
-	accLocal.Username = me[acc].Username
+	accLocal.Username = GetUsername(me[acc].Usernames)
 	Accounts[acc] = accLocal
 
-	log.Printf("Me: %s %s [%s]", me[acc].FirstName, me[acc].LastName, me[acc].Username)
+	log.Printf("Me: %s %s [%s]", me[acc].FirstName, me[acc].LastName, GetUsername(me[acc].Usernames))
 
 	//@NOTE: https://github.com/tdlib/td/issues/1005#issuecomment-613839507
 	go func() {
@@ -86,7 +86,6 @@ func InitTdlib(acc int64) {
 	//} else {
 	//	log.Printf("Set ignore_background_updates option: %s", JsonMarshalStr(ok))
 	//}
-
 }
 
 const AccStatusActive = "active"
@@ -154,7 +153,7 @@ func CreateAccount(phone string) {
 		me[meLocal.Id] = meLocal
 		tdlibClient[meLocal.Id] = tdlibClientLocal
 
-		log.Printf("NEW Me: %s %s [%s]", meLocal.FirstName, meLocal.LastName, meLocal.Username)
+		log.Printf("NEW Me: %s %s [%s]", meLocal.FirstName, meLocal.LastName, GetUsername(meLocal.Usernames))
 
 		//state = nil
 		currentAuthorizingAcc.Id = meLocal.Id

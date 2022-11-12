@@ -57,8 +57,9 @@ func buildChatInfoByLocalChat(chat *client.Chat, buildCounters bool) structs.Cha
 			} else {
 				info.Type = "Supergroup"
 			}
-			if sg.Username != "" {
-				info.Username = sg.Username
+			un := GetUsername(sg.Usernames)
+			if un != "" {
+				info.Username = un
 			}
 		}
 	case client.TypeChatTypePrivate:
@@ -68,8 +69,9 @@ func buildChatInfoByLocalChat(chat *client.Chat, buildCounters bool) structs.Cha
 		if err != nil {
 			info.Username = "Error " + err.Error()
 		} else {
-			if user.Username != "" {
-				info.Username = user.Username
+			un := GetUsername(user.Usernames)
+			if un != "" {
+				info.Username = un
 			}
 		}
 	case client.TypeChatTypeBasicGroup:

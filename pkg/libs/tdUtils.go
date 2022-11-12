@@ -52,13 +52,29 @@ func getUserFullname(user *client.User) string {
 	if user.LastName != "" {
 		name = fmt.Sprintf("%s %s", name, user.LastName)
 	}
-	if user.Username != "" {
-		name = fmt.Sprintf("%s (@%s)", name, user.Username)
+	un := GetUsername(user.Usernames)
+	if un != "" {
+		name = fmt.Sprintf("%s (@%s)", name, un)
 	}
 	if name == "" {
 		name = fmt.Sprintf("no_name %d", user.Id)
 	}
 	return name
+}
+
+func GetUsername(usernames *client.Usernames) string {
+	if usernames == nil {
+		return ""
+	}
+	if len(usernames.ActiveUsernames) == 0 {
+		return ""
+	}
+	if len(usernames.ActiveUsernames) > 1 {
+		log.Printf("whoa, multiple usernames? %s", JsonMarshalStr(usernames.ActiveUsernames))
+		return usernames.ActiveUsernames[0]
+	}
+
+	return usernames.ActiveUsernames[0]
 }
 
 func GetSenderObj(acc int64, sender client.MessageSender) (interface{}, error) {
