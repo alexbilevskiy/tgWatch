@@ -157,33 +157,48 @@ func processTgActiveSessions(req *http.Request, w http.ResponseWriter) {
 }
 
 func processTgSingleMessage(chatId int64, messageId int64, req *http.Request, w http.ResponseWriter) {
-	upd, err := FindUpdateNewMessage(currentAcc, chatId, messageId)
-	if err != nil {
-		m := structs.MessageError{T: "Error", MessageId: messageId, Error: fmt.Sprintf("Error: %s", err)}
-		renderTemplates(req, w, m, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/error.gohtml`)
+	var message *client.Message
+	var err error
+	//@TODO: pass as GET param
+	cached := false
+	if cached {
+		upd, err := FindUpdateNewMessage(currentAcc, chatId, messageId)
+		if err != nil {
+			m := structs.MessageError{T: "Error", MessageId: messageId, Error: fmt.Sprintf("Error: %s", err)}
+			renderTemplates(req, w, m, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/error.gohtml`)
 
-		return
+			return
+		}
+		message = upd.Message
+	} else {
+		message, err = GetMessage(currentAcc, chatId, messageId)
+		if err != nil {
+			m := structs.MessageError{T: "Error", MessageId: messageId, Error: fmt.Sprintf("Error: %s", err)}
+			renderTemplates(req, w, m, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/error.gohtml`)
+
+			return
+		}
 	}
 
-	senderChatId := GetChatIdBySender(upd.Message.SenderId)
-	ct := GetContentWithText(upd.Message.Content, upd.Message.ChatId)
+	senderChatId := GetChatIdBySender(message.SenderId)
+	ct := GetContentWithText(message.Content, message.ChatId)
 	msg := structs.MessageInfo{
 		T:             "NewMessage",
-		MessageId:     upd.Message.Id,
-		Date:          upd.Message.Date,
-		ChatId:        upd.Message.ChatId,
-		ChatName:      GetChatName(currentAcc, upd.Message.ChatId),
+		MessageId:     message.Id,
+		Date:          message.Date,
+		ChatId:        message.ChatId,
+		ChatName:      GetChatName(currentAcc, message.ChatId),
 		SenderId:      senderChatId,
-		SenderName:    GetSenderName(currentAcc, upd.Message.SenderId),
-		MediaAlbumId:  int64(upd.Message.MediaAlbumId),
+		SenderName:    GetSenderName(currentAcc, message.SenderId),
+		MediaAlbumId:  int64(message.MediaAlbumId),
 		SimpleText:    ct.Text,
 		FormattedText: ct.FormattedText,
-		Attachments:   GetContentAttachments(upd.Message.Content),
-		Deleted:       IsMessageDeleted(currentAcc, upd.Message.ChatId, upd.Message.Id),
-		Edited:        IsMessageEdited(currentAcc, upd.Message.ChatId, upd.Message.Id),
-		ContentRaw:    nil,
+		Attachments:   GetContentAttachments(message.Content),
+		Deleted:       IsMessageDeleted(currentAcc, message.ChatId, message.Id),
+		Edited:        IsMessageEdited(currentAcc, message.ChatId, message.Id),
+		ContentRaw:    message,
 	}
-	chat, _ := GetChat(currentAcc, upd.Message.ChatId, false)
+	chat, _ := GetChat(currentAcc, message.ChatId, false)
 	res := structs.SingleMessage{
 		T:       "Message",
 		Message: msg,

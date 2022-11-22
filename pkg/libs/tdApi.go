@@ -6,6 +6,7 @@ import (
 	"github.com/zelenin/go-tdlib/client"
 	"log"
 	"sync"
+	"time"
 )
 
 var m = sync.RWMutex{}
@@ -179,6 +180,37 @@ func GetLinkInfo(acc int64, link string) (client.InternalLinkType, interface{}, 
 	default:
 		return linkType, errors.New(fmt.Sprintf("unknown link type: %s", linkType.InternalLinkTypeType())), nil
 	}
+}
+
+func GetMessage(acc int64, chatId int64, messageId int64) (*client.Message, error) {
+	log.Printf("get message %d/%d", chatId, messageId)
+	var err error
+
+	openChatReq := &client.OpenChatRequest{ChatId: chatId}
+	_, err = tdlibClient[acc].OpenChat(openChatReq)
+	if err != nil {
+
+		return nil, errors.New(fmt.Sprintf("open chat error: %s", err.Error()))
+	}
+
+	messageIds := make([]int64, 0)
+	messageIds = append(messageIds, messageId)
+	viewMessagesReq := &client.ViewMessagesRequest{ChatId: chatId, MessageIds: messageIds}
+	_, err = tdlibClient[acc].ViewMessages(viewMessagesReq)
+	if err != nil {
+
+		return nil, errors.New(fmt.Sprintf("failed to view message: %s", err.Error()))
+	}
+	log.Printf("sleeping before get message %d/%d", chatId, messageId)
+	time.Sleep(time.Second * 5)
+
+	getMessageReq := &client.GetMessageRequest{ChatId: chatId, MessageId: messageId}
+	message, err := tdlibClient[acc].GetMessage(getMessageReq)
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("get message error: %s", err.Error()))
+	}
+
+	return message, nil
 }
 
 func loadChats(acc int64, chatList client.ChatList) error {
