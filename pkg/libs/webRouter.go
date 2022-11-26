@@ -110,6 +110,21 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		}
 
 		return
+	case "ho":
+		r := regexp.MustCompile(`^/ho/?(-?\d+)?($|/)`)
+		m := r.FindStringSubmatch(req.URL.Path)
+		if m == nil {
+			errorResponse(structs.WebError{T: "Not found", Error: req.URL.Path}, 404, req, res)
+
+			return
+		}
+		chatId, _ := strconv.ParseInt(m[1], 10, 64)
+		if m[1] == "" {
+			chatId = me[currentAcc].Id
+		}
+		processTgChatHistoryOnline(chatId, req, res)
+
+		return
 	case "f":
 		r := regexp.MustCompile(`^/f/([\w\-_]+)$`)
 		m := r.FindStringSubmatch(req.URL.Path)

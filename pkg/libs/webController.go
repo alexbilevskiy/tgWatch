@@ -268,7 +268,7 @@ func processTgMessagesByIds(chatId int64, req *http.Request, w http.ResponseWrit
 			continue
 		}
 
-		res.Messages = append(res.Messages, parseUpdateNewMessage(upd))
+		res.Messages = append(res.Messages, parseMessage(upd.Message))
 	}
 
 	renderTemplates(req, w, res, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/chat_history_filtered.gohtml`, `templates/messages_list.gohtml`, `templates/message.gohtml`)
@@ -341,9 +341,48 @@ func processTgChatHistory(chatId int64, req *http.Request, w http.ResponseWriter
 
 	for _, rawJsonBytes := range updates {
 		upd, _ := client.UnmarshalUpdateNewMessage(rawJsonBytes)
-		msg := parseUpdateNewMessage(upd)
+		msg := parseMessage(upd.Message)
 		//hack to reverse, orig was: res.Messages = append(res.Messages, msg)
 		res.Messages = append([]structs.MessageInfo{msg}, res.Messages...)
+	}
+
+	renderTemplates(req, w, res, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/chat_history.gohtml`, `templates/messages_list.gohtml`, `templates/message.gohtml`)
+}
+
+func processTgChatHistoryOnline(chatId int64, req *http.Request, w http.ResponseWriter) {
+	var fromMessageId int64 = 0
+	var err error
+	if req.FormValue("offset") != "" {
+		fromMessageId, err = strconv.ParseInt(req.FormValue("offset"), 10, 64)
+		if err != nil {
+			log.Printf("failed to parse from_message_id offset: %s", err.Error())
+			return
+		}
+	}
+
+	messages, err := LoadChatHistory(currentAcc, chatId, fromMessageId)
+	if err != nil {
+		log.Printf("error load history: %s", err.Error())
+
+		return
+	}
+	chat, _ := GetChat(currentAcc, chatId, false)
+	res := structs.ChatHistory{
+		T:          "ChatHistory",
+		Chat:       buildChatInfoByLocalChat(chat, false),
+		Limit:      0,
+		Offset:     fromMessageId,
+		NextOffset: messages.Messages[len(messages.Messages)-1].Id,
+		PrevOffset: fromMessageId,
+	}
+	if res.PrevOffset < 0 {
+		res.PrevOffset = 0
+	}
+
+	for _, message := range messages.Messages {
+		messageInfo := parseMessage(message)
+		//hack to reverse, orig was: res.Messages = append(res.Messages, messageInfo)
+		res.Messages = append([]structs.MessageInfo{messageInfo}, res.Messages...)
 	}
 
 	renderTemplates(req, w, res, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/chat_history.gohtml`, `templates/messages_list.gohtml`, `templates/message.gohtml`)

@@ -37,7 +37,6 @@ func ListenUpdates(acc int64) {
 			case client.TypeUpdateUnreadChatCount:
 			case client.TypeUpdateChatIsMarkedAsUnread:
 			case client.TypeUpdateChatUnreadMentionCount:
-			case client.TypeUpdateMessageInteractionInfo:
 			case client.TypeUpdateChatReplyMarkup:
 			case client.TypeUpdateChatPermissions:
 			case client.TypeUpdateChatNotificationSettings:
@@ -65,6 +64,10 @@ func ListenUpdates(acc int64) {
 			case client.TypeUpdateUserFullInfo:
 			case client.TypeUpdateChatPhoto:
 			case client.TypeUpdateMessageSendSucceeded:
+
+			case client.TypeUpdateMessageInteractionInfo:
+				upd := update.(*client.UpdateMessageInteractionInfo)
+				log.Printf("[%d] received interaction update for message in chat `%s`: %s", acc, GetChatName(acc, upd.ChatId), BuildMessageLink(upd.ChatId, upd.MessageId))
 
 			case client.TypeUpdateChatTitle:
 				upd := update.(*client.UpdateChatTitle)
@@ -184,7 +187,7 @@ func ListenUpdates(acc int64) {
 						if attachment.Id == "" {
 							continue
 						}
-						link := fmt.Sprintf("http://%s/m/%d/%d", config.Config.WebListen, savedMessage.Message.ChatId, savedMessage.Message.Id)
+						link := BuildMessageLink(savedMessage.Message.ChatId, savedMessage.Message.Id)
 						DLog(fmt.Sprintf("Downloading file from deleted message (%s): %s", attachment.T, attachment.Id))
 						file, err := DownloadFileByRemoteId(acc, attachment.Id)
 						if err != nil {
@@ -312,6 +315,7 @@ func ListenUpdates(acc int64) {
 		case client.ClassChatMember:
 		case client.ClassSessions:
 		case client.ClassMessage:
+		case client.ClassMessages:
 		case client.ClassInternalLinkType:
 		case client.ClassChatInviteLinkInfo:
 		case client.ClassMessageLinkInfo:

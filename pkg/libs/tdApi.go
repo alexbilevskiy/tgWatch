@@ -224,3 +224,14 @@ func getChatFilter(acc int64, filterId int32) (*client.ChatFilter, error) {
 	req := &client.GetChatFilterRequest{ChatFilterId: filterId}
 	return tdlibClient[acc].GetChatFilter(req)
 }
+
+func LoadChatHistory(acc int64, chatId int64, fromMessageId int64) (*client.Messages, error) {
+	chatHistoryRequest := client.GetChatHistoryRequest{ChatId: chatId, Offset: 0, FromMessageId: fromMessageId, OnlyLocal: false, Limit: 50}
+	messages, err := tdlibClient[acc].GetChatHistory(&chatHistoryRequest)
+	if err != nil {
+
+		return nil, errors.New(fmt.Sprintf("failed to load history: %s", err.Error()))
+	}
+
+	return messages, nil
+}

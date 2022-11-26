@@ -2,6 +2,7 @@ package libs
 
 import (
 	"fmt"
+	"github.com/alexbilevskiy/tgWatch/pkg/config"
 	"github.com/alexbilevskiy/tgWatch/pkg/structs"
 	"github.com/zelenin/go-tdlib/client"
 	"html"
@@ -9,34 +10,34 @@ import (
 	"unicode/utf16"
 )
 
-func parseUpdateNewMessage(upd *client.UpdateNewMessage) structs.MessageInfo {
-	senderChatId := GetChatIdBySender(upd.Message.SenderId)
-	ct := GetContentWithText(upd.Message.Content, upd.Message.ChatId)
-	msg := structs.MessageInfo{
+func parseMessage(message *client.Message) structs.MessageInfo {
+	senderChatId := GetChatIdBySender(message.SenderId)
+	ct := GetContentWithText(message.Content, message.ChatId)
+	messageInfo := structs.MessageInfo{
 		T:             "NewMessage",
-		MessageId:     upd.Message.Id,
-		Date:          upd.Message.Date,
-		DateTimeStr:   FormatDateTime(upd.Message.Date),
-		DateStr:       FormatDate(upd.Message.Date),
-		TimeStr:       FormatTime(upd.Message.Date),
-		ChatId:        upd.Message.ChatId,
-		ChatName:      GetChatName(currentAcc, upd.Message.ChatId),
+		MessageId:     message.Id,
+		Date:          message.Date,
+		DateTimeStr:   FormatDateTime(message.Date),
+		DateStr:       FormatDate(message.Date),
+		TimeStr:       FormatTime(message.Date),
+		ChatId:        message.ChatId,
+		ChatName:      GetChatName(currentAcc, message.ChatId),
 		SenderId:      senderChatId,
-		SenderName:    GetSenderName(currentAcc, upd.Message.SenderId),
-		MediaAlbumId:  int64(upd.Message.MediaAlbumId),
+		SenderName:    GetSenderName(currentAcc, message.SenderId),
+		MediaAlbumId:  int64(message.MediaAlbumId),
 		SimpleText:    ct.Text,
 		FormattedText: ct.FormattedText,
-		Attachments:   GetContentAttachments(upd.Message.Content),
-		Deleted:       IsMessageDeleted(currentAcc, upd.Message.ChatId, upd.Message.Id),
-		Edited:        IsMessageEdited(currentAcc, upd.Message.ChatId, upd.Message.Id),
+		Attachments:   GetContentAttachments(message.Content),
+		Deleted:       IsMessageDeleted(currentAcc, message.ChatId, message.Id),
+		Edited:        IsMessageEdited(currentAcc, message.ChatId, message.Id),
 		ContentRaw:    nil,
 	}
 
 	if verbose {
-		msg.ContentRaw = upd.Message.Content
+		messageInfo.ContentRaw = message.Content
 	}
 
-	return msg
+	return messageInfo
 }
 
 func buildChatInfoByLocalChat(chat *client.Chat, buildCounters bool) structs.ChatInfo {
@@ -199,4 +200,8 @@ func wrapEntity(entity *client.TextEntity, text string) string {
 
 func ut2hs(r []uint16) string { //utf text to html string
 	return html.EscapeString(string(utf16.Decode(r)))
+}
+
+func BuildMessageLink(chatId int64, messageId int64) string {
+	return fmt.Sprintf("http://%s/m/%d/%d", config.Config.WebListen, chatId, messageId)
 }
