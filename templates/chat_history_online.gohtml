@@ -2,6 +2,8 @@
 <div class="row justify-content-center">
     <div class="col col-4">
         <h4><a href="/c/{{.Chat.ChatId}}">{{.Chat.ChatName}}</a></h4>
+        <a class="btn btn-sm btn-light" href="/ho/{{.Chat.ChatId}}?from_message_id={{.LastMessageId}}&offset={{.PrevOffset}}">Prev page</a>
+        <a class="btn btn-sm btn-light" href="/ho/{{.Chat.ChatId}}?from_message_id={{.FirstMessageId}}&offset={{.NextOffset}}">Next page</a>
         {{template "messages_list" .}}
         <form method="post">
             <div class="input-group mb-3">
