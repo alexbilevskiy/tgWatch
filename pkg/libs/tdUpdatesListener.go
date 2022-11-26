@@ -55,6 +55,7 @@ func ListenUpdates(acc int64) {
 			case client.TypeUpdateScopeNotificationSettings:
 			case client.TypeUpdateStickerSet:
 			case client.TypeUpdateSavedNotificationSounds:
+			case client.TypeUpdateChatOnlineMemberCount:
 
 			case client.TypeUpdateSupergroup:
 			case client.TypeUpdateSupergroupFullInfo:

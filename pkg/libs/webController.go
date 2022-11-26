@@ -159,9 +159,19 @@ func processTgActiveSessions(req *http.Request, w http.ResponseWriter) {
 func processTgSingleMessage(chatId int64, messageId int64, req *http.Request, w http.ResponseWriter) {
 	var message *client.Message
 	var err error
-	//@TODO: pass as GET param
-	cached := false
-	if cached {
+	online := false
+	if req.FormValue("online") == "1" {
+		online = true
+	}
+	if online {
+		message, err = GetMessage(currentAcc, chatId, messageId)
+		if err != nil {
+			m := structs.MessageError{T: "Error", MessageId: messageId, Error: fmt.Sprintf("Error: %s", err)}
+			renderTemplates(req, w, m, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/error.gohtml`)
+
+			return
+		}
+	} else {
 		upd, err := FindUpdateNewMessage(currentAcc, chatId, messageId)
 		if err != nil {
 			m := structs.MessageError{T: "Error", MessageId: messageId, Error: fmt.Sprintf("Error: %s", err)}
@@ -170,14 +180,6 @@ func processTgSingleMessage(chatId int64, messageId int64, req *http.Request, w 
 			return
 		}
 		message = upd.Message
-	} else {
-		message, err = GetMessage(currentAcc, chatId, messageId)
-		if err != nil {
-			m := structs.MessageError{T: "Error", MessageId: messageId, Error: fmt.Sprintf("Error: %s", err)}
-			renderTemplates(req, w, m, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/error.gohtml`)
-
-			return
-		}
 	}
 
 	senderChatId := GetChatIdBySender(message.SenderId)
@@ -351,32 +353,39 @@ func processTgChatHistory(chatId int64, req *http.Request, w http.ResponseWriter
 
 func processTgChatHistoryOnline(chatId int64, req *http.Request, w http.ResponseWriter) {
 	var fromMessageId int64 = 0
+	var offset int32 = 0
 	var err error
-	if req.FormValue("offset") != "" {
-		fromMessageId, err = strconv.ParseInt(req.FormValue("offset"), 10, 64)
+	if req.FormValue("from_message_id") != "" {
+		fromMessageId, err = strconv.ParseInt(req.FormValue("from_message_id"), 10, 64)
 		if err != nil {
-			log.Printf("failed to parse from_message_id offset: %s", err.Error())
+			log.Printf("failed to parse from_message_id: %s", err.Error())
 			return
 		}
 	}
+	if req.FormValue("offset") != "" {
+		offset64, err := strconv.ParseInt(req.FormValue("offset"), 10, 32)
+		if err != nil {
+			log.Printf("failed to parse from_message_id fromMessageId: %s", err.Error())
+			return
+		}
+		offset = int32(offset64)
+	}
 
-	messages, err := LoadChatHistory(currentAcc, chatId, fromMessageId)
+	messages, err := LoadChatHistory(currentAcc, chatId, fromMessageId, offset)
 	if err != nil {
 		log.Printf("error load history: %s", err.Error())
 
 		return
 	}
 	chat, _ := GetChat(currentAcc, chatId, false)
-	res := structs.ChatHistory{
-		T:          "ChatHistory",
-		Chat:       buildChatInfoByLocalChat(chat, false),
-		Limit:      0,
-		Offset:     fromMessageId,
-		NextOffset: messages.Messages[len(messages.Messages)-1].Id,
-		PrevOffset: fromMessageId,
-	}
-	if res.PrevOffset < 0 {
-		res.PrevOffset = 0
+	res := structs.ChatHistoryOnline{
+		T:    "ChatHistory",
+		Chat: buildChatInfoByLocalChat(chat, false),
+		//wicked!
+		FirstMessageId: messages.Messages[0].Id,
+		LastMessageId:  messages.Messages[len(messages.Messages)-1].Id,
+		NextOffset:     -50,
+		PrevOffset:     0,
 	}
 
 	for _, message := range messages.Messages {
@@ -385,7 +394,7 @@ func processTgChatHistoryOnline(chatId int64, req *http.Request, w http.Response
 		res.Messages = append([]structs.MessageInfo{messageInfo}, res.Messages...)
 	}
 
-	renderTemplates(req, w, res, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/chat_history.gohtml`, `templates/messages_list.gohtml`, `templates/message.gohtml`)
+	renderTemplates(req, w, res, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/chat_history_online.gohtml`, `templates/messages_list.gohtml`, `templates/message.gohtml`)
 }
 
 func processTgChatList(req *http.Request, w http.ResponseWriter) {

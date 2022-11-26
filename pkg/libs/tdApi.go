@@ -225,8 +225,8 @@ func getChatFilter(acc int64, filterId int32) (*client.ChatFilter, error) {
 	return tdlibClient[acc].GetChatFilter(req)
 }
 
-func LoadChatHistory(acc int64, chatId int64, fromMessageId int64) (*client.Messages, error) {
-	chatHistoryRequest := client.GetChatHistoryRequest{ChatId: chatId, Offset: 0, FromMessageId: fromMessageId, OnlyLocal: false, Limit: 50}
+func LoadChatHistory(acc int64, chatId int64, fromMessageId int64, offset int32) (*client.Messages, error) {
+	chatHistoryRequest := client.GetChatHistoryRequest{ChatId: chatId, Offset: offset, FromMessageId: fromMessageId, OnlyLocal: false, Limit: 50}
 	messages, err := tdlibClient[acc].GetChatHistory(&chatHistoryRequest)
 	if err != nil {
 

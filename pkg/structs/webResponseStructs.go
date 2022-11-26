@@ -49,6 +49,16 @@ type ChatHistory struct {
 	Messages   []MessageInfo
 }
 
+type ChatHistoryOnline struct {
+	T              string
+	Chat           ChatInfo
+	FirstMessageId int64
+	LastMessageId  int64
+	NextOffset     int64
+	PrevOffset     int64
+	Messages       []MessageInfo
+}
+
 type SingleMessage struct {
 	T       string
 	Chat    ChatInfo
