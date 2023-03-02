@@ -7,6 +7,7 @@ import (
 	"github.com/zelenin/go-tdlib/client"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -56,6 +57,8 @@ func ListenUpdates(acc int64) {
 			case client.TypeUpdateStickerSet:
 			case client.TypeUpdateSavedNotificationSounds:
 			case client.TypeUpdateChatOnlineMemberCount:
+			case client.TypeUpdateChatIsTranslatable:
+			case client.TypeUpdateAutosaveSettings:
 
 			case client.TypeUpdateSupergroup:
 			case client.TypeUpdateSupergroupFullInfo:
@@ -288,10 +291,10 @@ func ListenUpdates(acc int64) {
 				}
 
 				break
-			case client.TypeUpdateChatMessageTtl:
-				upd := update.(*client.UpdateChatMessageTtl)
+			case client.TypeUpdateChatMessageAutoDeleteTime:
+				upd := update.(*client.UpdateChatMessageAutoDeleteTime)
 				chatName := GetChatName(acc, upd.ChatId)
-				log.Printf("Message TTL updated for chat `%s` %d: %ds", chatName, upd.ChatId, upd.MessageTtl)
+				log.Printf("Message auto-delete time updated for chat `%s` %d: %ds", chatName, upd.ChatId, upd.MessageAutoDeleteTime)
 			case client.TypeUpdateChatAvailableReactions:
 				upd := update.(*client.UpdateChatAvailableReactions)
 				chatName := GetChatName(acc, upd.ChatId)

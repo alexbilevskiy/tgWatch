@@ -287,12 +287,12 @@ func GetContentAttachments(content client.MessageContent) []structs.MessageAttac
 		return cnt
 	case client.TypeMessageSticker:
 		msg := content.(*client.MessageSticker)
-		if msg.Sticker.Type != nil {
+		if msg.Sticker.FullType != nil {
 			s := structs.MessageAttachment{
-				T:    msg.Sticker.Type.StickerTypeType(),
+				T:    msg.Sticker.FullType.StickerFullTypeType(),
 				Id:   msg.Sticker.Sticker.Remote.Id,
 				Link: append(make([]string, 0), fmt.Sprintf("http://%s/f/%s", config.Config.WebListen, msg.Sticker.Sticker.Remote.Id)),
-				Name: msg.Sticker.Type.StickerTypeType(),
+				Name: msg.Sticker.FullType.StickerFullTypeType(),
 			}
 			if msg.Sticker.Thumbnail != nil {
 				s.ThumbLink = fmt.Sprintf("http://%s/f/%s", config.Config.WebListen, msg.Sticker.Thumbnail.File.Remote.Id)
@@ -371,7 +371,7 @@ func GetContentAttachments(content client.MessageContent) []structs.MessageAttac
 	case client.TypeMessageVideoChatStarted:
 	case client.TypeMessageScreenshotTaken:
 
-	case client.TypeMessageChatSetTtl:
+	case client.TypeMessageChatSetMessageAutoDeleteTime:
 	case client.TypeMessageChatSetTheme:
 
 	case client.TypeMessageUnsupported:
