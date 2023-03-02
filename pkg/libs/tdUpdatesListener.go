@@ -7,7 +7,6 @@ import (
 	"github.com/zelenin/go-tdlib/client"
 	"log"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -59,6 +58,7 @@ func ListenUpdates(acc int64) {
 			case client.TypeUpdateChatOnlineMemberCount:
 			case client.TypeUpdateChatIsTranslatable:
 			case client.TypeUpdateAutosaveSettings:
+			case client.TypeUpdateForumTopicInfo:
 
 			case client.TypeUpdateSupergroup:
 			case client.TypeUpdateSupergroupFullInfo:
@@ -70,8 +70,8 @@ func ListenUpdates(acc int64) {
 			case client.TypeUpdateMessageSendSucceeded:
 
 			case client.TypeUpdateMessageInteractionInfo:
-				upd := update.(*client.UpdateMessageInteractionInfo)
-				log.Printf("[%d] received interaction update for message in chat `%s`: %s", acc, GetChatName(acc, upd.ChatId), BuildMessageLink(upd.ChatId, upd.MessageId))
+				//upd := update.(*client.UpdateMessageInteractionInfo)
+				//log.Printf("[%d] received interaction update for message in chat `%s`: %s", acc, GetChatName(acc, upd.ChatId), BuildMessageLink(upd.ChatId, upd.MessageId))
 
 			case client.TypeUpdateChatTitle:
 				upd := update.(*client.UpdateChatTitle)
@@ -89,12 +89,10 @@ func ListenUpdates(acc int64) {
 				//DLog(fmt.Sprintf("New chat added: %d / %s", upd.Chat.Id, upd.Chat.Title))
 				//saveAllChatPositions(acc, upd.Chat.Id, upd.Chat.Positions)
 
-				break
 			case client.TypeUpdateConnectionState:
 				upd := update.(*client.UpdateConnectionState)
 				DLog(fmt.Sprintf("Connection state changed: %s", upd.State.ConnectionStateType()))
 
-				break
 			case client.TypeUpdateChatAction:
 				upd := update.(*client.UpdateChatAction)
 				if upd.ChatId < 0 {
@@ -120,7 +118,6 @@ func ListenUpdates(acc int64) {
 					DLog(fmt.Sprintf("User action `%s`: %s", userName, upd.Action.ChatActionType()))
 				}
 
-				break
 			case client.TypeUpdateChatLastMessage:
 				upd := update.(*client.UpdateChatLastMessage)
 				if len(upd.Positions) == 0 {
@@ -128,24 +125,19 @@ func ListenUpdates(acc int64) {
 				}
 				saveAllChatPositions(acc, upd.ChatId, upd.Positions)
 
-				break
 			case client.TypeUpdateOption:
 				upd := update.(*client.UpdateOption)
 				if upd.Name != "unix_time" {
 					log.Printf("Update option %s: %s", upd.Name, JsonMarshalStr(upd.Value))
 				}
 
-				break
 			case client.TypeUpdateChatPosition:
 				upd := update.(*client.UpdateChatPosition)
 				saveChatPosition(acc, upd.ChatId, upd.Position)
 
-				break
 			case client.TypeUpdateChatFilters:
 				upd := update.(*client.UpdateChatFilters)
 				SaveChatFilters(acc, upd)
-
-				break
 
 			case client.TypeUpdateDeleteMessages:
 				upd := update.(*client.UpdateDeleteMessages)
@@ -214,8 +206,6 @@ func ListenUpdates(acc int64) {
 				count := len(upd.MessageIds)
 				DLog(fmt.Sprintf("[%s] DELETED %d Messages from chat: %d, `%s`, %s", mongoId, count, upd.ChatId, chatName, intLink))
 
-				break
-
 			case client.TypeUpdateNewMessage:
 				upd := update.(*client.UpdateNewMessage)
 				if checkSkippedChat(acc, strconv.FormatInt(upd.Message.ChatId, 10)) || checkSkippedChat(acc, strconv.FormatInt(GetChatIdBySender(upd.Message.SenderId), 10)) || checkChatFilter(acc, upd.Message.ChatId) {
@@ -234,7 +224,8 @@ func ListenUpdates(acc int64) {
 					MarkJoinAsRead(acc, upd.Message.ChatId, upd.Message.Id)
 				}
 
-				break
+				customNewMessageRoutine(acc, upd)
+
 			case client.TypeUpdateMessageEdited:
 				upd := update.(*client.UpdateMessageEdited)
 				if checkSkippedChat(acc, strconv.FormatInt(upd.ChatId, 10)) || checkChatFilter(acc, upd.ChatId) {
@@ -257,7 +248,6 @@ func ListenUpdates(acc int64) {
 				//intLink := fmt.Sprintf("http://%s/m/%d/%d", config.Config.WebListen, upd.ChatId, upd.MessageId)
 				//log.Printf("[%s] EDITED msg! Chat: %d, msg %d, `%s`, %s, %s", mongoId, upd.ChatId, upd.MessageId, chatName, link, intLink)
 
-				break
 			case client.TypeUpdateMessageContent:
 				upd := update.(*client.UpdateMessageContent)
 				//@TODO: find message in DB and check sender, maybe he is ignored
@@ -281,7 +271,8 @@ func ListenUpdates(acc int64) {
 				intLink := fmt.Sprintf("http://%s/m/%d/%d", config.Config.WebListen, upd.ChatId, upd.MessageId)
 				DLog(fmt.Sprintf("[%s] EDITED content! Chat: %d, msg %d, %s, %s, %s", mongoId, upd.ChatId, upd.MessageId, chatName, link, intLink))
 
-				break
+				customMessageContentRoutine(acc, upd)
+
 			case client.TypeUpdateFile:
 				upd := update.(*client.UpdateFile)
 				if upd.File.Local.IsDownloadingActive {
@@ -290,20 +281,21 @@ func ListenUpdates(acc int64) {
 					DLog(fmt.Sprintf("File downloaded: %d bytes, path: %s", upd.File.Local.DownloadedSize, upd.File.Local.Path))
 				}
 
-				break
 			case client.TypeUpdateChatMessageAutoDeleteTime:
 				upd := update.(*client.UpdateChatMessageAutoDeleteTime)
 				chatName := GetChatName(acc, upd.ChatId)
 				log.Printf("Message auto-delete time updated for chat `%s` %d: %ds", chatName, upd.ChatId, upd.MessageAutoDeleteTime)
+
 			case client.TypeUpdateChatAvailableReactions:
 				upd := update.(*client.UpdateChatAvailableReactions)
 				chatName := GetChatName(acc, upd.ChatId)
 				DLog(fmt.Sprintf("Available reactions updated for chat `%s` %d: %s", chatName, upd.ChatId, JsonMarshalStr(upd.AvailableReactions)))
+
 			default:
 				j, _ := json.Marshal(update)
 				log.Printf("Unknown update %s : %s", t, string(j))
 			}
-			break
+
 		case client.ClassOk:
 		case client.ClassError:
 		case client.ClassUser:
@@ -324,9 +316,16 @@ func ListenUpdates(acc int64) {
 		case client.ClassChatInviteLinkInfo:
 		case client.ClassMessageLinkInfo:
 		case client.ClassStickers:
-			break
+
 		default:
 			log.Printf("WAAAT? update who??? %s, %v", update.GetClass(), update)
 		}
 	}
+}
+
+//@TODO: create some kind of lua integration to allow writing custom message processing plugins without need to recompile
+func customNewMessageRoutine(acc int64, update *client.UpdateNewMessage) {
+}
+
+func customMessageContentRoutine(acc int64, update *client.UpdateMessageContent) {
 }
