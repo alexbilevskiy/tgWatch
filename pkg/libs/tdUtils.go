@@ -370,6 +370,7 @@ func GetContentAttachments(content client.MessageContent) []structs.MessageAttac
 	case client.TypeMessageVideoChatEnded:
 	case client.TypeMessageVideoChatStarted:
 	case client.TypeMessageScreenshotTaken:
+	case client.TypeMessageForumTopicEdited:
 
 	case client.TypeMessageChatSetMessageAutoDeleteTime:
 	case client.TypeMessageChatSetTheme:

@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/alexbilevskiy/tgWatch/pkg/config"
+	"io"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -50,6 +52,11 @@ func FormatDateTime(timestamp int32) string {
 	return time.Unix(int64(timestamp), 0).Format("2006-01-02 15:04:05")
 }
 
+func FormatDateTimeOs(timestamp int32) string {
+
+	return time.Unix(int64(timestamp), 0).Format("2006-01-02_150405")
+}
+
 func FormatTime(timestamp int32) string {
 
 	return time.Unix(int64(timestamp), 0).Format("15:04")
@@ -64,4 +71,28 @@ func DLog(format string) {
 	if config.Config.Debug {
 		log.Printf(format)
 	}
+}
+
+func MoveFile(sourcePath, destPath string) error {
+	inputFile, err := os.Open(sourcePath)
+	if err != nil {
+		return fmt.Errorf("Couldn't open source file: %s", err)
+	}
+	outputFile, err := os.Create(destPath)
+	if err != nil {
+		inputFile.Close()
+		return fmt.Errorf("Couldn't open dest file: %s", err)
+	}
+	defer outputFile.Close()
+	_, err = io.Copy(outputFile, inputFile)
+	inputFile.Close()
+	if err != nil {
+		return fmt.Errorf("Writing to output file failed: %s", err)
+	}
+	// The copy was successful, so now delete the original file
+	err = os.Remove(sourcePath)
+	if err != nil {
+		return fmt.Errorf("Failed removing original file: %s", err)
+	}
+	return nil
 }
