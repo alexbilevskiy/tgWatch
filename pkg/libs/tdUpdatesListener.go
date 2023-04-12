@@ -178,21 +178,8 @@ func ListenUpdates(acc int64) {
 						continue
 					}
 					realUpdates = append(realUpdates, messageId)
-					attachments := GetContentAttachments(savedMessage.Message.Content)
-					for _, attachment := range attachments {
-						if attachment.Id == "" {
-							continue
-						}
-						link := BuildMessageLink(savedMessage.Message.ChatId, savedMessage.Message.Id)
-						DLog(fmt.Sprintf("Downloading file from deleted message (%s): %s", attachment.T, attachment.Id))
-						file, err := DownloadFileByRemoteId(acc, attachment.Id)
-						if err != nil {
-							log.Printf("Failed to download deleted file: %s, %s", link, err.Error())
-						} else {
-							log.Printf("Successfully downloaded file from deleted message: %s, %s", link, file.Local.Path)
-						}
-					}
 
+					customDeleteMessageRoutine(acc, savedMessage)
 				}
 				if len(realUpdates) <= 0 {
 
@@ -328,4 +315,7 @@ func customNewMessageRoutine(acc int64, update *client.UpdateNewMessage) {
 }
 
 func customMessageContentRoutine(acc int64, update *client.UpdateMessageContent) {
+}
+
+func customDeleteMessageRoutine(acc int64, savedMessage *client.UpdateNewMessage) {
 }
