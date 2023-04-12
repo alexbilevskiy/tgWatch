@@ -118,6 +118,35 @@ func GetChatName(acc int64, chatId int64) string {
 	return name
 }
 
+func GetChatUsername(acc int64, chatId int64) string {
+	chat, err := GetChat(acc, chatId, false)
+	if err != nil {
+		log.Printf("Failed to get chat name by id %d: %s", chatId, err)
+
+		return ""
+	}
+	switch chat.Type.ChatTypeType() {
+	case client.TypeChatTypeSupergroup:
+		t := chat.Type.(*client.ChatTypeSupergroup)
+		sg, err := GetSuperGroup(acc, t.SupergroupId)
+		if err != nil {
+			log.Printf("GetChatUsername error: %s", err.Error())
+			return ""
+		}
+		return GetUsername(sg.Usernames)
+	case client.TypeChatTypePrivate:
+		t := chat.Type.(*client.ChatTypePrivate)
+		user, err := GetUser(acc, t.UserId)
+		if err != nil {
+			log.Printf("GetChatUsername error: %s", err.Error())
+			return ""
+		}
+		return GetUsername(user.Usernames)
+	}
+
+	return ""
+}
+
 func GetContentWithText(content client.MessageContent, chatId int64) structs.MessageTextContent {
 	if content == nil {
 
@@ -193,6 +222,7 @@ func GetContentWithText(content client.MessageContent, chatId int64) structs.Mes
 		return structs.MessageTextContent{Text: "joined by invite link"}
 	case client.TypeMessageChatDeleteMember:
 		msg := content.(*client.MessageChatDeleteMember)
+		//@TODO: pass currentAcc as argument
 		return structs.MessageTextContent{Text: fmt.Sprintf("deleted `%s` from chat", GetChatName(currentAcc, msg.UserId))}
 	case client.TypeMessageUnsupported:
 		//msg := content.(*client.MessageUnsupported)

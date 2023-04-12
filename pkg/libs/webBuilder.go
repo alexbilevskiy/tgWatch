@@ -45,39 +45,24 @@ func buildChatInfoByLocalChat(chat *client.Chat, buildCounters bool) structs.Cha
 
 		return structs.ChatInfo{ChatId: -1, Username: "ERROR", ChatName: "NULL CHAT"}
 	}
-	info := structs.ChatInfo{ChatId: chat.Id, ChatName: GetChatName(currentAcc, chat.Id)}
+	info := structs.ChatInfo{ChatId: chat.Id, ChatName: GetChatName(currentAcc, chat.Id), Username: GetChatName(currentAcc, chat.Id)}
 	switch chat.Type.ChatTypeType() {
 	case client.TypeChatTypeSupergroup:
 		t := chat.Type.(*client.ChatTypeSupergroup)
 		sg, err := GetSuperGroup(currentAcc, t.SupergroupId)
 		if err != nil {
-			info.Username = "Error " + err.Error()
+			info.Type = "Error " + err.Error()
 		} else {
 			if sg.IsChannel {
 				info.Type = "Channel"
 			} else {
 				info.Type = "Supergroup"
 			}
-			un := GetUsername(sg.Usernames)
-			if un != "" {
-				info.Username = un
-			}
+			info.HasTopics = sg.IsForum
 		}
-		info.HasTopics = sg.IsForum
 	case client.TypeChatTypePrivate:
-		t := chat.Type.(*client.ChatTypePrivate)
 		info.Type = "User"
-		user, err := GetUser(currentAcc, t.UserId)
-		if err != nil {
-			info.Username = "Error " + err.Error()
-		} else {
-			un := GetUsername(user.Usernames)
-			if un != "" {
-				info.Username = un
-			}
-		}
 	case client.TypeChatTypeBasicGroup:
-		//t := chat.Type.(*client.ChatTypeBasicGroup)
 		info.Type = "Group"
 	default:
 		info.Type = chat.Type.ChatTypeType()
