@@ -22,7 +22,9 @@ BUGS:
 * new account log-in process is kinda tricky and requires restart after successful login
 
 ### install:
-* install [tdlib](https://tdlib.github.io/td/build.html?language=Go), compile with `-stdlib=libstdc++`
+* install [tdlib](https://tdlib.github.io/td/build.html?language=Go)
+* use forked go-tdlib `go mod edit -replace="github.com/zelenin/go-tdlib=github.com/alexbilevskiy/go-tdlib@master"`
+* compile with `-stdlib=libstdc++`
 * `run.sh`
 ### dependencies:
 * [tdlib](https://tdlib.github.io/td/build.html?language=Go)
