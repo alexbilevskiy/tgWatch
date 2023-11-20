@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/alexbilevskiy/tgWatch/pkg/structs"
 	"github.com/zelenin/go-tdlib/client"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 	"net/http"
 	"os"
@@ -16,7 +18,7 @@ func processTgJournal(req *http.Request, w http.ResponseWriter) {
 	if req.FormValue("limit") != "" {
 		limit, _ = strconv.ParseInt(req.FormValue("limit"), 10, 64)
 	}
-	updates, updateTypes, dates, errSelect := FindRecentChanges(currentAcc, limit)
+	cursor, errSelect := FindRecentChanges(currentAcc)
 	if errSelect != nil {
 		fmt.Printf("Error select updates: %s\n", errSelect)
 
@@ -25,14 +27,25 @@ func processTgJournal(req *http.Request, w http.ResponseWriter) {
 	var data structs.Journal
 	data.T = "Journal"
 
-	for i, rawJsonBytes := range updates {
-		switch updateTypes[i] {
+	for cursor.Next(nil) && limit >= 0 {
+		limit--
+		var updObj = bson.M{}
+		err := cursor.Decode(updObj)
+		if err != nil {
+			log.Fatalf("failed to decode cursor item: %s", err.Error())
+		}
+
+		updateType := updObj["t"].(string)
+		rawJsonBytes := updObj["raw"].(primitive.Binary).Data
+		date := updObj["time"].(int32)
+
+		switch updateType {
 		case "updateNewMessage":
 			upd, _ := client.UnmarshalUpdateNewMessage(rawJsonBytes)
 			item := structs.JournalItem{
-				T:       updateTypes[i],
-				Time:    dates[i],
-				Date:    FormatDateTime(dates[i]),
+				T:       updateType,
+				Time:    date,
+				Date:    FormatDateTime(date),
 				Link:    GetLink(currentAcc, upd.Message.ChatId, upd.Message.Id),
 				IntLink: fmt.Sprintf("/m/%d/%d", upd.Message.ChatId, upd.Message.Id), //@TODO: link shoud be /m
 				Chat: structs.ChatInfo{
@@ -50,9 +63,9 @@ func processTgJournal(req *http.Request, w http.ResponseWriter) {
 		case "updateMessageEdited":
 			upd, _ := client.UnmarshalUpdateMessageEdited(rawJsonBytes)
 			item := structs.JournalItem{
-				T:       updateTypes[i],
-				Time:    dates[i],
-				Date:    FormatDateTime(dates[i]),
+				T:       updateType,
+				Time:    date,
+				Date:    FormatDateTime(date),
 				Link:    GetLink(currentAcc, upd.ChatId, upd.MessageId),
 				IntLink: fmt.Sprintf("/m/%d/%d", upd.ChatId, upd.MessageId),
 				Chat: structs.ChatInfo{
@@ -66,9 +79,9 @@ func processTgJournal(req *http.Request, w http.ResponseWriter) {
 		case "updateMessageContent":
 			upd, _ := client.UnmarshalUpdateMessageContent(rawJsonBytes)
 			item := structs.JournalItem{
-				T:       updateTypes[i],
-				Time:    dates[i],
-				Date:    FormatDateTime(dates[i]),
+				T:       updateType,
+				Time:    date,
+				Date:    FormatDateTime(date),
 				Link:    GetLink(currentAcc, upd.ChatId, upd.MessageId),
 				IntLink: fmt.Sprintf("/m/%d/%d", upd.ChatId, upd.MessageId),
 				Chat: structs.ChatInfo{
@@ -93,21 +106,65 @@ func processTgJournal(req *http.Request, w http.ResponseWriter) {
 			break
 		case "updateDeleteMessages":
 			upd, _ := client.UnmarshalUpdateDeleteMessages(rawJsonBytes)
+			if checkSkippedChat(currentAcc, fmt.Sprintf("%d", upd.ChatId)) || checkChatFilter(currentAcc, upd.ChatId) {
+				limit++
+				continue
+			}
+
+			chat, err := GetChat(currentAcc, upd.ChatId, false)
+			if err != nil {
+				log.Printf("failed to get chat: %s", err.Error())
+				limit++
+				continue
+			}
+			i := buildChatInfoByLocalChat(chat, false)
+			if i.Type != "Channel" {
+				limit++
+				continue
+			}
+
+			messageIds := make([]int64, 0)
+			diffs := make([]int64, 0)
+			for _, messageId := range upd.MessageIds {
+				m, err := FindUpdateNewMessage(currentAcc, upd.ChatId, messageId)
+				if err != nil {
+					log.Printf("Message not found: %s", err)
+					continue
+				}
+				diff := date - m.Message.Date
+				if diff >= 120 {
+					log.Printf("Skip: %d", diff)
+
+					continue
+				}
+				if m.Message.Content.MessageContentType() == client.TypeMessagePinMessage {
+
+					continue
+				}
+				messageIds = append(messageIds, messageId)
+				diffs = append(diffs, int64(diff))
+			}
+			if len(messageIds) == 0 {
+				limit++
+				continue
+			}
+
 			item := structs.JournalItem{
-				T:       updateTypes[i],
-				Time:    dates[i],
-				Date:    FormatDateTime(dates[i]),
-				IntLink: fmt.Sprintf("/h/%d/?ids=%s", upd.ChatId, ImplodeInt(upd.MessageIds)),
+				T:       updateType,
+				Time:    date,
+				Date:    FormatDateTime(date),
+				IntLink: fmt.Sprintf("/h/%d/?ids=%s", upd.ChatId, ImplodeInt(messageIds)),
 				Chat: structs.ChatInfo{
 					ChatId:   upd.ChatId,
 					ChatName: GetChatName(currentAcc, upd.ChatId),
 				},
-				MessageId: upd.MessageIds,
+				MessageId: messageIds,
+				Message:   ImplodeInt(diffs),
 			}
 			data.J = append(data.J, item)
 			break
 		default:
-			//fc += fmt.Sprintf("[%s] Unknown update type \"%s\"<br>", FormatDateTime(dates[i]), updateTypes[i])
+			//fc += fmt.Sprintf("[%s] Unknown update type \"%s\"<br>", FormatDateTime(date), updateType)
 		}
 	}
 	renderTemplates(req, w, data, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/journal.gohtml`)

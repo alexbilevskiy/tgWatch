@@ -202,18 +202,16 @@ func countBy(acc int64, crit bson.D) int64 {
 	return count
 }
 
-func FindRecentChanges(acc int64, limit int64) ([][]byte, []string, []int32, error) {
+func FindRecentChanges(acc int64) (*mongo.Cursor, error) {
 	availableTypes := []string{
 		//"updateNewMessage",
-		"updateMessageContent",
+		//"updateMessageContent",
 		"updateDeleteMessages",
 	}
 	crit := bson.D{{"t", bson.M{"$in": availableTypes}}}
-	lim := &limit
-	opts := options.FindOptions{Limit: lim, Sort: bson.M{"_id": -1}}
-	cur, _ := updatesColl[acc].Find(mongoContext, crit, &opts)
+	opts := options.FindOptions{Sort: bson.M{"_id": -1}, Hint: "_id_-1_t_1"}
 
-	return iterateCursor(acc, cur)
+	return updatesColl[acc].Find(mongoContext, crit, &opts)
 }
 
 func GetChatsStats(acc int64, chats []int64) ([]structs.ChatCounters, error) {

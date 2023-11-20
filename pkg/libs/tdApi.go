@@ -73,11 +73,11 @@ func DownloadFileByRemoteId(acc int64, id string) (*client.File, error) {
 
 		return nil, errors.New("remoteFile request error: " + err.Error())
 	}
-	if remoteFile.Local.IsDownloadingCompleted {
-		log.Printf("Not dowloading file again: %s", remoteFile.Local.Path)
-
-		return remoteFile, nil
-	}
+	//if remoteFile.Local.IsDownloadingCompleted {
+	//	log.Printf("Not dowloading file again: %s", remoteFile.Local.Path)
+	//
+	//	return remoteFile, nil
+	//}
 
 	return DownloadFile(acc, remoteFile.Id)
 }

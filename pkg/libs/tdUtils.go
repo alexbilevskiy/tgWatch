@@ -208,8 +208,12 @@ func GetContentWithText(content client.MessageContent, chatId int64) structs.Mes
 		return structs.MessageTextContent{Text: fmt.Sprintf("Call (%ds)", msg.Duration)}
 	case client.TypeMessageAnimatedEmoji:
 		msg := content.(*client.MessageAnimatedEmoji)
+		if msg.AnimatedEmoji.Sticker != nil {
 
-		return structs.MessageTextContent{Text: fmt.Sprintf("%s (animated)", msg.AnimatedEmoji.Sticker.Emoji)}
+			return structs.MessageTextContent{Text: fmt.Sprintf("%s (animated)", msg.AnimatedEmoji.Sticker.Emoji)}
+		}
+		return structs.MessageTextContent{Text: "(invalid animated sticker)"}
+
 	case client.TypeMessageChatChangeTitle:
 		msg := content.(*client.MessageChatChangeTitle)
 
