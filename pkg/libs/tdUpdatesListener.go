@@ -6,7 +6,10 @@ import (
 	"github.com/alexbilevskiy/tgWatch/pkg/config"
 	"github.com/zelenin/go-tdlib/client"
 	"log"
+	"os"
+	"path"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -27,7 +30,7 @@ func ListenUpdates(acc int64) {
 			case client.TypeUpdateRecentStickers:
 			case client.TypeUpdateSavedAnimations:
 			case client.TypeUpdateTrendingStickerSets:
-			case client.TypeUpdateChatIsBlocked:
+			case client.TypeUpdateChatBlockList:
 			case client.TypeUpdateChatDraftMessage:
 			case client.TypeUpdateUserStatus:
 			case client.TypeUpdateChatReadInbox:
@@ -135,8 +138,8 @@ func ListenUpdates(acc int64) {
 				upd := update.(*client.UpdateChatPosition)
 				saveChatPosition(acc, upd.ChatId, upd.Position)
 
-			case client.TypeUpdateChatFilters:
-				upd := update.(*client.UpdateChatFilters)
+			case client.TypeUpdateChatFolders:
+				upd := update.(*client.UpdateChatFolders)
 				SaveChatFilters(acc, upd)
 
 			case client.TypeUpdateDeleteMessages:
@@ -293,7 +296,7 @@ func ListenUpdates(acc int64) {
 		case client.ClassChats:
 		case client.ClassMessageLink:
 		case client.ClassFile:
-		case client.ClassChatFilter:
+		case client.ClassChatFolder:
 		case client.ClassOptionValue:
 		case client.ClassChatMember:
 		case client.ClassSessions:

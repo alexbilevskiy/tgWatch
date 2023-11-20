@@ -473,7 +473,7 @@ func processTgChatList(req *http.Request, w http.ResponseWriter) {
 	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: ClMy, Title: "Owned chats"})
 	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: ClNotSubscribed, Title: "Not subscribed chats"})
 	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: ClNotAssigned, Title: "Chats not in any folder"})
-	for _, filter := range chatFilters[currentAcc] {
+	for _, filter := range chatFolders[currentAcc] {
 		folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: filter.Id, Title: filter.Title})
 	}
 
@@ -513,7 +513,7 @@ func processTgChatList(req *http.Request, w http.ResponseWriter) {
 	} else if folder == ClNotAssigned {
 		for _, chat := range localChats[currentAcc] {
 			saved := false
-			for _, filter := range chatFilters[currentAcc] {
+			for _, filter := range chatFolders[currentAcc] {
 				savedChats := getSavedChats(currentAcc, filter.Id)
 				for _, pos := range savedChats {
 					if pos.ChatId == chat.Id {

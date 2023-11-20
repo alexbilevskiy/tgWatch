@@ -19,7 +19,7 @@ var chatListColl map[int64]*mongo.Collection
 var settingsColl map[int64]*mongo.Collection
 var tdlibClient map[int64]*client.Client
 var tdlibOptions map[int64]map[string]structs.TdlibOption
-var chatFilters map[int64][]structs.ChatFilter
+var chatFolders map[int64][]structs.ChatFilter
 var ignoreLists map[int64](structs.IgnoreLists)
 var localChats map[int64]map[int64]*client.Chat
 var me map[int64]*client.User
@@ -31,7 +31,7 @@ func InitSharedVars() {
 	settingsColl = make(map[int64]*mongo.Collection)
 	tdlibClient = make(map[int64]*client.Client)
 	tdlibOptions = make(map[int64]map[string]structs.TdlibOption)
-	chatFilters = make(map[int64][]structs.ChatFilter)
+	chatFolders = make(map[int64][]structs.ChatFilter)
 	ignoreLists = make(map[int64](structs.IgnoreLists))
 	localChats = make(map[int64](map[int64]*client.Chat))
 	me = make(map[int64]*client.User)

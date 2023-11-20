@@ -130,7 +130,8 @@ func SendMessage(acc int64, text string, chatId int64, replyToMessageId *int64) 
 	if replyToMessageId == nil {
 		req = &client.SendMessageRequest{ChatId: chatId, InputMessageContent: content}
 	} else {
-		req = &client.SendMessageRequest{ChatId: chatId, ReplyToMessageId: *replyToMessageId, InputMessageContent: content}
+		replyTo := client.InputMessageReplyToMessage{MessageId: *replyToMessageId}
+		req = &client.SendMessageRequest{ChatId: chatId, ReplyTo: &replyTo, InputMessageContent: content}
 	}
 	message, err := tdlibClient[acc].SendMessage(req)
 	if err != nil {
@@ -220,9 +221,9 @@ func loadChats(acc int64, chatList client.ChatList) error {
 	return err
 }
 
-func getChatFilter(acc int64, filterId int32) (*client.ChatFilter, error) {
-	req := &client.GetChatFilterRequest{ChatFilterId: filterId}
-	return tdlibClient[acc].GetChatFilter(req)
+func getChatFolder(acc int64, folderId int32) (*client.ChatFolder, error) {
+	req := &client.GetChatFolderRequest{ChatFolderId: folderId}
+	return tdlibClient[acc].GetChatFolder(req)
 }
 
 func LoadChatHistory(acc int64, chatId int64, fromMessageId int64, offset int32) (*client.Messages, error) {

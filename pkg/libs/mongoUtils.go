@@ -338,24 +338,24 @@ func iterateCursor(acc int64, cur *mongo.Cursor) ([][]byte, []string, []int32, e
 	return jsons, types, dates, nil
 }
 
-func saveChatFilter(acc int64, chatFilter *client.ChatFilter, filterInfo *client.ChatFilterInfo) {
+func saveChatFolder(acc int64, chatFolder *client.ChatFolder, folderInfo *client.ChatFolderInfo) {
 
-	filStr := structs.ChatFilter{Id: filterInfo.Id, Title: filterInfo.Title, IncludedChats: chatFilter.IncludedChatIds}
-	crit := bson.D{{"id", filterInfo.Id}}
+	filStr := structs.ChatFilter{Id: folderInfo.Id, Title: folderInfo.Title, IncludedChats: chatFolder.IncludedChatIds}
+	crit := bson.D{{"id", folderInfo.Id}}
 	update := bson.D{{"$set", filStr}}
 	t := true
 	opts := &options.UpdateOptions{Upsert: &t}
 	_, err := chatFiltersColl[acc].UpdateOne(mongoContext, crit, update, opts)
 	if err != nil {
-		fmt.Printf("Failed to save chat filter: id: %d, n: %s, err: %s\n", filterInfo.Id, filterInfo.Title, err)
+		fmt.Printf("Failed to save chat filter: id: %d, n: %s, err: %s\n", folderInfo.Id, folderInfo.Title, err)
 	}
 
-	crit = bson.D{{"chatid", bson.M{"$nin": chatFilter.IncludedChatIds}}, {"listid", filterInfo.Id}}
+	crit = bson.D{{"chatid", bson.M{"$nin": chatFolder.IncludedChatIds}}, {"listid", folderInfo.Id}}
 	dr, err := chatListColl[acc].DeleteMany(mongoContext, crit)
 	if err != nil {
-		fmt.Printf("Failed to delete chats from folder id: %d, n: %s, err: %s\n", filterInfo.Id, filterInfo.Title, err)
+		fmt.Printf("Failed to delete chats from folder id: %d, n: %s, err: %s\n", folderInfo.Id, folderInfo.Title, err)
 	} else if dr.DeletedCount > 0 {
-		fmt.Printf("Deleted %d chats from folder id: %d, name: %s\n", dr.DeletedCount, filterInfo.Id, filterInfo.Title)
+		fmt.Printf("Deleted %d chats from folder id: %d, name: %s\n", dr.DeletedCount, folderInfo.Id, folderInfo.Title)
 	}
 }
 
@@ -389,9 +389,9 @@ func saveChatPosition(acc int64, chatId int64, chatPosition *client.ChatPosition
 		//l := chatPosition.List.(*client.ChatListMain)
 		listId = ClMain
 		break
-	case "chatListFilter":
-		l := chatPosition.List.(*client.ChatListFilter)
-		listId = l.ChatFilterId
+	case "chatListFolder":
+		l := chatPosition.List.(*client.ChatListFolder)
+		listId = l.ChatFolderId
 		break
 	default:
 		listId = ClCached
@@ -450,7 +450,7 @@ func ClearChatFilters(acc int64) {
 	log.Printf("Removed %d chat folders from db", removed.DeletedCount)
 }
 
-func LoadChatFilters(acc int64) {
+func LoadChatFolders(acc int64) {
 	cur, _ := chatFiltersColl[acc].Find(mongoContext, bson.M{})
 	fi := make([]structs.ChatFilter, 0)
 	err := cur.All(mongoContext, &fi)
@@ -460,8 +460,8 @@ func LoadChatFilters(acc int64) {
 
 		return
 	}
-	chatFilters[acc] = fi
-	log.Printf("Loaded %d chat folders from db", len(chatFilters[acc]))
+	chatFolders[acc] = fi
+	log.Printf("Loaded %d chat folders from db", len(chatFolders[acc]))
 }
 
 func LoadSettings(acc int64) {

@@ -428,7 +428,7 @@ func loadChatsList(acc int64, listId int32) {
 	case ClArchive:
 		chatList = &client.ChatListArchive{}
 	default:
-		chatList = &client.ChatListFilter{ChatFilterId: listId}
+		chatList = &client.ChatListFolder{ChatFolderId: listId}
 	}
 	crit := bson.D{{"listid", listId}}
 	d, err := chatListColl[acc].DeleteMany(mongoContext, crit)
@@ -479,7 +479,7 @@ func checkSkippedSenderBySavedMessage(acc int64, chatId int64, messageId int64) 
 }
 
 func checkChatFilter(acc int64, chatId int64) bool {
-	for _, filter := range chatFilters[acc] {
+	for _, filter := range chatFolders[acc] {
 		for _, chatInFilter := range filter.IncludedChats {
 			if chatInFilter == chatId && ignoreLists[acc].IgnoreFolders[filter.Title] {
 				//log.Printf("Skip chat %d because it's in skipped folder %s", chatId, filter.Title)
@@ -492,45 +492,45 @@ func checkChatFilter(acc int64, chatId int64) bool {
 	return false
 }
 
-func SaveChatFilters(acc int64, chatFiltersUpdate *client.UpdateChatFilters) {
-	log.Printf("Chat filters update! %s", chatFiltersUpdate.Type)
+func SaveChatFilters(acc int64, chatFoldersUpdate *client.UpdateChatFolders) {
+	log.Printf("Chat filters update! %s", chatFoldersUpdate.Type)
 	//ClearChatFilters(acc)
 	var wg sync.WaitGroup
 
-	for _, filterInfo := range chatFiltersUpdate.ChatFilters {
+	for _, folderInfo := range chatFoldersUpdate.ChatFolders {
 		existed := false
-		for _, existningFilter := range chatFilters[acc] {
-			if existningFilter.Id == filterInfo.Id {
+		for _, existningFilter := range chatFolders[acc] {
+			if existningFilter.Id == folderInfo.Id {
 				existed = true
 				break
 			}
 		}
 		if existed {
-			log.Printf("Existing chat filter: id: %d, n: %s", filterInfo.Id, filterInfo.Title)
+			log.Printf("Existing chat folder: id: %d, n: %s", folderInfo.Id, folderInfo.Title)
 			continue
 		}
-		log.Printf("New chat filter: id: %d, n: %s", filterInfo.Id, filterInfo.Title)
+		log.Printf("New chat folder: id: %d, n: %s", folderInfo.Id, folderInfo.Title)
 
 		wg.Add(1)
-		go func(filterInfo *client.ChatFilterInfo, wg *sync.WaitGroup) {
+		go func(folderInfo *client.ChatFolderInfo, wg *sync.WaitGroup) {
 			defer wg.Done()
-			chatFilter, err := getChatFilter(acc, filterInfo.Id)
+			chatFolder, err := getChatFolder(acc, folderInfo.Id)
 			if err != nil {
-				log.Printf("Failed to load chat filter: id: %d, n: %s, reason: %s", filterInfo.Id, filterInfo.Title, err.Error())
+				log.Printf("Failed to load chat folder: id: %d, n: %s, reason: %s", folderInfo.Id, folderInfo.Title, err.Error())
 
 				return
 			}
-			saveChatFilter(acc, chatFilter, filterInfo)
-			log.Printf("Chat filter LOADED: id: %d, n: %s", filterInfo.Id, filterInfo.Title)
-		}(filterInfo, &wg)
+			saveChatFolder(acc, chatFolder, folderInfo)
+			log.Printf("Chat folder LOADED: id: %d, n: %s", folderInfo.Id, folderInfo.Title)
+		}(folderInfo, &wg)
 		//time.Sleep(time.Second * 2)
 	}
 	wg.Wait()
 
-	for _, existningFilter := range chatFilters[acc] {
+	for _, existningFolder := range chatFolders[acc] {
 		deleted := true
-		for _, filterInfo := range chatFiltersUpdate.ChatFilters {
-			if filterInfo.Id == existningFilter.Id {
+		for _, folderInfo := range chatFoldersUpdate.ChatFolders {
+			if folderInfo.Id == existningFolder.Id {
 				deleted = false
 				continue
 			}
@@ -538,11 +538,11 @@ func SaveChatFilters(acc int64, chatFiltersUpdate *client.UpdateChatFilters) {
 		if !deleted {
 			continue
 		}
-		log.Printf("Deleted chat filter: id: %d, n: %s", existningFilter.Id, existningFilter.Title)
+		log.Printf("Deleted chat folder: id: %d, n: %s", existningFolder.Id, existningFolder.Title)
 		//@TODO: delete it
 	}
 
-	LoadChatFilters(acc)
+	LoadChatFolders(acc)
 
 }
 

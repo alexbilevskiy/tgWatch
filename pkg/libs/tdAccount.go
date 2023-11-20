@@ -29,7 +29,7 @@ func createTdlibParameters(dataDir string) *client.SetTdlibParametersRequest {
 }
 func InitTdlib(acc int64) {
 	LoadSettings(acc)
-	LoadChatFilters(acc)
+	LoadChatFolders(acc)
 	loadOptionsList(acc)
 	authorizer := client.ClientAuthorizer()
 	go client.CliInteractor(authorizer)
