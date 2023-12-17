@@ -17,6 +17,7 @@ ENV PATH="/usr/local/go/bin:${PATH}"
 WORKDIR /tgWatch
 COPY . .
 
+RUN make deps
 RUN make build
 
 CMD ["/tgWatch/tgWatch"]
