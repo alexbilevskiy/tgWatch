@@ -35,13 +35,13 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if detectAccount(req, res) == false {
+	if action[1] == "new" {
+		processAddAccount(req, res)
 
 		return
 	}
 
-	if action[1] == "new" {
-		processAddAccount(req, res)
+	if detectAccount(req, res) == false {
 
 		return
 	}
