@@ -19,6 +19,4 @@ COPY . .
 
 RUN make build
 
-COPY config.json ./
-
 CMD ["/tgWatch/tgWatch"]
