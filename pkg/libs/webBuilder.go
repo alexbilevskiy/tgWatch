@@ -44,7 +44,7 @@ func buildChatInfoByLocalChat(chat *client.Chat) structs.ChatInfo {
 
 		return structs.ChatInfo{ChatId: -1, Username: "ERROR", ChatName: "NULL CHAT"}
 	}
-	info := structs.ChatInfo{ChatId: chat.Id, ChatName: GetChatName(currentAcc, chat.Id), Username: GetChatName(currentAcc, chat.Id)}
+	info := structs.ChatInfo{ChatId: chat.Id, ChatName: GetChatName(currentAcc, chat.Id), Username: GetChatUsername(currentAcc, chat.Id)}
 	switch chat.Type.ChatTypeType() {
 	case client.TypeChatTypeSupergroup:
 		t := chat.Type.(*client.ChatTypeSupergroup)
