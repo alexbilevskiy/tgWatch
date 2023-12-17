@@ -158,8 +158,11 @@ func CreateAccount(phone string) {
 		//state = nil
 		currentAuthorizingAcc.Id = meLocal.Id
 		currentAuthorizingAcc.Status = AccStatusActive
+		currentAuthorizingAcc.Username = GetUsername(meLocal.Usernames)
+
 		SaveAccount(currentAuthorizingAcc)
-		//LoadAccounts()
+		Accounts[meLocal.Id] = *currentAuthorizingAcc
+
 		currentAuthorizingAcc = nil
 	}()
 }
