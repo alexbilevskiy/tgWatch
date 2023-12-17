@@ -3,13 +3,6 @@
     <h4><a href="/c/{{.Chat.ChatId}}">{{.Chat.ChatName}}</a></h4>
    <div>
        {{template "message" dict "parent" .Message "chat" .Chat "needHeader" true "needSender" true  "needFooter" true "needPrevFooter" false}}
-       {{if .Edits}}
-            {{range .Edits}}
-                Edited at {{.Date | Time}}
-                {{$msg := SetNestedMsg $.Message .FormattedText .SimpleText .Attachments}}
-               {{template "message" dict "parent" $msg "chat" $.Chat "needHeader" true "needSender" true  "needFooter" true "needPrevFooter" false}}
-            {{end}}
-       {{end}}
     </div>
 </div>
 {{end}}

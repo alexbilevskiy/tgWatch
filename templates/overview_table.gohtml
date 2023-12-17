@@ -17,17 +17,8 @@
         <th scope="col" class="sort_by"  data-sort-by="unread">
             Unread
         </th>
-        <th scope="col" class="sort_by"  data-sort-by="total">
-            Total
-        </th>
         <th scope="col" class="sort_by"  data-sort-by="messages">
             Messages
-        </th>
-        <th scope="col" class="sort_by" data-sort-by="edits">
-            Edits
-        </th>
-        <th scope="col" class="sort_by" data-sort-by="deletes">
-            Deletes
         </th>
     </tr>
     </thead>
@@ -35,10 +26,7 @@
     {{range .Chats}}
     <tr
         data-unread="{{.CountUnread}}"
-        data-total="{{.CountTotal}}"
         data-messages="{{.CountMessages}}"
-        data-edits="{{.CountEdits}}"
-        data-deletes="{{.CountDeletes}}"
     >
         <td>
             {{.Type}}
@@ -53,7 +41,7 @@
 
         </td>
         <td>
-            <a href="/h/{{.ChatId}}">{{.ChatName}}</a>
+            <a href="/ho/{{.ChatId}}">{{.ChatName}}</a>
         </td>
         <td>
             {{if gt .CountUnread 0}}
@@ -61,23 +49,8 @@
             {{end}}
         </td>
         <td>
-            {{if gt .CountTotal 0}}
-            <span class="badge bg-secondary">{{.CountTotal}}</span>
-            {{end}}
-        </td>
-        <td>
             {{if gt .CountMessages 0}}
             <span class="badge bg-success">{{.CountMessages}}</span>
-            {{end}}
-        </td>
-        <td>
-            {{if gt .CountEdits 0}}
-            <span class="badge bg-info">{{.CountEdits}}</span>
-            {{end}}
-        </td>
-        <td>
-            {{if gt .CountDeletes 0}}
-            <a href="/h/{{.ChatId}}?deleted=1"><span class="badge bg-danger">{{.CountDeletes}}</span></a>
             {{end}}
         </td>
     </tr>

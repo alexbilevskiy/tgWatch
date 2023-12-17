@@ -66,7 +66,6 @@
         {{end}}
         <div class="align-bottom text-end fw-lighter small position-absolute bottom-0 end-0">
             {{if .parent.Edited}}📝{{end}}
-            {{if .parent.Deleted}}❌{{end}}
             <span title="{{.parent.Date | DateTime}}">
                 <a class="link-secondary" href="/m/{{.chat.ChatId}}/{{.parent.MessageId}}">{{.parent.Date | Time}}</a>
             </span>

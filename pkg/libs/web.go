@@ -69,7 +69,7 @@ func renderTemplates(req *http.Request, w http.ResponseWriter, templateData inte
 					return structs.ChatInfo{ChatId: chatId, ChatName: "_NOT_FOUND_"}
 				}
 
-				return buildChatInfoByLocalChat(localChat, false)
+				return buildChatInfoByLocalChat(localChat)
 			},
 			"chatInfo": func(chatIdstr string) structs.ChatInfo {
 				chatId, _ := strconv.ParseInt(chatIdstr, 10, 64)
@@ -83,7 +83,7 @@ func renderTemplates(req *http.Request, w http.ResponseWriter, templateData inte
 					return structs.ChatInfo{ChatId: chatId, ChatName: getUserFullname(user)}
 				}
 
-				return buildChatInfoByLocalChat(c, false)
+				return buildChatInfoByLocalChat(c)
 			},
 			"GetLink": func(chatId int64, messageId int64) string {
 				return GetLink(currentAcc, chatId, messageId)

@@ -7,26 +7,7 @@ type ChatInfo struct {
 	Type          string
 	HasTopics     bool
 	CountUnread   int32
-	CountTotal    int32
 	CountMessages int32
-	CountEdits    int32
-	CountDeletes  int32
-}
-type JournalItem struct {
-	T         string
-	Time      int32
-	Date      string
-	MessageId []int64
-	Chat      ChatInfo
-	From      ChatInfo
-	Link      string
-	IntLink   string
-	Message   string
-	Error     string
-}
-type Journal struct {
-	T string
-	J []JournalItem
 }
 type Index struct {
 	T string
@@ -37,16 +18,6 @@ type Overview struct {
 }
 type JSON struct {
 	JSON string
-}
-
-type ChatHistory struct {
-	T          string
-	Chat       ChatInfo
-	Limit      int64
-	Offset     int64
-	NextOffset int64
-	PrevOffset int64
-	Messages   []MessageInfo
 }
 
 type ChatHistoryOnline struct {
@@ -63,7 +34,6 @@ type SingleMessage struct {
 	T       string
 	Chat    ChatInfo
 	Message MessageInfo
-	Edits   []MessageEditedInfo
 }
 
 type ChatFullInfo struct {

@@ -28,8 +28,7 @@ func parseMessage(message *client.Message) structs.MessageInfo {
 		SimpleText:    ct.Text,
 		FormattedText: ct.FormattedText,
 		Attachments:   GetContentAttachments(message.Content),
-		Deleted:       IsMessageDeleted(currentAcc, message.ChatId, message.Id),
-		Edited:        IsMessageEdited(currentAcc, message.ChatId, message.Id),
+		Edited:        message.EditDate != 0,
 		ContentRaw:    nil,
 	}
 
@@ -40,7 +39,7 @@ func parseMessage(message *client.Message) structs.MessageInfo {
 	return messageInfo
 }
 
-func buildChatInfoByLocalChat(chat *client.Chat, buildCounters bool) structs.ChatInfo {
+func buildChatInfoByLocalChat(chat *client.Chat) structs.ChatInfo {
 	if chat == nil {
 
 		return structs.ChatInfo{ChatId: -1, Username: "ERROR", ChatName: "NULL CHAT"}
@@ -68,17 +67,6 @@ func buildChatInfoByLocalChat(chat *client.Chat, buildCounters bool) structs.Cha
 		info.Type = chat.Type.ChatTypeType()
 	}
 	info.CountUnread = chat.UnreadCount
-	if buildCounters {
-		chatStats, err := GetChatsStats(currentAcc, append(make([]int64, 0), chat.Id))
-		if err != nil {
-			fmt.Printf("Failed to get chat stats %d", chat.Id)
-		} else if len(chatStats) > 0 {
-			info.CountTotal = chatStats[0].Counters["total"]
-			info.CountDeletes = chatStats[0].Counters["updateDeleteMessages"]
-			info.CountEdits = chatStats[0].Counters["updateMessageEdited"]
-			info.CountMessages = chatStats[0].Counters["updateNewMessage"]
-		}
-	}
 
 	return info
 }

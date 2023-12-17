@@ -17,19 +17,7 @@ type MessageInfo struct {
 	FormattedText *client.FormattedText
 	SimpleText    string
 	Attachments   []MessageAttachment
-	Deleted       bool
-	DeletedAt     int32
 	Edited        bool
-	ContentRaw    interface{}
-}
-
-type MessageEditedInfo struct {
-	T             string
-	MessageId     int64
-	FormattedText *client.FormattedText
-	SimpleText    string
-	Attachments   []MessageAttachment
-	Date          int32
 	ContentRaw    interface{}
 }
 

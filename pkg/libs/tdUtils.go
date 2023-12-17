@@ -9,7 +9,6 @@ import (
 	"github.com/zelenin/go-tdlib/client"
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
-	"strconv"
 	"sync"
 )
 
@@ -456,21 +455,6 @@ func checkSkippedChat(acc int64, chatId string) bool {
 		return true
 	}
 	if _, ok := ignoreLists[acc].IgnoreChatIds[chatId]; ok {
-
-		return true
-	}
-
-	return false
-}
-
-func checkSkippedSenderBySavedMessage(acc int64, chatId int64, messageId int64) bool {
-	savedMessage, err := FindUpdateNewMessage(acc, chatId, messageId)
-	if err != nil {
-
-		return false
-	}
-
-	if checkSkippedChat(acc, strconv.FormatInt(GetChatIdBySender(savedMessage.Message.SenderId), 10)) {
 
 		return true
 	}

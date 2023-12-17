@@ -21,6 +21,7 @@ func ListenUpdates(acc int64) {
 			switch t {
 			case client.TypeUpdateChatActionBar:
 			case client.TypeUpdateSuggestedActions:
+			case client.TypeUpdateChatTheme:
 			case client.TypeUpdateChatThemes:
 			case client.TypeUpdateFavoriteStickers:
 			case client.TypeUpdateInstalledStickerSets:
@@ -150,53 +151,10 @@ func ListenUpdates(acc int64) {
 
 					break
 				}
-				if checkSkippedChat(acc, strconv.FormatInt(upd.ChatId, 10)) || checkChatFilter(acc, upd.ChatId) {
-
-					break
-				}
-				MarkAsDeleted(acc, upd.ChatId, upd.MessageIds)
-
-				skipUpdate := 0
-				realUpdates := make([]int64, 0)
-				for _, messageId := range upd.MessageIds {
-					savedMessage, err := FindUpdateNewMessage(acc, upd.ChatId, messageId)
-					if err != nil {
-						realUpdates = append(realUpdates, messageId)
-
-						continue
-					}
-					if checkSkippedChat(acc, strconv.FormatInt(GetChatIdBySender(savedMessage.Message.SenderId), 10)) {
-						DLog(fmt.Sprintf("Skip deleted message %d from sender %d, `%s`", messageId, GetChatIdBySender(savedMessage.Message.SenderId), GetSenderName(acc, savedMessage.Message.SenderId)))
-						skipUpdate++
-
-						continue
-					}
-					if savedMessage.Message.Content == nil {
-						log.Printf("Skip deleted message %d with unknown content from %d", messageId, GetChatIdBySender(savedMessage.Message.SenderId))
-
-						continue
-					}
-					if savedMessage.Message.Content.MessageContentType() == client.TypeMessageChatAddMembers {
-						DLog(fmt.Sprintf("Skip deleted message %d (chat join of user %d)", messageId, GetChatIdBySender(savedMessage.Message.SenderId)))
-						skipUpdate++
-
-						continue
-					}
-					realUpdates = append(realUpdates, messageId)
-
-					customDeleteMessageRoutine(acc, savedMessage)
-				}
-				if len(realUpdates) <= 0 {
-
-					break
-				}
-				upd.MessageIds = realUpdates
-				mongoId := SaveUpdate(acc, t, upd, 0)
-
 				chatName := GetChatName(acc, upd.ChatId)
 				intLink := fmt.Sprintf("http://%s/h/%d/?ids=%s", config.Config.WebListen, upd.ChatId, ImplodeInt(upd.MessageIds))
 				count := len(upd.MessageIds)
-				DLog(fmt.Sprintf("[%s] DELETED %d Messages from chat: %d, `%s`, %s", mongoId, count, upd.ChatId, chatName, intLink))
+				DLog(fmt.Sprintf("DELETED %d Messages from chat: %d, `%s`, %s", count, upd.ChatId, chatName, intLink))
 
 			case client.TypeUpdateNewMessage:
 				upd := update.(*client.UpdateNewMessage)
@@ -205,7 +163,6 @@ func ListenUpdates(acc int64) {
 					break
 				}
 				//senderChatId := GetChatIdBySender(upd.Message.Sender)
-				SaveUpdate(acc, t, upd, upd.Message.Date)
 				//mongoId := SaveUpdate(t, upd, upd.Message.Date)
 				//link := GetLink(tdlibClient, upd.Message.ChatId, upd.Message.Id)
 				//chatName := GetChatName(upd.Message.ChatId)
@@ -228,12 +185,7 @@ func ListenUpdates(acc int64) {
 					//messages with buttons - reactions, likes etc
 					break
 				}
-				if checkSkippedSenderBySavedMessage(acc, upd.ChatId, upd.MessageId) {
 
-					break
-				}
-
-				SaveUpdate(acc, t, upd, upd.EditDate)
 				//mongoId := SaveUpdate(t, upd, upd.EditDate)
 				//link := GetLink(tdlibClient, upd.ChatId, upd.MessageId)
 				//chatName := GetChatName(upd.ChatId)
@@ -242,7 +194,6 @@ func ListenUpdates(acc int64) {
 
 			case client.TypeUpdateMessageContent:
 				upd := update.(*client.UpdateMessageContent)
-				//@TODO: find message in DB and check sender, maybe he is ignored
 				if checkSkippedChat(acc, strconv.FormatInt(upd.ChatId, 10)) || checkChatFilter(acc, upd.ChatId) {
 
 					break
@@ -251,17 +202,10 @@ func ListenUpdates(acc int64) {
 					//dont save "poll" updates - that's just counters, users cannot update polls manually
 					break
 				}
-				if checkSkippedSenderBySavedMessage(acc, upd.ChatId, upd.MessageId) {
-
-					break
-				}
-
-				mongoId := SaveUpdate(acc, t, upd, 0)
-
 				link := GetLink(acc, upd.ChatId, upd.MessageId)
 				chatName := GetChatName(acc, upd.ChatId)
 				intLink := fmt.Sprintf("http://%s/m/%d/%d", config.Config.WebListen, upd.ChatId, upd.MessageId)
-				DLog(fmt.Sprintf("[%s] EDITED content! Chat: %d, msg %d, %s, %s, %s", mongoId, upd.ChatId, upd.MessageId, chatName, link, intLink))
+				DLog(fmt.Sprintf("EDITED content! Chat: %d, msg %d, %s, %s, %s", upd.ChatId, upd.MessageId, chatName, link, intLink))
 
 				customMessageContentRoutine(acc, upd)
 

@@ -62,9 +62,6 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		messageId, _ := strconv.ParseInt(m[2], 10, 64)
 		processTgSingleMessage(chatId, messageId, req, res)
 		return
-	case "j":
-		processTgJournal(req, res)
-		return
 	case "l":
 		processTgChatList(req, res)
 		return
@@ -101,28 +98,12 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		if m[1] == "" {
 			chatId = me[currentAcc].Id
 		}
-
 		ids := req.FormValue("ids")
 		if ids != "" {
 			processTgMessagesByIds(chatId, req, res)
 		} else {
-			processTgChatHistory(chatId, req, res)
+			processTgChatHistoryOnline(chatId, req, res)
 		}
-
-		return
-	case "ho":
-		r := regexp.MustCompile(`^/ho/?(-?\d+)?($|/)`)
-		m := r.FindStringSubmatch(req.URL.Path)
-		if m == nil {
-			errorResponse(structs.WebError{T: "Not found", Error: req.URL.Path}, 404, req, res)
-
-			return
-		}
-		chatId, _ := strconv.ParseInt(m[1], 10, 64)
-		if m[1] == "" {
-			chatId = me[currentAcc].Id
-		}
-		processTgChatHistoryOnline(chatId, req, res)
 
 		return
 	case "f":
