@@ -7,6 +7,7 @@ import (
 	"github.com/alexbilevskiy/tgWatch/pkg/structs"
 	"github.com/zelenin/go-tdlib/client"
 	"html/template"
+	"log"
 	"net/http"
 	"strconv"
 )
@@ -26,7 +27,12 @@ func renderTemplates(req *http.Request, w http.ResponseWriter, templateData inte
 	var t *template.Template
 	var errParse error
 	if verbose {
-		t, errParse = template.New(`json.gohtml`).ParseFiles(`templates/json.gohtml`)
+		w.Header().Set("Content-Type", "application/json")
+		_, err := w.Write(jsonMarshalPretty(templateData))
+		if err != nil {
+			log.Printf("failed writing debug body: %s", err.Error())
+		}
+		return
 	} else {
 		t, errParse = template.New(`base.gohtml`).Funcs(template.FuncMap{
 			"formValue": func(key string) string {
@@ -128,11 +134,7 @@ func renderTemplates(req *http.Request, w http.ResponseWriter, templateData inte
 	}
 
 	var err error
-	if verbose {
-		err = t.Execute(w, structs.JSON{JSON: JsonMarshalStr(templateData)})
-	} else {
-		err = t.Execute(w, templateData)
-	}
+	err = t.Execute(w, templateData)
 
 	if err != nil {
 		fmt.Printf("Error tpl: %s\n", err)

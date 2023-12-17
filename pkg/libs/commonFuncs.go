@@ -37,14 +37,14 @@ func JsonMarshalStr(j interface{}) string {
 	return string(m)
 }
 
-func jsonMarshalPretty(j interface{}) string {
+func jsonMarshalPretty(j interface{}) []byte {
 	m, err := json.MarshalIndent(j, "", "    ")
 	if err != nil {
 
-		return "INVALID_JSON"
+		return []byte("INVALID_JSON")
 	}
 
-	return string(m)
+	return m
 }
 
 func FormatDateTime(timestamp int32) string {

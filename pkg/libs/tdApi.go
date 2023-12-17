@@ -6,7 +6,6 @@ import (
 	"github.com/zelenin/go-tdlib/client"
 	"log"
 	"sync"
-	"time"
 )
 
 var m = sync.RWMutex{}
@@ -202,8 +201,8 @@ func GetMessage(acc int64, chatId int64, messageId int64) (*client.Message, erro
 
 		return nil, errors.New(fmt.Sprintf("failed to view message: %s", err.Error()))
 	}
-	log.Printf("sleeping before get message %d/%d", chatId, messageId)
-	time.Sleep(time.Second * 5)
+	//log.Printf("sleeping before get message %d/%d", chatId, messageId)
+	//time.Sleep(time.Second * 5)
 
 	getMessageReq := &client.GetMessageRequest{ChatId: chatId, MessageId: messageId}
 	message, err := tdlibClient[acc].GetMessage(getMessageReq)

@@ -48,7 +48,7 @@ func processTgActiveSessions(req *http.Request, w http.ResponseWriter) {
 	}
 	data := structs.SessionsList{T: "Sessions", Sessions: sessions}
 	if !verbose {
-		data.SessionsRaw = jsonMarshalPretty(sessions)
+		data.SessionsRaw = string(jsonMarshalPretty(sessions))
 	}
 
 	renderTemplates(req, w, data, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/sessions_list.gohtml`)
@@ -140,7 +140,7 @@ func processTgChatInfo(chatId int64, req *http.Request, w http.ResponseWriter) {
 	if verbose {
 		data = res
 	} else {
-		res.ChatRaw = jsonMarshalPretty(chat)
+		res.ChatRaw = string(jsonMarshalPretty(chat))
 		data = res
 	}
 	renderTemplates(req, w, data, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/chat_info.gohtml`)
@@ -481,7 +481,7 @@ func processTgLink(req *http.Request, w http.ResponseWriter) {
 		SourceLink  string
 		LinkInfoRaw string
 		LinkDataRaw string
-	}{T: "Link info", SourceLink: link, LinkInfoRaw: jsonMarshalPretty(linkInfo), LinkDataRaw: jsonMarshalPretty(LinkData)}
+	}{T: "Link info", SourceLink: link, LinkInfoRaw: string(jsonMarshalPretty(linkInfo)), LinkDataRaw: string(jsonMarshalPretty(LinkData))}
 
 	renderTemplates(req, w, respStruct, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/link_info.gohtml`)
 }
