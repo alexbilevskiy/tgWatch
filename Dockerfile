@@ -15,9 +15,12 @@ COPY --from=golang:1.18 /usr/local/go/ /usr/local/go/
 ENV PATH="/usr/local/go/bin:${PATH}"
 
 WORKDIR /tgWatch
-COPY . .
-
+COPY go.mod .
+COPY go.sum .
+COPY Makefile .
 RUN make deps
+
+COPY . .
 RUN make build
 
 CMD ["/tgWatch/tgWatch"]
