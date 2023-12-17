@@ -62,6 +62,11 @@ func ListenUpdates(acc int64) {
 			case client.TypeUpdateChatIsTranslatable:
 			case client.TypeUpdateAutosaveSettings:
 			case client.TypeUpdateForumTopicInfo:
+			case client.TypeUpdateChatAccentColor:
+			case client.TypeUpdateChatBackgroundCustomEmoji:
+			case client.TypeUpdateChatBackground:
+			case client.TypeUpdateChatActiveStories:
+			case client.TypeUpdateStoryListChatCount:
 
 			case client.TypeUpdateSupergroup:
 			case client.TypeUpdateSupergroupFullInfo:
