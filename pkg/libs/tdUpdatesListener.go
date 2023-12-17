@@ -6,10 +6,7 @@ import (
 	"github.com/alexbilevskiy/tgWatch/pkg/config"
 	"github.com/zelenin/go-tdlib/client"
 	"log"
-	"os"
-	"path"
 	"strconv"
-	"strings"
 	"time"
 )
 
