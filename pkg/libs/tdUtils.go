@@ -421,14 +421,6 @@ func GetContentAttachments(content client.MessageContent) []structs.MessageAttac
 
 func loadChatsList(acc int64, listId int32) {
 	var chatList client.ChatList
-	switch listId {
-	case ClMain:
-		chatList = &client.ChatListMain{}
-	case ClArchive:
-		chatList = &client.ChatListArchive{}
-	default:
-		chatList = &client.ChatListFolder{ChatFolderId: listId}
-	}
 	crit := bson.D{{"listid", listId}}
 	d, err := chatListColl[acc].DeleteMany(mongoContext, crit)
 	if err != nil {
@@ -437,7 +429,18 @@ func loadChatsList(acc int64, listId int32) {
 		log.Printf("Deleted %d chats by listid %d because refresh was called\n", d.DeletedCount, listId)
 	}
 
-	log.Printf("Requesting LoadChats for list %s id:%d", chatList.ChatListType(), listId)
+	switch listId {
+	case ClMain:
+		chatList = &client.ChatListMain{}
+		log.Printf("Requesting LoadChats for main list: %s", chatList.ChatListType())
+	case ClArchive:
+		chatList = &client.ChatListArchive{}
+		log.Printf("Requesting LoadChats for archive: %s", chatList.ChatListType())
+	default:
+		chatList = &client.ChatListFolder{ChatFolderId: listId}
+		log.Printf("Requesting LoadChats for folder: %d", chatList.(*client.ChatListFolder).ChatFolderId)
+	}
+
 	err = loadChats(acc, chatList)
 	if err != nil {
 		//@see https://github.com/tdlib/td/blob/fb39e5d74667db915a75a5e58065c59af8e7d8d6/td/generate/scheme/td_api.tl#L4171

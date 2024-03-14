@@ -208,7 +208,7 @@ func processTgChatList(req *http.Request, w http.ResponseWriter) {
 	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: ClMain, Title: "Main"})
 	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: ClArchive, Title: "Archive"})
 	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: ClCached, Title: "Cached"})
-	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: ClMy, Title: "Owned chats"})
+	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: ClOwned, Title: "Owned chats"})
 	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: ClNotSubscribed, Title: "Not subscribed chats"})
 	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: ClNotAssigned, Title: "Chats not in any folder"})
 	for _, filter := range chatFolders[currentAcc] {
@@ -221,12 +221,12 @@ func processTgChatList(req *http.Request, w http.ResponseWriter) {
 			info := buildChatInfoByLocalChat(chat)
 			res.Chats = append(res.Chats, info)
 		}
-	} else if folder == ClMy {
+	} else if folder == ClOwned {
 		for _, chat := range localChats[currentAcc] {
 			m := client.MessageSenderUser{UserId: me[currentAcc].Id}
 			req := &client.GetChatMemberRequest{ChatId: chat.Id, MemberId: &m}
 			cm, err := tdlibClient[currentAcc].GetChatMember(req)
-			if err != nil {
+			if err != nil && err.Error() != "400 CHANNEL_PRIVATE" {
 				fmt.Printf("failed to get chat member status: %d, `%s`, %s\n", chat.Id, GetChatName(currentAcc, chat.Id), err)
 				continue
 			}
@@ -236,6 +236,8 @@ func processTgChatList(req *http.Request, w http.ResponseWriter) {
 			case client.TypeChatMemberStatusAdministrator:
 			case client.TypeChatMemberStatusMember:
 			case client.TypeChatMemberStatusLeft:
+			case client.TypeChatMemberStatusRestricted:
+				//@todo: print restrictions
 			default:
 				fmt.Printf("Unusual chat memer status: %d, `%s`, %s\n", chat.Id, GetChatName(currentAcc, chat.Id), cm.Status.ChatMemberStatusType())
 
