@@ -155,8 +155,6 @@ func CreateAccount(phone string) {
 		tdlibClient[meLocal.Id] = tdlibClientLocal
 
 		log.Printf("NEW Me: %s %s [%s]", meLocal.FirstName, meLocal.LastName, GetUsername(meLocal.Usernames))
-		//seems like the tdlib does not send this state
-		authorizer.State <- &client.AuthorizationStateReady{}
 
 		//state = nil
 		currentAuthorizingAcc.Id = meLocal.Id

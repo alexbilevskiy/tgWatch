@@ -3,7 +3,6 @@ package libs
 import (
 	"github.com/zelenin/go-tdlib/client"
 	"log"
-	"time"
 )
 
 type clientAuthorizer struct {
@@ -97,23 +96,22 @@ var passwordSet bool = false
 func ChanInteractor(clientAuthorizer *clientAuthorizer, phone string, nextParams chan string) {
 	var ok bool
 	var param string
-	for {
-		if len(clientAuthorizer.State) == 0 {
-			if state == nil {
-				log.Printf("waiting state...")
-				time.Sleep(1 * time.Second)
-				continue
-			}
-		} else {
-			state, ok = <-clientAuthorizer.State
-			if !ok {
-				log.Printf("invalid state...")
-				time.Sleep(1 * time.Second)
 
-				continue
-			}
-			log.Printf("new state! %s", state.AuthorizationStateType())
+	defer func() {
+		state = nil
+		phoneSet = false
+		codeSet = false
+		passwordSet = false
+	}()
+
+	for {
+		state, ok = <-clientAuthorizer.State
+		if !ok {
+			log.Printf("Authorization process closed!")
+
+			return
 		}
+		log.Printf("new state! %s", state.AuthorizationStateType())
 
 		switch state.AuthorizationStateType() {
 		case client.TypeAuthorizationStateWaitPhoneNumber:
@@ -162,10 +160,6 @@ func ChanInteractor(clientAuthorizer *clientAuthorizer, phone string, nextParams
 
 		case client.TypeAuthorizationStateReady:
 			log.Printf("Authorize complete!")
-			state = nil
-			phoneSet = false
-			codeSet = false
-			passwordSet = false
 
 			return
 		}
