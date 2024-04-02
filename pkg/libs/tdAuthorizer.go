@@ -161,6 +161,7 @@ func ChanInteractor(clientAuthorizer *clientAuthorizer, phone string, nextParams
 			clientAuthorizer.Password <- param
 
 		case client.TypeAuthorizationStateReady:
+			log.Printf("Authorize complete!")
 			state = nil
 			phoneSet = false
 			codeSet = false

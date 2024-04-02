@@ -38,6 +38,7 @@ func InitTdlib(acc int64) {
 	logVerbosity := client.WithLogVerbosity(&client.SetLogVerbosityLevelRequest{
 		NewVerbosityLevel: 1,
 	})
+	//client.WithCatchTimeout(60)
 
 	var err error
 	tdlibClient[acc], err = client.NewClient(authorizer, logVerbosity)
@@ -154,6 +155,8 @@ func CreateAccount(phone string) {
 		tdlibClient[meLocal.Id] = tdlibClientLocal
 
 		log.Printf("NEW Me: %s %s [%s]", meLocal.FirstName, meLocal.LastName, GetUsername(meLocal.Usernames))
+		//seems like the tdlib does not send this state
+		authorizer.State <- &client.AuthorizationStateReady{}
 
 		//state = nil
 		currentAuthorizingAcc.Id = meLocal.Id
