@@ -1,8 +1,8 @@
 package libs
 
 import (
-	"fmt"
 	"github.com/zelenin/go-tdlib/client"
+	"log"
 	"time"
 )
 
@@ -100,19 +100,19 @@ func ChanInteractor(clientAuthorizer *clientAuthorizer, phone string, nextParams
 	for {
 		if len(clientAuthorizer.State) == 0 {
 			if state == nil {
-				fmt.Printf("waiting state...\n")
+				log.Printf("waiting state...")
 				time.Sleep(1 * time.Second)
 				continue
 			}
 		} else {
 			state, ok = <-clientAuthorizer.State
 			if !ok {
-				fmt.Printf("invalid state...\n")
+				log.Printf("invalid state...")
 				time.Sleep(1 * time.Second)
 
 				continue
 			}
-			fmt.Printf("new state! %s\n", state.AuthorizationStateType())
+			log.Printf("new state! %s", state.AuthorizationStateType())
 		}
 
 		switch state.AuthorizationStateType() {
@@ -120,7 +120,7 @@ func ChanInteractor(clientAuthorizer *clientAuthorizer, phone string, nextParams
 			if phoneSet == true {
 				continue
 			}
-			fmt.Printf("Setting phone...\n")
+			log.Printf("Setting phone...")
 			clientAuthorizer.PhoneNumber <- phone
 			phoneSet = true
 
@@ -128,16 +128,16 @@ func ChanInteractor(clientAuthorizer *clientAuthorizer, phone string, nextParams
 			if codeSet == true {
 				continue
 			}
-			fmt.Printf("Waiting code...\n")
+			log.Printf("Waiting code...")
 
 			select {
 			case param, ok = <-nextParams:
 				if !ok {
-					fmt.Printf("Invalid param!\n")
+					log.Printf("Invalid param!")
 					continue
 				}
 			}
-			fmt.Printf("Setting code...\n")
+			log.Printf("Setting code...")
 			codeSet = true
 
 			clientAuthorizer.Code <- param
@@ -146,16 +146,16 @@ func ChanInteractor(clientAuthorizer *clientAuthorizer, phone string, nextParams
 			if passwordSet == true {
 				continue
 			}
-			fmt.Printf("Waiting password...\n")
+			log.Printf("Waiting password...")
 
 			select {
 			case param, ok = <-nextParams:
 				if !ok {
-					fmt.Printf("Invalid param!\n")
+					log.Printf("Invalid param!")
 					continue
 				}
 			}
-			fmt.Printf("Setting password...\n")
+			log.Printf("Setting password...")
 			passwordSet = true
 
 			clientAuthorizer.Password <- param
