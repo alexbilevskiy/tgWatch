@@ -156,13 +156,14 @@ func CreateAccount(phone string) {
 
 		log.Printf("NEW Me: %s %s [%s]", meLocal.FirstName, meLocal.LastName, GetUsername(meLocal.Usernames))
 
-		//state = nil
 		currentAuthorizingAcc.Id = meLocal.Id
 		currentAuthorizingAcc.Status = AccStatusActive
 		currentAuthorizingAcc.Username = GetUsername(meLocal.Usernames)
 
 		SaveAccount(currentAuthorizingAcc)
 		Accounts[meLocal.Id] = *currentAuthorizingAcc
+		//TODO: something else is missing, chatlist and other interaction from web yield empty results
+		InitMongo(meLocal.Id)
 
 		currentAuthorizingAcc = nil
 	}()
