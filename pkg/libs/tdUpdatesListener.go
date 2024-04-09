@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/alexbilevskiy/tgWatch/pkg/config"
+	"github.com/alexbilevskiy/tgWatch/pkg/libs/modules"
 	"github.com/zelenin/go-tdlib/client"
 	"log"
 	"strconv"
@@ -173,7 +174,7 @@ func ListenUpdates(acc int64) {
 					MarkJoinAsRead(acc, upd.Message.ChatId, upd.Message.Id)
 				}
 
-				customNewMessageRoutine(acc, upd)
+				modules.CustomNewMessageRoutine(acc, tdlibClient[acc], upd)
 
 			case client.TypeUpdateMessageEdited:
 				upd := update.(*client.UpdateMessageEdited)
@@ -207,7 +208,7 @@ func ListenUpdates(acc int64) {
 				intLink := fmt.Sprintf("http://%s/m/%d/%d", config.Config.WebListen, upd.ChatId, upd.MessageId)
 				DLog(fmt.Sprintf("EDITED content! Chat: %d, msg %d, %s, %s, %s", upd.ChatId, upd.MessageId, chatName, link, intLink))
 
-				customMessageContentRoutine(acc, upd)
+				modules.CustomMessageContentRoutine(acc, tdlibClient[acc], upd)
 
 			case client.TypeUpdateFile:
 				upd := update.(*client.UpdateFile)
@@ -257,14 +258,4 @@ func ListenUpdates(acc int64) {
 			log.Printf("WAAAT? update who??? %s, %v", update.GetClass(), update)
 		}
 	}
-}
-
-//@TODO: create some kind of lua integration to allow writing custom message processing plugins without need to recompile
-func customNewMessageRoutine(acc int64, update *client.UpdateNewMessage) {
-}
-
-func customMessageContentRoutine(acc int64, update *client.UpdateMessageContent) {
-}
-
-func customDeleteMessageRoutine(acc int64, savedMessage *client.UpdateNewMessage) {
 }
