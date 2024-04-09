@@ -1,5 +1,4 @@
 deps:
-	go mod tidy
 	go mod download
 build:
 	go build cmd/tgWatch.go
