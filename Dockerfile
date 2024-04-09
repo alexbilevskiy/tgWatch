@@ -18,6 +18,12 @@ WORKDIR /tgWatch
 COPY go.mod .
 COPY go.sum .
 COPY Makefile .
+
+# uncomment to build against local copy of go-tdlib;
+# also add line "replace github.com/zelenin/go-tdlib => ../go-tdlib" to go.mod
+# and use dockerBuildLocal.sh with custom build-context
+#COPY --from=gopath /src/go-tdlib /go-tdlib
+
 RUN make deps
 
 COPY . .
