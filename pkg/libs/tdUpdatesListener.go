@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func ListenUpdates(acc int64) {
+func listenUpdates(acc int64) {
 	listener := tdlibClient[acc].GetListener()
 	defer listener.Close()
 

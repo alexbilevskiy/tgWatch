@@ -40,7 +40,7 @@ func InitGlobalMongo() {
 	accountColl = mongoClient.Database(config.Config.Mongo["db"]).Collection("accounts")
 }
 
-func InitMongo(acc int64) {
+func initMongo(acc int64) {
 	db := Accounts[acc].DbPrefix + Accounts[acc].Phone
 	updatesColl[acc] = mongoClient.Database(db).Collection("updates")
 	chatFiltersColl[acc] = mongoClient.Database(db).Collection("chatFilters")
@@ -210,14 +210,13 @@ func saveSettings(acc int64) {
 	}
 }
 
-func GetAccountsFilter(phone *string) bson.M {
-	if phone == nil {
-		return bson.M{}
+func LoadAccounts(phone string) {
+	var crit bson.M
+	if phone == "" {
+		crit = bson.M{}
+	} else {
+		crit = bson.M{"phone": phone}
 	}
-	return bson.M{"phone": phone}
-}
-
-func LoadAccounts(crit bson.M) {
 	accountsCursor, err := accountColl.Find(mongoContext, crit)
 	if err != nil {
 		log.Fatalf("Accounts load error: %s", err.Error())
@@ -229,7 +228,6 @@ func LoadAccounts(crit bson.M) {
 		log.Fatalf("Accounts cursor error: %s", err.Error())
 		return
 	}
-	Accounts = make(map[int64]structs.Account)
 	counter := 0
 	for _, accObj := range accountsBson {
 		counter++

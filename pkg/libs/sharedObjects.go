@@ -25,6 +25,8 @@ var localChats map[int64]map[int64]*client.Chat
 var me map[int64]*client.User
 
 func InitSharedVars() {
+	Accounts = make(map[int64]structs.Account)
+
 	updatesColl = make(map[int64]*mongo.Collection)
 	chatFiltersColl = make(map[int64]*mongo.Collection)
 	chatListColl = make(map[int64]*mongo.Collection)
@@ -37,7 +39,7 @@ func InitSharedVars() {
 	me = make(map[int64]*client.User)
 }
 
-func InitSharedSubVars(acc int64) {
+func initSharedSubVars(acc int64) {
 	tdlibOptions[acc] = make(map[string]structs.TdlibOption)
 	localChats[acc] = make(map[int64]*client.Chat)
 }

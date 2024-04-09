@@ -27,7 +27,7 @@ func createTdlibParameters(dataDir string) *client.SetTdlibParametersRequest {
 		IgnoreFileNames:        false,
 	}
 }
-func InitTdlib(acc int64) {
+func initTdlib(acc int64) {
 	LoadSettings(acc)
 	LoadChatFolders(acc)
 	loadOptionsList(acc)
@@ -129,7 +129,7 @@ func CreateAccount(phone string) {
 
 		go ChanInteractor(authorizer, phone, authParams)
 
-		log.Println("create client")
+		log.Println("create authorizing client instance")
 
 		var err error
 		tdlibClientLocal, err = client.NewClient(authorizer, logVerbosity)
@@ -148,23 +148,31 @@ func CreateAccount(phone string) {
 		log.Printf("TDLib version: %s", optionValue.(*client.OptionValueString).Value)
 
 		meLocal, err = tdlibClientLocal.GetMe()
+		id := meLocal.Id
+		phoneLocal := meLocal.PhoneNumber
 		if err != nil {
 			log.Fatalf("GetMe error: %s", err)
 		}
-		me[meLocal.Id] = meLocal
-		tdlibClient[meLocal.Id] = tdlibClientLocal
 
 		log.Printf("NEW Me: %s %s [%s]", meLocal.FirstName, meLocal.LastName, GetUsername(meLocal.Usernames))
 
-		currentAuthorizingAcc.Id = meLocal.Id
+		currentAuthorizingAcc.Id = id
 		currentAuthorizingAcc.Status = AccStatusActive
 		currentAuthorizingAcc.Username = GetUsername(meLocal.Usernames)
 
 		SaveAccount(currentAuthorizingAcc)
-		Accounts[meLocal.Id] = *currentAuthorizingAcc
-		//TODO: something else is missing, chatlist and other interaction from web yield empty results
-		InitMongo(meLocal.Id)
+
+		log.Printf("closing authorizing instance")
+		_, err = tdlibClientLocal.Close()
+		if err != nil {
+			log.Printf("failed to close authorizing instance: %s", err.Error())
+		}
 
 		currentAuthorizingAcc = nil
+
+		log.Printf("create normal client instance for new account %d", id)
+
+		LoadAccounts(phoneLocal)
+		RunAccount(id)
 	}()
 }
