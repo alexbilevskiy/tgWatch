@@ -202,6 +202,10 @@ func processTgChatList(req *http.Request, w http.ResponseWriter) {
 		folder64, _ := strconv.ParseInt(req.FormValue("folder"), 10, 32)
 		folder = int32(folder64)
 	}
+	var groupsInCommonUserId int64
+	if req.FormValue("groups_in_common_userid") != "" {
+		groupsInCommonUserId, _ = strconv.ParseInt(req.FormValue("groups_in_common_userid"), 10, 64)
+	}
 
 	var folders []structs.ChatFolder
 	folders = make([]structs.ChatFolder, 0)
@@ -273,6 +277,22 @@ func processTgChatList(req *http.Request, w http.ResponseWriter) {
 		loadChatsList(currentAcc, folder)
 		http.Redirect(w, req, fmt.Sprintf("/l?folder=%d", folder), 302)
 		return
+	} else if groupsInCommonUserId != 0 {
+		chats, err := GetGroupsInCommon(currentAcc, groupsInCommonUserId)
+		if err != nil {
+			log.Printf("failed to get groups in common: %d, `%s`, %s", groupsInCommonUserId, GetChatName(currentAcc, groupsInCommonUserId), err)
+		}
+		for _, chatId := range chats.ChatIds {
+			chat, err := GetChat(currentAcc, chatId, true)
+			var chatInfo structs.ChatInfo
+			if err != nil {
+				chatInfo = structs.ChatInfo{ChatId: chatId, ChatName: GetChatName(currentAcc, chatId), Username: "ERROR " + err.Error()}
+			} else {
+				chatInfo = buildChatInfoByLocalChat(chat)
+			}
+
+			res.Chats = append(res.Chats, chatInfo)
+		}
 	} else {
 		chatList := getSavedChats(currentAcc, folder)
 		for _, chatPos := range chatList {

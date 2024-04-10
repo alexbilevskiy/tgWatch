@@ -1,3 +1,7 @@
 {{define "main"}}
+<a href="/c/{{.Chat.id}}">This page</a><br>
+<a href="/h/{{.Chat.id}}">Chat history</a><br>
+<a href="/l/?groups_in_common_userid={{.Chat.id}}">Groups in common</a><br>
+
 <pre>{{.ChatRaw}}</pre>
 {{end}}

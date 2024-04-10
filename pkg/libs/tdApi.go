@@ -52,6 +52,12 @@ func GetBasicGroup(acc int64, groupId int64) (*client.BasicGroup, error) {
 	return tdlibClient[acc].GetBasicGroup(bgReq)
 }
 
+func GetGroupsInCommon(acc int64, userId int64) (*client.Chats, error) {
+	cgReq := &client.GetGroupsInCommonRequest{UserId: userId, Limit: 500}
+
+	return tdlibClient[acc].GetGroupsInCommon(cgReq)
+}
+
 func DownloadFile(acc int64, id int32) (*client.File, error) {
 	req := client.DownloadFileRequest{FileId: id, Priority: 1, Synchronous: true}
 	file, err := tdlibClient[acc].DownloadFile(&req)
