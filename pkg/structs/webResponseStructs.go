@@ -38,7 +38,7 @@ type SingleMessage struct {
 
 type ChatFullInfo struct {
 	T       string
-	Chat    interface{}
+	Chat    ChatInfo
 	ChatRaw string
 }
 

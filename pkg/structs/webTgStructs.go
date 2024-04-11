@@ -51,6 +51,7 @@ type ChatFolder struct {
 type ChatList struct {
 	T              string
 	SelectedFolder int32
+	PartnerChat    ChatInfo
 	ChatFolders    []ChatFolder
 	Chats          []ChatInfo
 }

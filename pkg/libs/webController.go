@@ -120,13 +120,9 @@ func processTgMessagesByIds(chatId int64, req *http.Request, w http.ResponseWrit
 }
 
 func processTgChatInfo(chatId int64, req *http.Request, w http.ResponseWriter) {
-	var chat interface{}
+	var chat *client.Chat
 	var err error
-	if chatId > 0 {
-		chat, err = GetUser(currentAcc, chatId)
-	} else {
-		chat, err = GetChat(currentAcc, chatId, false)
-	}
+	chat, err = GetChat(currentAcc, chatId, false)
 	if err != nil {
 		fmt.Printf("Error get chat: %s\n", err)
 		return
@@ -134,7 +130,7 @@ func processTgChatInfo(chatId int64, req *http.Request, w http.ResponseWriter) {
 
 	res := structs.ChatFullInfo{
 		T:    "ChatFullInfo",
-		Chat: chat,
+		Chat: buildChatInfoByLocalChat(chat),
 	}
 	var data interface{}
 	if verbose {
@@ -173,6 +169,7 @@ func processTgChatHistoryOnline(chatId int64, req *http.Request, w http.Response
 		return
 	}
 	chat, _ := GetChat(currentAcc, chatId, false)
+	//@TODO: crashes if history is empty
 	res := structs.ChatHistoryOnline{
 		T:    "ChatHistory",
 		Chat: buildChatInfoByLocalChat(chat),
@@ -278,6 +275,8 @@ func processTgChatList(req *http.Request, w http.ResponseWriter) {
 		http.Redirect(w, req, fmt.Sprintf("/l?folder=%d", folder), 302)
 		return
 	} else if groupsInCommonUserId != 0 {
+		partnerChat, _ := GetChat(currentAcc, groupsInCommonUserId, false)
+		res.PartnerChat = buildChatInfoByLocalChat(partnerChat)
 		chats, err := GetGroupsInCommon(currentAcc, groupsInCommonUserId)
 		if err != nil {
 			log.Printf("failed to get groups in common: %d, `%s`, %s", groupsInCommonUserId, GetChatName(currentAcc, groupsInCommonUserId), err)
