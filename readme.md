@@ -3,22 +3,26 @@
 Initially this client was intended for logging and viewing deleted and updated messages in telegram chats, but this functionality is against telegram ToS, so it was removed.
 Now it's more like a telegram explorer - view raw messages and chats, files, responses, etc.
 
-Implemented telegram features:
-* chats list (folders included) with message counters 
+Pros:
+* chats list (folders included)
 * chat history (only *online* history - no local copy)
 * sending messages
 * profile info
 * active sessions
-* multi-account support
+* multi-account
+* download media
 
 Next ideas:
 * mute chats by conditions (how to define rules? "all chats in folder "work" except these two")
 * merge multiple outgoing one-line messages into one
 * auto-respond 
+* send media
+* grpc api
+* chat topics
 
-BUGS:
-* uses custom go-tdlib fork
-* new account log-in process is kinda tricky and requires restart after successful login
+Cons:
+* uses [custom go-tdlib fork](https://github.com/alexbilevskiy/go-tdlib)
+* ~~new account log-in process is kinda tricky and requires restart after successful login~~
 
 ### install:
 * install [tdlib](https://tdlib.github.io/td/build.html?language=Go)
