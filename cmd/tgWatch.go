@@ -23,8 +23,6 @@ func main() {
 		log.Fatalf("Invalid argument")
 	}
 
-	//go libs.InitVoskModel()
-
 	//@TODO: check if goroutine with specific account is alive?
 	for accId, acc := range libs.Accounts {
 		if acc.Status != libs.AccStatusActive {
