@@ -33,6 +33,7 @@ func main() {
 
 		libs.RunAccount(accId)
 	}
+	log.Printf("starting web server...")
 
 	libs.InitWeb()
 

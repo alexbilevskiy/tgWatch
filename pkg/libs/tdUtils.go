@@ -493,7 +493,7 @@ func SaveChatFilters(acc int64, chatFoldersUpdate *client.UpdateChatFolders) {
 			}
 		}
 		if existed {
-			log.Printf("Existing chat folder: id: %d, n: %s", folderInfo.Id, folderInfo.Title)
+			//log.Printf("Existing chat folder: id: %d, n: %s", folderInfo.Id, folderInfo.Title)
 			continue
 		}
 		log.Printf("New chat folder: id: %d, n: %s", folderInfo.Id, folderInfo.Title)
