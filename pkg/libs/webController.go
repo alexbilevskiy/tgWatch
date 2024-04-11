@@ -275,6 +275,30 @@ func processTgChatList(req *http.Request, w http.ResponseWriter) {
 		http.Redirect(w, req, fmt.Sprintf("/l?folder=%d", folder), 302)
 		return
 	} else if groupsInCommonUserId != 0 {
+		if req.Method == "POST" {
+
+			var addToFolder int32
+			if req.FormValue("add_to_folder") != "" {
+				folder64, _ := strconv.ParseInt(req.FormValue("add_to_folder"), 10, 32)
+				addToFolder = int32(folder64)
+			}
+
+			addChatsToFolder := make([]int64, 0)
+			if _, ok := req.PostForm["chats"]; ok {
+				for _, chatIdStr := range req.PostForm["chats"] {
+					if chatIdStr == "" {
+						continue
+					}
+					chatId, _ := strconv.ParseInt(chatIdStr, 10, 64)
+					addChatsToFolder = append(addChatsToFolder, chatId)
+				}
+			}
+			if len(addChatsToFolder) > 0 {
+				//@TODO: errors validation
+				AddChatsToFolder(currentAcc, addChatsToFolder, addToFolder)
+			}
+			http.Redirect(w, req, fmt.Sprintf("/l?groups_in_common_userid=%d", groupsInCommonUserId), 302)
+		}
 		partnerChat, _ := GetChat(currentAcc, groupsInCommonUserId, false)
 		res.PartnerChat = buildChatInfoByLocalChat(partnerChat)
 		chats, err := GetGroupsInCommon(currentAcc, groupsInCommonUserId)

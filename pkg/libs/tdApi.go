@@ -128,6 +128,27 @@ func GetLink(acc int64, chatId int64, messageId int64) string {
 	return link.Link
 }
 
+func AddChatsToFolder(acc int64, chats []int64, folder int32) error {
+	for _, chatId := range chats {
+		_, err := GetChat(acc, chatId, true)
+		if err != nil {
+			log.Printf("failed to get chat before adding to folder: %d %s", chatId, err.Error())
+			continue
+		}
+
+		chatList := &client.ChatListFolder{ChatFolderId: folder}
+		req := client.AddChatToListRequest{ChatId: chatId, ChatList: chatList}
+		_, err = tdlibClient[acc].AddChatToList(&req)
+		if err != nil {
+			log.Printf("failed to add chat %d to list %d: %s", chatId, folder, err.Error())
+		} else {
+			log.Printf("added chat %d to list %d", chatId, folder)
+		}
+	}
+
+	return nil
+}
+
 func SendMessage(acc int64, text string, chatId int64, replyToMessageId *int64) {
 	mtext := &client.FormattedText{Text: text}
 	content := &client.InputMessageText{Text: mtext}
