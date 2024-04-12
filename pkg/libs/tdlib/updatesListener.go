@@ -1,9 +1,8 @@
-package libs
+package tdlib
 
 import (
 	"encoding/json"
-	"fmt"
-	"github.com/alexbilevskiy/tgWatch/pkg/config"
+	"github.com/alexbilevskiy/tgWatch/pkg/libs"
 	"github.com/alexbilevskiy/tgWatch/pkg/libs/modules"
 	"github.com/zelenin/go-tdlib/client"
 	"log"
@@ -11,15 +10,15 @@ import (
 	"time"
 )
 
-func listenUpdates(acc int64) {
-	listener := tdlibClient[acc].GetListener()
+func (t *TdApi) ListenUpdates() {
+	listener := t.tdlibClient.GetListener()
 	defer listener.Close()
 
 	for update := range listener.Updates {
 		switch update.GetClass() {
 		case client.ClassUpdate:
-			t := update.GetType()
-			switch t {
+			typ := update.GetType()
+			switch typ {
 			case client.TypeUpdateChatActionBar:
 			case client.TypeUpdateSuggestedActions:
 			case client.TypeUpdateChatTheme:
@@ -81,48 +80,48 @@ func listenUpdates(acc int64) {
 				//log.Printf("[%d] received interaction update for message in chat `%s`: %s", acc, GetChatName(acc, upd.ChatId), BuildMessageLink(upd.ChatId, upd.MessageId))
 
 			case client.TypeUpdateChatTitle:
-				upd := update.(*client.UpdateChatTitle)
+				//upd := update.(*client.UpdateChatTitle)
 				//@TODO: where to get old name?
-				DLog(fmt.Sprintf("Renamed chat id:%d to `%s`", upd.ChatId, upd.Title))
+				//fmt.Printf("Renamed chat id:%d to `%s`", upd.ChatId, upd.Title))
 
 			case client.TypeUpdateChatHasProtectedContent:
 				upd := update.(*client.UpdateChatHasProtectedContent)
-				log.Printf("Chat id:%d `%s` now has protected content: %s", upd.ChatId, GetChatName(acc, upd.ChatId), JsonMarshalStr(upd.HasProtectedContent))
+				log.Printf("Chat id:%d `%s` now has protected content: %s", upd.ChatId, t.GetChatName(upd.ChatId), libs.JsonMarshalStr(upd.HasProtectedContent))
 
 			case client.TypeUpdateNewChat:
 				//dont need to cache chat here, because chat info is empty, @see case client.ClassChat below
 				//upd := update.(*client.UpdateNewChat)
 				//CacheChat(acc, upd.Chat)
-				//DLog(fmt.Sprintf("New chat added: %d / %s", upd.Chat.Id, upd.Chat.Title))
+				////fmt.Printf("New chat added: %d / %s", upd.Chat.Id, upd.Chat.Title))
 				//saveAllChatPositions(acc, upd.Chat.Id, upd.Chat.Positions)
 
 			case client.TypeUpdateConnectionState:
-				upd := update.(*client.UpdateConnectionState)
-				DLog(fmt.Sprintf("Connection state changed: %s", upd.State.ConnectionStateType()))
+				//upd := update.(*client.UpdateConnectionState)
+				//fmt.Printf("Connection state changed: %s", upd.State.ConnectionStateType()))
 
 			case client.TypeUpdateChatAction:
 				upd := update.(*client.UpdateChatAction)
 				if upd.ChatId < 0 {
-					DLog(fmt.Sprintf("Skipping action in non-user chat %d: %s", upd.ChatId, upd.Action.ChatActionType()))
+					//fmt.Printf("Skipping action in non-user chat %d: %s", upd.ChatId, upd.Action.ChatActionType()))
 					break
 				}
-				localChat, err := GetChat(acc, upd.ChatId, false)
+				localChat, err := t.GetChat(upd.ChatId, false)
 				if err == nil {
 					if localChat.LastMessage != nil && localChat.LastMessage.Date < int32(time.Now().Unix())-int32((time.Hour*6).Seconds()) {
-						DLog(fmt.Sprintf("User action in chat `%s`: %s", localChat.Title, upd.Action.ChatActionType()))
+						//fmt.Printf("User action in chat `%s`: %s", localChat.Title, upd.Action.ChatActionType()))
 					} else {
-						DLog(fmt.Sprintf("Skipping action because its from fresh chat %d `%s`: %s\n", upd.ChatId, localChat.Title, upd.Action.ChatActionType()))
+						//fmt.Printf("Skipping action because its from fresh chat %d `%s`: %s\n", upd.ChatId, localChat.Title, upd.Action.ChatActionType()))
 					}
 				} else {
 					//@NOTE: sender could not be "channel" here, because we only log private chats
-					user, err := GetUser(acc, GetChatIdBySender(upd.SenderId))
-					userName := "err_name"
-					if err != nil {
-						fmt.Printf("failed to get user %d: %s\n", user.Id, err)
-					} else {
-						userName = getUserFullname(user)
-					}
-					DLog(fmt.Sprintf("User action `%s`: %s", userName, upd.Action.ChatActionType()))
+					//user, err := t.GetUser(GetChatIdBySender(upd.SenderId))
+					//userName := "err_name"
+					//if err != nil {
+					//	fmt.Printf("failed to get user %d: %s\n", user.Id, err)
+					//} else {
+					//	userName = getUserFullname(user)
+					//}
+					//fmt.Printf("User action `%s`: %s", userName, upd.Action.ChatActionType()))
 				}
 
 			case client.TypeUpdateChatLastMessage:
@@ -130,21 +129,21 @@ func listenUpdates(acc int64) {
 				if len(upd.Positions) == 0 {
 					break
 				}
-				saveAllChatPositions(acc, upd.ChatId, upd.Positions)
+				t.db.SaveAllChatPositions(upd.ChatId, upd.Positions)
 
 			case client.TypeUpdateOption:
 				upd := update.(*client.UpdateOption)
 				if upd.Name != "unix_time" {
-					log.Printf("Update option %s: %s", upd.Name, JsonMarshalStr(upd.Value))
+					log.Printf("Update option %s: %s", upd.Name, libs.JsonMarshalStr(upd.Value))
 				}
 
 			case client.TypeUpdateChatPosition:
 				upd := update.(*client.UpdateChatPosition)
-				saveChatPosition(acc, upd.ChatId, upd.Position)
+				t.db.SaveChatPosition(upd.ChatId, upd.Position)
 
 			case client.TypeUpdateChatFolders:
 				upd := update.(*client.UpdateChatFolders)
-				SaveChatFilters(acc, upd)
+				t.SaveChatFilters(upd)
 
 			case client.TypeUpdateDeleteMessages:
 				upd := update.(*client.UpdateDeleteMessages)
@@ -152,14 +151,14 @@ func listenUpdates(acc int64) {
 
 					break
 				}
-				chatName := GetChatName(acc, upd.ChatId)
-				intLink := fmt.Sprintf("http://%s/h/%d/?ids=%s", config.Config.WebListen, upd.ChatId, ImplodeInt(upd.MessageIds))
-				count := len(upd.MessageIds)
-				DLog(fmt.Sprintf("DELETED %d Messages from chat: %d, `%s`, %s", count, upd.ChatId, chatName, intLink))
+				//chatName := GetChatName(acc, upd.ChatId)
+				//intLink := fmt.Sprintf("http://%s/h/%d/?ids=%s", config.Config.WebListen, upd.ChatId, ImplodeInt(upd.MessageIds))
+				//count := len(upd.MessageIds)
+				//fmt.Printf("DELETED %d Messages from chat: %d, `%s`, %s", count, upd.ChatId, chatName, intLink))
 
 			case client.TypeUpdateNewMessage:
 				upd := update.(*client.UpdateNewMessage)
-				if checkSkippedChat(acc, strconv.FormatInt(upd.Message.ChatId, 10)) || checkSkippedChat(acc, strconv.FormatInt(GetChatIdBySender(upd.Message.SenderId), 10)) || checkChatFilter(acc, upd.Message.ChatId) {
+				if t.checkSkippedChat(strconv.FormatInt(upd.Message.ChatId, 10)) || t.checkSkippedChat(strconv.FormatInt(GetChatIdBySender(upd.Message.SenderId), 10)) || t.checkChatFilter(upd.Message.ChatId) {
 
 					break
 				}
@@ -171,14 +170,14 @@ func listenUpdates(acc int64) {
 				//log.Printf("[%s] New Message from chat: %d, `%s`, %s, %s", mongoId, upd.Message.ChatId, chatName, link, intLink)
 				if upd.Message.Content.MessageContentType() == client.TypeMessageChatAddMembers ||
 					upd.Message.Content.MessageContentType() == client.TypeMessageChatJoinByLink {
-					MarkJoinAsRead(acc, upd.Message.ChatId, upd.Message.Id)
+					t.MarkJoinAsRead(upd.Message.ChatId, upd.Message.Id)
 				}
 
-				modules.CustomNewMessageRoutine(acc, tdlibClient[acc], upd)
+				modules.CustomNewMessageRoutine(t.acc.Id, t.tdlibClient, upd)
 
 			case client.TypeUpdateMessageEdited:
 				upd := update.(*client.UpdateMessageEdited)
-				if checkSkippedChat(acc, strconv.FormatInt(upd.ChatId, 10)) || checkChatFilter(acc, upd.ChatId) {
+				if t.checkSkippedChat(strconv.FormatInt(upd.ChatId, 10)) || t.checkChatFilter(upd.ChatId) {
 
 					break
 				}
@@ -195,7 +194,7 @@ func listenUpdates(acc int64) {
 
 			case client.TypeUpdateMessageContent:
 				upd := update.(*client.UpdateMessageContent)
-				if checkSkippedChat(acc, strconv.FormatInt(upd.ChatId, 10)) || checkChatFilter(acc, upd.ChatId) {
+				if t.checkSkippedChat(strconv.FormatInt(upd.ChatId, 10)) || t.checkChatFilter(upd.ChatId) {
 
 					break
 				}
@@ -203,34 +202,34 @@ func listenUpdates(acc int64) {
 					//dont save "poll" updates - that's just counters, users cannot update polls manually
 					break
 				}
-				link := GetLink(acc, upd.ChatId, upd.MessageId)
-				chatName := GetChatName(acc, upd.ChatId)
-				intLink := fmt.Sprintf("http://%s/m/%d/%d", config.Config.WebListen, upd.ChatId, upd.MessageId)
-				DLog(fmt.Sprintf("EDITED content! Chat: %d, msg %d, %s, %s, %s", upd.ChatId, upd.MessageId, chatName, link, intLink))
+				//link := t.GetLink(upd.ChatId, upd.MessageId)
+				//chatName := t.GetChatName(upd.ChatId)
+				//intLink := fmt.Sprintf("http://%s/m/%d/%d", config.Config.WebListen, upd.ChatId, upd.MessageId)
+				//fmt.Printf("EDITED content! Chat: %d, msg %d, %s, %s, %s", upd.ChatId, upd.MessageId, chatName, link, intLink))
 
-				modules.CustomMessageContentRoutine(acc, tdlibClient[acc], upd)
+				modules.CustomMessageContentRoutine(t.acc.Id, t.tdlibClient, upd)
 
 			case client.TypeUpdateFile:
 				upd := update.(*client.UpdateFile)
 				if upd.File.Local.IsDownloadingActive {
-					DLog(fmt.Sprintf("File downloading: %d/%d bytes", upd.File.Local.DownloadedSize, upd.File.ExpectedSize))
+					//fmt.Printf("File downloading: %d/%d bytes", upd.File.Local.DownloadedSize, upd.File.ExpectedSize))
 				} else {
-					DLog(fmt.Sprintf("File downloaded: %d bytes, path: %s", upd.File.Local.DownloadedSize, upd.File.Local.Path))
+					//fmt.Printf("File downloaded: %d bytes, path: %s", upd.File.Local.DownloadedSize, upd.File.Local.Path))
 				}
 
 			case client.TypeUpdateChatMessageAutoDeleteTime:
 				upd := update.(*client.UpdateChatMessageAutoDeleteTime)
-				chatName := GetChatName(acc, upd.ChatId)
+				chatName := t.GetChatName(upd.ChatId)
 				log.Printf("Message auto-delete time updated for chat `%s` %d: %ds", chatName, upd.ChatId, upd.MessageAutoDeleteTime)
 
 			case client.TypeUpdateChatAvailableReactions:
-				upd := update.(*client.UpdateChatAvailableReactions)
-				chatName := GetChatName(acc, upd.ChatId)
-				DLog(fmt.Sprintf("Available reactions updated for chat `%s` %d: %s", chatName, upd.ChatId, JsonMarshalStr(upd.AvailableReactions)))
+				//upd := update.(*client.UpdateChatAvailableReactions)
+				//chatName := t.GetChatName(upd.ChatId)
+				//fmt.Printf("Available reactions updated for chat `%s` %d: %s", chatName, upd.ChatId, JsonMarshalStr(upd.AvailableReactions)))
 
 			default:
 				j, _ := json.Marshal(update)
-				log.Printf("Unknown update %s : %s", t, string(j))
+				log.Printf("Unknown update %s : %s", typ, string(j))
 			}
 
 		case client.ClassOk:
@@ -238,7 +237,7 @@ func listenUpdates(acc int64) {
 		case client.ClassUser:
 		case client.ClassChat:
 			upd := update.(*client.Chat)
-			CacheChat(acc, upd)
+			t.cacheChat(upd)
 		case client.ClassSupergroup:
 		case client.ClassChats:
 		case client.ClassMessageLink:

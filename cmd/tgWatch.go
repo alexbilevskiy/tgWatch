@@ -3,6 +3,9 @@ package main
 import (
 	"github.com/alexbilevskiy/tgWatch/pkg/config"
 	"github.com/alexbilevskiy/tgWatch/pkg/libs"
+	"github.com/alexbilevskiy/tgWatch/pkg/libs/mongo"
+	"github.com/alexbilevskiy/tgWatch/pkg/libs/tdlib"
+	"github.com/alexbilevskiy/tgWatch/pkg/libs/web"
 	"log"
 	"os"
 )
@@ -10,32 +13,34 @@ import (
 func main() {
 	config.InitConfiguration()
 
-	libs.InitSharedVars()
-	libs.InitGlobalMongo()
+	tdlib.LoadOptionsList()
+	mongo.InitGlobalMongo()
 
 	args := os.Args
+
 	if len(args) == 1 {
-		libs.LoadAccounts("")
+		mongo.LoadAccounts("")
 	} else if len(args) == 2 {
 		log.Printf("Using single account %s", args[1])
-		libs.LoadAccounts(args[1])
+		mongo.LoadAccounts(args[1])
 	} else {
 		log.Fatalf("Invalid argument")
 	}
 
-	//@TODO: check if goroutine with specific account is alive?
-	for accId, acc := range libs.Accounts {
-		if acc.Status != libs.AccStatusActive {
+	libs.AS.Range(func(accId any, accInt any) bool {
+		acc := accInt.(*libs.Account)
+		if acc.Status != tdlib.AccStatusActive {
 			log.Printf("Wont use account %d, because its not active yet: `%s`", acc.Id, acc.Status)
-			continue
+			return true
 		}
 		log.Printf("Init account %d", acc.Id)
 
-		libs.RunAccount(accId)
-	}
+		acc.RunAccount()
+		return true
+	})
 	log.Printf("starting web server...")
 
-	libs.InitWeb()
+	web.InitWeb()
 
 	select {}
 }

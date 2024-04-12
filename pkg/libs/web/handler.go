@@ -1,15 +1,20 @@
-package libs
+package web
 
 import (
 	"encoding/base64"
+	"github.com/alexbilevskiy/tgWatch/pkg/libs"
 	"github.com/alexbilevskiy/tgWatch/pkg/structs"
 	"log"
 	"net/http"
+	"os"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
-type HttpHandler struct{}
+type HttpHandler struct {
+	Controller webController
+}
 
 func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	log.Printf("HTTP: %s", req.URL.Path)
@@ -19,7 +24,7 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 	err := req.ParseForm()
 	if err != nil {
-		errorResponse(structs.WebError{T: "Unknown error", Error: err.Error()}, 504, req, res)
+		h.Controller.errorResponse(structs.WebError{T: "Unknown error", Error: err.Error()}, 504, req, res)
 		return
 	}
 
@@ -30,18 +35,19 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 	action := regexp.MustCompile(`^/([a-z]*?)(?:$|/.+$)`).FindStringSubmatch(req.URL.Path)
 	if action == nil {
-		errorResponse(structs.WebError{T: "Not found", Error: req.URL.Path}, 404, req, res)
+		h.Controller.errorResponse(structs.WebError{T: "Not found", Error: req.URL.Path}, 404, req, res)
 
 		return
 	}
 
 	if action[1] == "new" {
-		processAddAccount(req, res)
+		h.Controller.processAddAccount(req, res)
 
 		return
 	}
 
 	if detectAccount(req, res) == false {
+		h.Controller.errorResponse(structs.WebError{T: "Invalid account", Error: "no such account"}, 504, req, res)
 
 		return
 	}
@@ -54,55 +60,55 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		r := regexp.MustCompile(`^/m/(-?\d+)/(\d+)$`)
 		m := r.FindStringSubmatch(req.URL.Path)
 		if m == nil {
-			errorResponse(structs.WebError{T: "Not found", Error: req.URL.Path}, 404, req, res)
+			h.Controller.errorResponse(structs.WebError{T: "Not found", Error: req.URL.Path}, 404, req, res)
 
 			return
 		}
 		chatId, _ := strconv.ParseInt(m[1], 10, 64)
 		messageId, _ := strconv.ParseInt(m[2], 10, 64)
-		processTgSingleMessage(chatId, messageId, req, res)
+		h.Controller.processTgSingleMessage(chatId, messageId, req, res)
 		return
 	case "l":
-		processTgChatList(req, res)
+		h.Controller.processTgChatList(req, res)
 		return
 	case "li":
-		processTgLink(req, res)
+		h.Controller.processTgLink(req, res)
 		return
 	case "to":
-		processTdlibOptions(req, res)
+		h.Controller.processTdlibOptions(req, res)
 		return
 	case "as":
-		processTgActiveSessions(req, res)
+		h.Controller.processTgActiveSessions(req, res)
 		return
 	case "c":
 		r := regexp.MustCompile(`^/c/(-?\d+)$`)
 		m := r.FindStringSubmatch(req.URL.Path)
 		if m == nil {
-			errorResponse(structs.WebError{T: "Not found", Error: req.URL.Path}, 404, req, res)
+			h.Controller.errorResponse(structs.WebError{T: "Not found", Error: req.URL.Path}, 404, req, res)
 
 			return
 		}
 		chatId, _ := strconv.ParseInt(m[1], 10, 64)
-		processTgChatInfo(chatId, req, res)
+		h.Controller.processTgChatInfo(chatId, req, res)
 
 		return
 	case "h":
 		r := regexp.MustCompile(`^/h/?(-?\d+)?($|/)`)
 		m := r.FindStringSubmatch(req.URL.Path)
 		if m == nil {
-			errorResponse(structs.WebError{T: "Not found", Error: req.URL.Path}, 404, req, res)
+			h.Controller.errorResponse(structs.WebError{T: "Not found", Error: req.URL.Path}, 404, req, res)
 
 			return
 		}
 		chatId, _ := strconv.ParseInt(m[1], 10, 64)
 		if m[1] == "" {
-			chatId = me[currentAcc].Id
+			chatId = libs.AS.Get(currentAcc).Id
 		}
 		ids := req.FormValue("ids")
 		if ids != "" {
-			processTgMessagesByIds(chatId, req, res)
+			h.Controller.processTgMessagesByIds(chatId, req, res)
 		} else {
-			processTgChatHistoryOnline(chatId, req, res)
+			h.Controller.processTgChatHistoryOnline(chatId, req, res)
 		}
 
 		return
@@ -110,15 +116,15 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		r := regexp.MustCompile(`^/f/([\w\-_]+)$`)
 		m := r.FindStringSubmatch(req.URL.Path)
 		if m == nil || m[1] == "" {
-			errorResponse(structs.WebError{T: "Not found", Error: req.URL.Path}, 404, req, res)
+			h.Controller.errorResponse(structs.WebError{T: "Not found", Error: req.URL.Path}, 404, req, res)
 
 			return
 		}
 
-		file, err := DownloadFileByRemoteId(currentAcc, m[1])
+		file, err := libs.AS.Get(currentAcc).TdApi.DownloadFileByRemoteId(m[1])
 
 		if err != nil {
-			errorResponse(structs.WebError{T: "Attachment error", Error: err.Error()}, 502, req, res)
+			h.Controller.errorResponse(structs.WebError{T: "Attachment error", Error: err.Error()}, 502, req, res)
 
 			return
 		}
@@ -134,32 +140,55 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		errorResponse(structs.WebError{T: "Invalid file", Error: file.Extra}, 504, req, res)
+		h.Controller.errorResponse(structs.WebError{T: "Invalid file", Error: file.Extra}, 504, req, res)
 
 		return
 
 	case "s":
-		processSettings(req, res)
+		h.Controller.processSettings(req, res)
 		return
 	case "delete":
 		r := regexp.MustCompile(`^/delete/(-?\d+)$`)
 		m := r.FindStringSubmatch(req.URL.Path)
 		if m == nil {
-			errorResponse(structs.WebError{T: "Not found", Error: req.URL.Path}, 404, req, res)
+			h.Controller.errorResponse(structs.WebError{T: "Not found", Error: req.URL.Path}, 404, req, res)
 
 			return
 		}
 
 		chatId, _ := strconv.ParseInt(m[1], 10, 64)
 
-		processTgDelete(chatId, req, res)
+		h.Controller.processTgDelete(chatId, req, res)
 
 		return
 	default:
-		errorResponse(structs.WebError{T: "Not found", Error: req.URL.Path}, 404, req, res)
+		h.Controller.errorResponse(structs.WebError{T: "Not found", Error: req.URL.Path}, 404, req, res)
 
 		return
 	}
+}
+
+func tryFile(req *http.Request, w http.ResponseWriter) bool {
+	i := strings.Index(req.URL.Path, "/web/")
+	var path string
+	if i == -1 {
+		path = "web/" + req.URL.Path
+	} else if i == 0 {
+		path = req.URL.Path[1:]
+	} else {
+		w.WriteHeader(404)
+		w.Write([]byte("not found"))
+
+		return true
+	}
+	stat, err := os.Stat(path)
+	if err == nil && !stat.IsDir() {
+		http.ServeFile(w, req, path)
+
+		return true
+	}
+
+	return false
 }
 
 func detectAccount(req *http.Request, res http.ResponseWriter) bool {
@@ -174,13 +203,11 @@ func detectAccount(req *http.Request, res http.ResponseWriter) bool {
 	}
 	currentAcc, err = strconv.ParseInt(accCookie.Value, 10, 64)
 	if err != nil {
-		errorResponse(structs.WebError{T: "Invalid account", Error: err.Error()}, 504, req, res)
 
 		return false
 	}
 
-	if _, ok := Accounts[currentAcc]; !ok {
-		errorResponse(structs.WebError{T: "Invalid account", Error: "no such account"}, 504, req, res)
+	if libs.AS.Get(currentAcc) == nil {
 
 		return false
 	}

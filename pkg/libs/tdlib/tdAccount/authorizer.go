@@ -1,4 +1,4 @@
-package libs
+package tdAccount
 
 import (
 	"github.com/zelenin/go-tdlib/client"
@@ -88,7 +88,7 @@ func ClientAuthorizer() *clientAuthorizer {
 	}
 }
 
-var state client.AuthorizationState
+var AuthorizerState client.AuthorizationState
 var phoneSet bool = false
 var codeSet bool = false
 var passwordSet bool = false
@@ -98,22 +98,22 @@ func ChanInteractor(clientAuthorizer *clientAuthorizer, phone string, nextParams
 	var param string
 
 	defer func() {
-		state = nil
+		AuthorizerState = nil
 		phoneSet = false
 		codeSet = false
 		passwordSet = false
 	}()
 
 	for {
-		state, ok = <-clientAuthorizer.State
+		AuthorizerState, ok = <-clientAuthorizer.State
 		if !ok {
 			log.Printf("Authorization process closed!")
 
 			return
 		}
-		log.Printf("new state! %s", state.AuthorizationStateType())
+		log.Printf("new state! %s", AuthorizerState.AuthorizationStateType())
 
-		switch state.AuthorizationStateType() {
+		switch AuthorizerState.AuthorizationStateType() {
 		case client.TypeAuthorizationStateWaitPhoneNumber:
 			if phoneSet == true {
 				continue

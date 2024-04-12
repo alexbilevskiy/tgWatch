@@ -3,12 +3,10 @@ package libs
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/alexbilevskiy/tgWatch/pkg/config"
 	"io"
-	"log"
 	"os"
 	"strconv"
-	"strings"
+	strings "strings"
 	"time"
 )
 
@@ -37,7 +35,7 @@ func JsonMarshalStr(j interface{}) string {
 	return string(m)
 }
 
-func jsonMarshalPretty(j interface{}) []byte {
+func JsonMarshalPretty(j interface{}) []byte {
 	m, err := json.MarshalIndent(j, "", "    ")
 	if err != nil {
 
@@ -65,12 +63,6 @@ func FormatTime(timestamp int32) string {
 func FormatDate(timestamp int32) string {
 
 	return time.Unix(int64(timestamp), 0).Format("2006-01-02")
-}
-
-func DLog(format string) {
-	if config.Config.Debug {
-		log.Printf(format)
-	}
 }
 
 func MoveFile(sourcePath, destPath string) error {

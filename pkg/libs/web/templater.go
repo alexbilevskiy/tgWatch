@@ -1,9 +1,10 @@
-package libs
+package web
 
 import (
 	"errors"
 	"fmt"
-	"github.com/alexbilevskiy/tgWatch/pkg/config"
+	"github.com/alexbilevskiy/tgWatch/pkg/libs"
+	"github.com/alexbilevskiy/tgWatch/pkg/libs/tdlib"
 	"github.com/alexbilevskiy/tgWatch/pkg/structs"
 	"github.com/zelenin/go-tdlib/client"
 	"html/template"
@@ -12,23 +13,12 @@ import (
 	"strconv"
 )
 
-var verbose bool = false
-var currentAcc int64
-
-func InitWeb() {
-	server := &http.Server{
-		Addr:    config.Config.WebListen,
-		Handler: HttpHandler{},
-	}
-	go server.ListenAndServe()
-}
-
 func renderTemplates(req *http.Request, w http.ResponseWriter, templateData interface{}, templates ...string) {
 	var t *template.Template
 	var errParse error
 	if verbose {
 		w.Header().Set("Content-Type", "application/json")
-		_, err := w.Write(jsonMarshalPretty(templateData))
+		_, err := w.Write(libs.JsonMarshalPretty(templateData))
 		if err != nil {
 			log.Printf("failed writing debug body: %s", err.Error())
 		}
@@ -44,12 +34,16 @@ func renderTemplates(req *http.Request, w http.ResponseWriter, templateData inte
 			"renderText": func(text *client.FormattedText) template.HTML {
 				return template.HTML(renderText(text))
 			},
-			"accountsList": func() map[int64]structs.Account {
-
-				return Accounts
+			"accountsList": func() []*libs.Account {
+				accounts := make([]*libs.Account, 0)
+				libs.AS.Range(func(key any, value any) bool {
+					accounts = append(accounts, value.(*libs.Account))
+					return true
+				})
+				return accounts
 			},
 			"isMe": func(chatId int64) bool {
-				if chatId == me[currentAcc].Id {
+				if chatId == libs.AS.Get(currentAcc).Id {
 
 					return true
 				}
@@ -57,10 +51,7 @@ func renderTemplates(req *http.Request, w http.ResponseWriter, templateData inte
 				return false
 			},
 			"isCurrentAcc": func(acc int64) bool {
-				if _, ok := Accounts[currentAcc]; !ok {
-					return false
-				}
-				if acc == Accounts[currentAcc].Id {
+				if acc == libs.AS.Get(currentAcc).Id {
 
 					return true
 				}
@@ -69,7 +60,7 @@ func renderTemplates(req *http.Request, w http.ResponseWriter, templateData inte
 			},
 			"chatInfoLocal": func(chatIdstr string) structs.ChatInfo {
 				chatId, _ := strconv.ParseInt(chatIdstr, 10, 64)
-				localChat, err := GetChat(currentAcc, chatId, false)
+				localChat, err := libs.AS.Get(currentAcc).TdApi.GetChat(chatId, false)
 				if err == nil {
 
 					return structs.ChatInfo{ChatId: chatId, ChatName: "_NOT_FOUND_"}
@@ -79,29 +70,29 @@ func renderTemplates(req *http.Request, w http.ResponseWriter, templateData inte
 			},
 			"chatInfo": func(chatIdstr string) structs.ChatInfo {
 				chatId, _ := strconv.ParseInt(chatIdstr, 10, 64)
-				c, err := GetChat(currentAcc, chatId, false)
+				c, err := libs.AS.Get(currentAcc).TdApi.GetChat(chatId, false)
 				if err != nil {
-					user, err := GetUser(currentAcc, chatId)
+					user, err := libs.AS.Get(currentAcc).TdApi.GetUser(chatId)
 					if err != nil {
 						return structs.ChatInfo{ChatId: chatId, ChatName: fmt.Sprintf("ERROR: %s", err.Error())}
 					}
 
-					return structs.ChatInfo{ChatId: chatId, ChatName: getUserFullname(user)}
+					return structs.ChatInfo{ChatId: chatId, ChatName: tdlib.GetUserFullname(user)}
 				}
 
 				return buildChatInfoByLocalChat(c)
 			},
 			"GetLink": func(chatId int64, messageId int64) string {
-				return GetLink(currentAcc, chatId, messageId)
+				return libs.AS.Get(currentAcc).TdApi.GetLink(chatId, messageId)
 			},
 			"DateTime": func(date int32) string {
-				return FormatDateTime(date)
+				return libs.FormatDateTime(date)
 			},
 			"Date": func(date int32) string {
-				return FormatDate(date)
+				return libs.FormatDate(date)
 			},
 			"Time": func(date int32) string {
-				return FormatTime(date)
+				return libs.FormatTime(date)
 			},
 			"SetNestedMsg": func(info structs.MessageInfo, text *client.FormattedText, simple string, attachments []structs.MessageAttachment) structs.MessageInfo {
 				info.FormattedText = text

@@ -1,16 +1,30 @@
-package libs
+package tdlib
 
 import (
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"github.com/alexbilevskiy/tgWatch/pkg/config"
+	"github.com/alexbilevskiy/tgWatch/pkg/libs"
 	"github.com/alexbilevskiy/tgWatch/pkg/structs"
 	"github.com/zelenin/go-tdlib/client"
-	"go.mongodb.org/mongo-driver/bson"
 	"log"
-	"sync"
 )
+
+const (
+	ClCached        int32 = 0
+	ClMain          int32 = -1
+	ClArchive       int32 = -2
+	ClOwned         int32 = -3
+	ClNotSubscribed int32 = -4
+	ClNotAssigned   int32 = -5
+)
+
+const (
+	AccStatusNew    = "new"
+	AccStatusActive = "active"
+)
+
+var TdlibOptions map[string]structs.TdlibOption
 
 func GetChatIdBySender(sender client.MessageSender) int64 {
 	senderChatId := int64(0)
@@ -23,27 +37,7 @@ func GetChatIdBySender(sender client.MessageSender) int64 {
 	return senderChatId
 }
 
-func GetSenderName(acc int64, sender client.MessageSender) string {
-	chat, err := GetSenderObj(acc, sender)
-	if err != nil {
-
-		return err.Error()
-	}
-	if sender.MessageSenderType() == "messageSenderChat" {
-		name := fmt.Sprintf("%s", chat.(*client.Chat).Title)
-		if name == "" {
-			name = fmt.Sprintf("no_name %d", chat.(*client.Chat).Id)
-		}
-		return name
-	} else if sender.MessageSenderType() == "messageSenderUser" {
-		user := chat.(*client.User)
-		return getUserFullname(user)
-	}
-
-	return "unkown_chattype"
-}
-
-func getUserFullname(user *client.User) string {
+func GetUserFullname(user *client.User) string {
 	name := ""
 	if user.FirstName != "" {
 		name = user.FirstName
@@ -69,81 +63,11 @@ func GetUsername(usernames *client.Usernames) string {
 		return ""
 	}
 	if len(usernames.ActiveUsernames) > 1 {
-		log.Printf("whoa, multiple usernames? %s", JsonMarshalStr(usernames.ActiveUsernames))
+		log.Printf("whoa, multiple usernames? %s", libs.JsonMarshalStr(usernames.ActiveUsernames))
 		return usernames.ActiveUsernames[0]
 	}
 
 	return usernames.ActiveUsernames[0]
-}
-
-func GetSenderObj(acc int64, sender client.MessageSender) (interface{}, error) {
-	if sender.MessageSenderType() == "messageSenderChat" {
-		chatId := sender.(*client.MessageSenderChat).ChatId
-		chat, err := GetChat(acc, chatId, false)
-		if err != nil {
-			log.Printf("Failed to request sender chat info by id %d: %s", chatId, err)
-
-			return nil, errors.New("unknown chat")
-		}
-
-		return chat, nil
-	} else if sender.MessageSenderType() == "messageSenderUser" {
-		userId := sender.(*client.MessageSenderUser).UserId
-		user, err := GetUser(acc, userId)
-		if err != nil {
-			log.Printf("Failed to request user info by id %d: %s", userId, err)
-
-			return nil, errors.New("unknown user")
-		}
-
-		return user, nil
-	}
-
-	return nil, errors.New("unknown sender type")
-}
-
-func GetChatName(acc int64, chatId int64) string {
-	fullChat, err := GetChat(acc, chatId, false)
-	if err != nil {
-		log.Printf("Failed to get chat name by id %d: %s", chatId, err)
-
-		return "no_title"
-	}
-	name := fmt.Sprintf("%s", fullChat.Title)
-	if name == "" {
-		name = fmt.Sprintf("no_name %d", chatId)
-	}
-
-	return name
-}
-
-func GetChatUsername(acc int64, chatId int64) string {
-	chat, err := GetChat(acc, chatId, false)
-	if err != nil {
-		log.Printf("Failed to get chat name by id %d: %s", chatId, err)
-
-		return ""
-	}
-	switch chat.Type.ChatTypeType() {
-	case client.TypeChatTypeSupergroup:
-		t := chat.Type.(*client.ChatTypeSupergroup)
-		sg, err := GetSuperGroup(acc, t.SupergroupId)
-		if err != nil {
-			log.Printf("GetChatUsername error: %s", err.Error())
-			return ""
-		}
-		return GetUsername(sg.Usernames)
-	case client.TypeChatTypePrivate:
-		t := chat.Type.(*client.ChatTypePrivate)
-		user, err := GetUser(acc, t.UserId)
-		if err != nil {
-			log.Printf("GetChatUsername error: %s", err.Error())
-			return ""
-		}
-		return GetUsername(user.Usernames)
-	}
-
-	return ""
 }
 
 func GetContentWithText(content client.MessageContent, chatId int64) structs.MessageTextContent {
@@ -191,7 +115,7 @@ func GetContentWithText(content client.MessageContent, chatId int64) structs.Mes
 	case client.TypeMessageChatAddMembers:
 		msg := content.(*client.MessageChatAddMembers)
 
-		return structs.MessageTextContent{Text: fmt.Sprintf("Added users %s", JsonMarshalStr(msg.MemberUserIds))}
+		return structs.MessageTextContent{Text: fmt.Sprintf("Added users %s", libs.JsonMarshalStr(msg.MemberUserIds))}
 	case client.TypeMessagePinMessage:
 		msg := content.(*client.MessagePinMessage)
 		var url client.TextEntityType
@@ -226,46 +150,15 @@ func GetContentWithText(content client.MessageContent, chatId int64) structs.Mes
 	case client.TypeMessageChatDeleteMember:
 		msg := content.(*client.MessageChatDeleteMember)
 		//@TODO: pass currentAcc as argument
-		return structs.MessageTextContent{Text: fmt.Sprintf("deleted `%s` from chat", GetChatName(currentAcc, msg.UserId))}
+		return structs.MessageTextContent{Text: fmt.Sprintf("deleted `%d` from chat", msg.UserId)}
 	case client.TypeMessageUnsupported:
 		//msg := content.(*client.MessageUnsupported)
 		return structs.MessageTextContent{Text: ">unsupported message<"}
 	default:
 		log.Printf("unknown text type: %s", content.MessageContentType())
 
-		return structs.MessageTextContent{Text: JsonMarshalStr(content)}
+		return structs.MessageTextContent{Text: libs.JsonMarshalStr(content)}
 	}
-}
-
-func MarkJoinAsRead(acc int64, chatId int64, messageId int64) {
-	chat, err := GetChat(acc, chatId, true)
-	if err != nil {
-		fmt.Printf("Cannot update unread count because chat %d not found: %s\n", chatId, err.Error())
-
-		return
-	}
-	name := GetChatName(acc, chatId)
-
-	if chat.UnreadCount != 1 {
-		DLog(fmt.Sprintf("Chat `%s` %d unread count: %d>1, not marking as read\n", name, chatId, chat.UnreadCount))
-		return
-	}
-	DLog(fmt.Sprintf("Chat `%s` %d unread count: %d, marking join as read\n", name, chatId, chat.UnreadCount))
-
-	err = markAsRead(acc, chatId, messageId)
-	if err != nil {
-		fmt.Printf("Cannot mark as read chat %d, message %d: %s\n", chatId, messageId, err.Error())
-
-		return
-	}
-	chat, err = GetChat(acc, chatId, true)
-	if err != nil {
-		fmt.Printf("Cannot get NEW unread count because chat %d not found: %s\n", chatId, err.Error())
-
-		return
-	}
-	DLog(fmt.Sprintf("NEW Chat `%s` %d unread count: %d\n", name, chatId, chat.UnreadCount))
-
 }
 
 func GetContentAttachments(content client.MessageContent) []structs.MessageAttachment {
@@ -334,7 +227,7 @@ func GetContentAttachments(content client.MessageContent) []structs.MessageAttac
 
 			return cnt
 		}
-		log.Printf("Invalid sticker in messsage (probably it's webp photo): %s", JsonMarshalStr(msg))
+		log.Printf("Invalid sticker in messsage (probably it's webp photo): %s", libs.JsonMarshalStr(msg))
 
 		return nil
 	case client.TypeMessageVoiceNote:
@@ -419,123 +312,9 @@ func GetContentAttachments(content client.MessageContent) []structs.MessageAttac
 	return nil
 }
 
-func loadChatsList(acc int64, listId int32) {
-	var chatList client.ChatList
-	crit := bson.D{{"listid", listId}}
-	d, err := chatListColl[acc].DeleteMany(mongoContext, crit)
-	if err != nil {
-		log.Printf("Failed to delete chats by list %d: %s\n", listId, err.Error())
-	} else {
-		log.Printf("Deleted %d chats by listid %d because refresh was called\n", d.DeletedCount, listId)
-	}
-
-	switch listId {
-	case ClMain:
-		chatList = &client.ChatListMain{}
-		log.Printf("Requesting LoadChats for main list: %s", chatList.ChatListType())
-	case ClArchive:
-		chatList = &client.ChatListArchive{}
-		log.Printf("Requesting LoadChats for archive: %s", chatList.ChatListType())
-	default:
-		chatList = &client.ChatListFolder{ChatFolderId: listId}
-		log.Printf("Requesting LoadChats for folder: %d", chatList.(*client.ChatListFolder).ChatFolderId)
-	}
-
-	err = loadChats(acc, chatList)
-	if err != nil {
-		//@see https://github.com/tdlib/td/blob/fb39e5d74667db915a75a5e58065c59af8e7d8d6/td/generate/scheme/td_api.tl#L4171
-		if err.Error() == "404 Not Found" {
-			log.Printf("All chats already loaded")
-		} else {
-			log.Fatalf("[ERROR] LoadChats: %s", err)
-		}
-	}
-}
-
-func checkSkippedChat(acc int64, chatId string) bool {
-	if _, ok := ignoreLists[acc].IgnoreAuthorIds[chatId]; ok {
-
-		return true
-	}
-	if _, ok := ignoreLists[acc].IgnoreChatIds[chatId]; ok {
-
-		return true
-	}
-
-	return false
-}
-
-func checkChatFilter(acc int64, chatId int64) bool {
-	for _, filter := range chatFolders[acc] {
-		for _, chatInFilter := range filter.IncludedChats {
-			if chatInFilter == chatId && ignoreLists[acc].IgnoreFolders[filter.Title] {
-				//log.Printf("Skip chat %d because it's in skipped folder %s", chatId, filter.Title)
-
-				return true
-			}
-		}
-	}
-
-	return false
-}
-
-func SaveChatFilters(acc int64, chatFoldersUpdate *client.UpdateChatFolders) {
-	log.Printf("Chat filters update! %s", chatFoldersUpdate.Type)
-	//ClearChatFilters(acc)
-	var wg sync.WaitGroup
-
-	for _, folderInfo := range chatFoldersUpdate.ChatFolders {
-		existed := false
-		for _, existningFilter := range chatFolders[acc] {
-			if existningFilter.Id == folderInfo.Id {
-				existed = true
-				break
-			}
-		}
-		if existed {
-			//log.Printf("Existing chat folder: id: %d, n: %s", folderInfo.Id, folderInfo.Title)
-			continue
-		}
-		log.Printf("New chat folder: id: %d, n: %s", folderInfo.Id, folderInfo.Title)
-
-		wg.Add(1)
-		go func(folderInfo *client.ChatFolderInfo, wg *sync.WaitGroup) {
-			defer wg.Done()
-			chatFolder, err := getChatFolder(acc, folderInfo.Id)
-			if err != nil {
-				log.Printf("Failed to load chat folder: id: %d, n: %s, reason: %s", folderInfo.Id, folderInfo.Title, err.Error())
-
-				return
-			}
-			saveChatFolder(acc, chatFolder, folderInfo)
-			log.Printf("Chat folder LOADED: id: %d, n: %s", folderInfo.Id, folderInfo.Title)
-		}(folderInfo, &wg)
-		//time.Sleep(time.Second * 2)
-	}
-	wg.Wait()
-
-	for _, existningFolder := range chatFolders[acc] {
-		deleted := true
-		for _, folderInfo := range chatFoldersUpdate.ChatFolders {
-			if folderInfo.Id == existningFolder.Id {
-				deleted = false
-				continue
-			}
-		}
-		if !deleted {
-			continue
-		}
-		log.Printf("Deleted chat folder: id: %d, n: %s", existningFolder.Id, existningFolder.Title)
-		//@TODO: delete it
-	}
-
-	LoadChatFolders(acc)
-
-}
-
-func loadOptionsList(acc int64) {
+func LoadOptionsList() {
 	var opts map[string]structs.TdlibOption
 	opts = make(map[string]structs.TdlibOption)
 	config.UnmarshalJsonFile("tdlib_options.json", &opts)
-	tdlibOptions[acc] = opts
+	TdlibOptions = opts
 }

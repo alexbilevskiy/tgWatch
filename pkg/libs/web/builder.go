@@ -1,8 +1,10 @@
-package libs
+package web
 
 import (
 	"fmt"
 	"github.com/alexbilevskiy/tgWatch/pkg/config"
+	"github.com/alexbilevskiy/tgWatch/pkg/libs"
+	"github.com/alexbilevskiy/tgWatch/pkg/libs/tdlib"
 	"github.com/alexbilevskiy/tgWatch/pkg/structs"
 	"github.com/zelenin/go-tdlib/client"
 	"html"
@@ -11,23 +13,23 @@ import (
 )
 
 func parseMessage(message *client.Message) structs.MessageInfo {
-	senderChatId := GetChatIdBySender(message.SenderId)
-	ct := GetContentWithText(message.Content, message.ChatId)
+	senderChatId := tdlib.GetChatIdBySender(message.SenderId)
+	ct := tdlib.GetContentWithText(message.Content, message.ChatId)
 	messageInfo := structs.MessageInfo{
 		T:             "NewMessage",
 		MessageId:     message.Id,
 		Date:          message.Date,
-		DateTimeStr:   FormatDateTime(message.Date),
-		DateStr:       FormatDate(message.Date),
-		TimeStr:       FormatTime(message.Date),
+		DateTimeStr:   libs.FormatDateTime(message.Date),
+		DateStr:       libs.FormatDate(message.Date),
+		TimeStr:       libs.FormatTime(message.Date),
 		ChatId:        message.ChatId,
-		ChatName:      GetChatName(currentAcc, message.ChatId),
+		ChatName:      libs.AS.Get(currentAcc).TdApi.GetChatName(message.ChatId),
 		SenderId:      senderChatId,
-		SenderName:    GetSenderName(currentAcc, message.SenderId),
+		SenderName:    libs.AS.Get(currentAcc).TdApi.GetSenderName(message.SenderId),
 		MediaAlbumId:  int64(message.MediaAlbumId),
 		SimpleText:    ct.Text,
 		FormattedText: ct.FormattedText,
-		Attachments:   GetContentAttachments(message.Content),
+		Attachments:   tdlib.GetContentAttachments(message.Content),
 		Edited:        message.EditDate != 0,
 		ContentRaw:    nil,
 	}
@@ -44,11 +46,11 @@ func buildChatInfoByLocalChat(chat *client.Chat) structs.ChatInfo {
 
 		return structs.ChatInfo{ChatId: -1, Username: "ERROR", ChatName: "NULL CHAT"}
 	}
-	info := structs.ChatInfo{ChatId: chat.Id, ChatName: GetChatName(currentAcc, chat.Id), Username: GetChatUsername(currentAcc, chat.Id)}
+	info := structs.ChatInfo{ChatId: chat.Id, ChatName: libs.AS.Get(currentAcc).TdApi.GetChatName(chat.Id), Username: libs.AS.Get(currentAcc).TdApi.GetChatUsername(chat.Id)}
 	switch chat.Type.ChatTypeType() {
 	case client.TypeChatTypeSupergroup:
 		t := chat.Type.(*client.ChatTypeSupergroup)
-		sg, err := GetSuperGroup(currentAcc, t.SupergroupId)
+		sg, err := libs.AS.Get(currentAcc).TdApi.GetSuperGroup(t.SupergroupId)
 		if err != nil {
 			info.Type = "Error " + err.Error()
 		} else {
@@ -152,7 +154,7 @@ func wrapEntity(entity *client.TextEntity, text string) string {
 	case client.TypeTextEntityTypeCustomEmoji:
 		t := entity.Type.(*client.TextEntityTypeCustomEmoji)
 		customEmojisIds := append(make([]client.JsonInt64, 1), t.CustomEmojiId)
-		customEmojis, err := GetCustomEmoji(customEmojisIds)
+		customEmojis, err := libs.AS.Get(currentAcc).TdApi.GetCustomEmoji(customEmojisIds)
 		if err != nil {
 			wrapped = fmt.Sprintf(`<span title="%s" class="badge bg-warning">%s</span>`, entity.Type.TextEntityTypeType(), text)
 			break
