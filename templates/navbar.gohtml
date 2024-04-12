@@ -46,10 +46,10 @@
                     {{$sel := false}}
                     {{range accountsList}}
                         <option
-                                value="{{.Id}}"
-                                {{if isCurrentAcc .Id}} {{$sel = true}} selected{{end}}
-                                {{if ne .Status "active"}} disabled {{end}}
-                        >{{.Phone}} {{.Username}}</option>
+                                value="{{.DbData.Id}}"
+                                {{if isCurrentAcc .DbData.Id}} {{$sel = true}} selected{{end}}
+                                {{if ne .DbData.Status "active"}} disabled {{end}}
+                        >{{.DbData.Phone}} {{.Username}}</option>
                     {{end}}
                     {{if eq $sel false}}
                         <option value="" selected></option>

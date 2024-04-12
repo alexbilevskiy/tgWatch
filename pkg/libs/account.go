@@ -38,7 +38,7 @@ type AccountStorage struct {
 }
 
 func (as *AccountStorage) Create(mongoAcc *mongo.DbAccountData) {
-	acc := Account{
+	acc := &Account{
 		DbData: mongoAcc,
 	}
 	as.accounts.Store(acc.DbData.Id, acc)
