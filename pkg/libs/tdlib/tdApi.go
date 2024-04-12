@@ -71,6 +71,7 @@ func (t *TdApi) Init(dbData *mongo.DbAccountData, tdlibClient *client.Client, td
 	t.dbData = dbData
 
 	t.localChats = make(map[int64]*client.Chat)
+	t.chatFolders = t.db.LoadChatFolders()
 	t.m = sync.RWMutex{}
 }
 
