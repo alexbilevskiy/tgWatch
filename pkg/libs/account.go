@@ -56,6 +56,11 @@ func (as *AccountStorage) Get(accId int64) *Account {
 	return acc.(*Account)
 }
 
+func (as *AccountStorage) Delete(accId int64) {
+
+	as.accounts.Delete(accId)
+}
+
 func (as *AccountStorage) Range(f func(key any, value any) bool) {
 
 	as.accounts.Range(f)
@@ -78,12 +83,19 @@ func (as *AccountStorage) Run() {
 	for {
 		accounts := mongo.LoadAccounts("")
 		for _, mongoAcc := range accounts {
-			if mongoAcc.Status != consts.AccStatusActive {
-				log.Printf("wont run account %d, because its not active yet: `%s`", mongoAcc.Id, mongoAcc.Status)
+			if AS.Get(mongoAcc.Id) != nil {
+				if mongoAcc.Status != consts.AccStatusActive {
+					//not implemented actually. No one updates status to non-active axcept when upating manually in DB
+					log.Printf("need to stop account %d, because it became active: `%s`", mongoAcc.Id, mongoAcc.Status)
+					AS.Get(mongoAcc.Id).TdApi.Close()
+					AS.Delete(mongoAcc.Id)
+				} else {
+					//already running
+				}
 				continue
 			}
-			if AS.Get(mongoAcc.Id) != nil {
-				//already running
+			if mongoAcc.Status != consts.AccStatusActive {
+				log.Printf("wont run account %d, because its not active yet: `%s`", mongoAcc.Id, mongoAcc.Status)
 				continue
 			}
 			log.Printf("create account %d", mongoAcc.Id)

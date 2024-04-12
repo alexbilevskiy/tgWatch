@@ -23,6 +23,7 @@ type TdApi struct {
 type tdApiInterface interface {
 	Init(dbData *mongo.DbAccountData, tdlibClient *client.Client, tdMongo *mongo.TdMongo)
 	ListenUpdates()
+	Close()
 
 	GetChat(chatId int64, force bool) (*client.Chat, error)
 	GetUser(userId int64) (*client.User, error)
@@ -602,4 +603,8 @@ func (t *TdApi) GetChatMember(chatId int64) (*client.ChatMember, error) {
 func (t *TdApi) GetStorage() *mongo.TdMongo {
 	//@TODO: mutex?
 	return t.db
+}
+func (t *TdApi) Close() {
+
+	t.tdlibClient.Close()
 }
