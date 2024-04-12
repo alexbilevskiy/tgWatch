@@ -2,7 +2,7 @@ package mongo
 
 import (
 	"fmt"
-	"github.com/alexbilevskiy/tgWatch/pkg/libs/tdlib"
+	"github.com/alexbilevskiy/tgWatch/pkg/consts"
 	"github.com/alexbilevskiy/tgWatch/pkg/structs"
 	"github.com/zelenin/go-tdlib/client"
 	"go.mongodb.org/mongo-driver/bson"
@@ -84,18 +84,18 @@ func (m *TdMongo) SaveChatPosition(chatId int64, chatPosition *client.ChatPositi
 	switch clType {
 	case "chatListArchive":
 		//l := chatPosition.List.(*client.ChatListArchive)
-		listId = tdlib.ClArchive
+		listId = consts.ClArchive
 		break
 	case "chatListMain":
 		//l := chatPosition.List.(*client.ChatListMain)
-		listId = tdlib.ClMain
+		listId = consts.ClMain
 		break
 	case "chatListFolder":
 		l := chatPosition.List.(*client.ChatListFolder)
 		listId = l.ChatFolderId
 		break
 	default:
-		listId = tdlib.ClCached
+		listId = consts.ClCached
 		fmt.Printf("Invalid chat position type: %s", clType)
 	}
 	//fmt.Printf("ChatPosition update: %d | %d | %d | %s\n", chatId, chatPosition.Order, listId, chatPosition.List.ChatListType())

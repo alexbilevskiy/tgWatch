@@ -9,11 +9,7 @@ import (
 )
 
 type Account struct {
-	Id       int64
-	Phone    string
-	DbPrefix string
-	DataDir  string
-	Status   string
+	DbData   *mongo.DbAccountData
 	Username string
 	TdApi    *tdlib.TdApi
 	Me       *client.User
@@ -21,14 +17,14 @@ type Account struct {
 
 func (acc *Account) RunAccount() {
 	tdMongo := mongo.TdMongo{}
-	tdMongo.Init(acc.DbPrefix, acc.Phone)
+	tdMongo.Init(acc.DbData.DbPrefix, acc.DbData.Phone)
 
-	tdlibClient, me := tdAccount.RunTdlib(*acc)
+	tdlibClient, me := tdAccount.RunTdlib(acc.DbData)
 	acc.Username = tdlib.GetUsername(me.Usernames)
 	acc.Me = me
 
 	tdApi := tdlib.TdApi{}
-	tdApi.Init(acc, tdlibClient, &tdMongo)
+	tdApi.Init(acc.DbData, tdlibClient, &tdMongo)
 
 	acc.TdApi = &tdApi
 
@@ -41,12 +37,13 @@ type AccountStorage struct {
 	accounts sync.Map
 }
 
-func (as *AccountStorage) Init() {
+func (as *AccountStorage) Create(mongoAcc *mongo.DbAccountData) {
+	acc := Account{
+		DbData: mongoAcc,
+	}
+	as.accounts.Store(acc.DbData.Id, acc)
 }
 
-func (as *AccountStorage) Store(acc *Account) {
-	as.accounts.Store(acc.Id, acc)
-}
 func (as *AccountStorage) Get(accId int64) *Account {
 	acc, ok := as.accounts.Load(accId)
 	if !ok {

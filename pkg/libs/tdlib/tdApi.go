@@ -3,7 +3,7 @@ package tdlib
 import (
 	"errors"
 	"fmt"
-	"github.com/alexbilevskiy/tgWatch/pkg/libs"
+	"github.com/alexbilevskiy/tgWatch/pkg/consts"
 	"github.com/alexbilevskiy/tgWatch/pkg/libs/mongo"
 	"github.com/alexbilevskiy/tgWatch/pkg/structs"
 	"github.com/zelenin/go-tdlib/client"
@@ -13,7 +13,7 @@ import (
 
 type TdApi struct {
 	m           sync.RWMutex
-	acc         *libs.Account
+	dbData      *mongo.DbAccountData
 	localChats  map[int64]*client.Chat
 	chatFolders []structs.ChatFilter
 	tdlibClient *client.Client
@@ -21,7 +21,7 @@ type TdApi struct {
 }
 
 type tdApiInterface interface {
-	Init(acc *libs.Account, tdlibClient *client.Client, tdMongo *mongo.TdMongo)
+	Init(dbData *mongo.DbAccountData, tdlibClient *client.Client, tdMongo *mongo.TdMongo)
 	ListenUpdates()
 
 	GetChat(chatId int64, force bool) (*client.Chat, error)
@@ -65,10 +65,10 @@ type tdApiInterface interface {
 	cacheChat(chat *client.Chat)
 }
 
-func (t *TdApi) Init(acc *libs.Account, tdlibClient *client.Client, tdMongo *mongo.TdMongo) {
+func (t *TdApi) Init(dbData *mongo.DbAccountData, tdlibClient *client.Client, tdMongo *mongo.TdMongo) {
 	t.tdlibClient = tdlibClient
 	t.db = tdMongo
-	t.acc = acc
+	t.dbData = dbData
 
 	t.localChats = make(map[int64]*client.Chat)
 	t.m = sync.RWMutex{}
@@ -456,10 +456,10 @@ func (t *TdApi) LoadChatsList(listId int32) {
 	}
 
 	switch listId {
-	case ClMain:
+	case consts.ClMain:
 		chatList = &client.ChatListMain{}
 		log.Printf("Requesting LoadChats for main list: %s", chatList.ChatListType())
-	case ClArchive:
+	case consts.ClArchive:
 		chatList = &client.ChatListArchive{}
 		log.Printf("Requesting LoadChats for archive: %s", chatList.ChatListType())
 	default:
@@ -592,7 +592,7 @@ func (t *TdApi) DeleteMessages(chatId int64, messageIds []int64) (*client.Ok, er
 }
 
 func (t *TdApi) GetChatMember(chatId int64) (*client.ChatMember, error) {
-	m := client.MessageSenderUser{UserId: t.acc.Id}
+	m := client.MessageSenderUser{UserId: t.dbData.Id}
 	req := &client.GetChatMemberRequest{ChatId: chatId, MemberId: &m}
 
 	return t.tdlibClient.GetChatMember(req)

@@ -2,7 +2,9 @@ package web
 
 import (
 	"fmt"
+	"github.com/alexbilevskiy/tgWatch/pkg/consts"
 	"github.com/alexbilevskiy/tgWatch/pkg/libs"
+	"github.com/alexbilevskiy/tgWatch/pkg/libs/helpers"
 	"github.com/alexbilevskiy/tgWatch/pkg/libs/tdlib"
 	"github.com/alexbilevskiy/tgWatch/pkg/libs/tdlib/tdAccount"
 	"github.com/alexbilevskiy/tgWatch/pkg/structs"
@@ -55,7 +57,7 @@ func (wc *webController) processTgActiveSessions(req *http.Request, w http.Respo
 	}
 	data := structs.SessionsList{T: "Sessions", Sessions: sessions}
 	if !verbose {
-		data.SessionsRaw = string(libs.JsonMarshalPretty(sessions))
+		data.SessionsRaw = string(helpers.JsonMarshalPretty(sessions))
 	}
 
 	renderTemplates(req, w, data, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/sessions_list.gohtml`)
@@ -99,7 +101,7 @@ func (wc *webController) processTgSingleMessage(chatId int64, messageId int64, r
 }
 
 func (wc *webController) processTgMessagesByIds(chatId int64, req *http.Request, w http.ResponseWriter) {
-	messageIds := libs.ExplodeInt(req.FormValue("ids"))
+	messageIds := helpers.ExplodeInt(req.FormValue("ids"))
 	res := structs.ChatHistoryOnline{
 		T:        "ChatHistory-filtered",
 		Messages: make([]structs.MessageInfo, 0),
@@ -143,7 +145,7 @@ func (wc *webController) processTgChatInfo(chatId int64, req *http.Request, w ht
 	if verbose {
 		data = res
 	} else {
-		res.ChatRaw = string(libs.JsonMarshalPretty(chat))
+		res.ChatRaw = string(helpers.JsonMarshalPretty(chat))
 		data = res
 	}
 	renderTemplates(req, w, data, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/chat_info.gohtml`)
@@ -201,7 +203,7 @@ func (wc *webController) processTgChatList(req *http.Request, w http.ResponseWri
 	if req.FormValue("refresh") == "1" {
 		refresh = true
 	}
-	var folder int32 = tdlib.ClMain
+	var folder int32 = consts.ClMain
 	if req.FormValue("folder") != "" {
 		folder64, _ := strconv.ParseInt(req.FormValue("folder"), 10, 32)
 		folder = int32(folder64)
@@ -213,23 +215,23 @@ func (wc *webController) processTgChatList(req *http.Request, w http.ResponseWri
 
 	var folders []structs.ChatFolder
 	folders = make([]structs.ChatFolder, 0)
-	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: tdlib.ClMain, Title: "Main"})
-	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: tdlib.ClArchive, Title: "Archive"})
-	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: tdlib.ClCached, Title: "Cached"})
-	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: tdlib.ClOwned, Title: "Owned chats"})
-	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: tdlib.ClNotSubscribed, Title: "Not subscribed chats"})
-	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: tdlib.ClNotAssigned, Title: "Chats not in any folder"})
+	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: consts.ClMain, Title: "Main"})
+	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: consts.ClArchive, Title: "Archive"})
+	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: consts.ClCached, Title: "Cached"})
+	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: consts.ClOwned, Title: "Owned chats"})
+	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: consts.ClNotSubscribed, Title: "Not subscribed chats"})
+	folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: consts.ClNotAssigned, Title: "Chats not in any folder"})
 	for _, filter := range libs.AS.Get(currentAcc).TdApi.GetChatFolders() {
 		folders = append(folders, structs.ChatFolder{T: "ChatFolder", Id: filter.Id, Title: filter.Title})
 	}
 
 	res := structs.ChatList{T: "Chat list", ChatFolders: folders, SelectedFolder: folder}
-	if folder == tdlib.ClCached {
+	if folder == consts.ClCached {
 		for _, chat := range libs.AS.Get(currentAcc).TdApi.GetLocalChats() {
 			info := buildChatInfoByLocalChat(chat)
 			res.Chats = append(res.Chats, info)
 		}
-	} else if folder == tdlib.ClOwned {
+	} else if folder == consts.ClOwned {
 		for _, chat := range libs.AS.Get(currentAcc).TdApi.GetLocalChats() {
 			cm, err := libs.AS.Get(currentAcc).TdApi.GetChatMember(chat.Id)
 			if err != nil && err.Error() != "400 CHANNEL_PRIVATE" {
@@ -249,14 +251,14 @@ func (wc *webController) processTgChatList(req *http.Request, w http.ResponseWri
 
 			}
 		}
-	} else if folder == tdlib.ClNotSubscribed {
+	} else if folder == consts.ClNotSubscribed {
 		for _, chat := range libs.AS.Get(currentAcc).TdApi.GetLocalChats() {
 			if chat.LastMessage == nil && chat.LastReadInboxMessageId == 0 {
 				info := buildChatInfoByLocalChat(chat)
 				res.Chats = append(res.Chats, info)
 			}
 		}
-	} else if folder == tdlib.ClNotAssigned {
+	} else if folder == consts.ClNotAssigned {
 		for _, chat := range libs.AS.Get(currentAcc).TdApi.GetLocalChats() {
 			saved := false
 			for _, filter := range libs.AS.Get(currentAcc).TdApi.GetChatFolders() {
@@ -473,7 +475,7 @@ func (wc *webController) processAddAccount(req *http.Request, w http.ResponseWri
 		if tdAccount.CurrentAuthorizingAcc == nil {
 			if req.FormValue("phone") != "" {
 				tdAccount.CreateAccount(req.FormValue("phone"))
-				if tdAccount.CurrentAuthorizingAcc.Status == tdlib.AccStatusActive {
+				if tdAccount.CurrentAuthorizingAcc.Status == consts.AccStatusActive {
 					st.State = "already_authorized"
 					tdAccount.CurrentAuthorizingAcc = nil
 				} else {
@@ -528,7 +530,7 @@ func (wc *webController) processTgLink(req *http.Request, w http.ResponseWriter)
 		SourceLink  string
 		LinkInfoRaw string
 		LinkDataRaw string
-	}{T: "Link info", SourceLink: link, LinkInfoRaw: string(libs.JsonMarshalPretty(linkInfo)), LinkDataRaw: string(libs.JsonMarshalPretty(LinkData))}
+	}{T: "Link info", SourceLink: link, LinkInfoRaw: string(helpers.JsonMarshalPretty(linkInfo)), LinkDataRaw: string(helpers.JsonMarshalPretty(LinkData))}
 
 	renderTemplates(req, w, respStruct, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/link_info.gohtml`)
 }

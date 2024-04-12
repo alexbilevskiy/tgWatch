@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/alexbilevskiy/tgWatch/pkg/config"
 	"github.com/alexbilevskiy/tgWatch/pkg/libs"
+	"github.com/alexbilevskiy/tgWatch/pkg/libs/helpers"
 	"github.com/alexbilevskiy/tgWatch/pkg/libs/tdlib"
 	"github.com/alexbilevskiy/tgWatch/pkg/structs"
 	"github.com/zelenin/go-tdlib/client"
@@ -19,9 +20,9 @@ func parseMessage(message *client.Message) structs.MessageInfo {
 		T:             "NewMessage",
 		MessageId:     message.Id,
 		Date:          message.Date,
-		DateTimeStr:   libs.FormatDateTime(message.Date),
-		DateStr:       libs.FormatDate(message.Date),
-		TimeStr:       libs.FormatTime(message.Date),
+		DateTimeStr:   helpers.FormatDateTime(message.Date),
+		DateStr:       helpers.FormatDate(message.Date),
+		TimeStr:       helpers.FormatTime(message.Date),
 		ChatId:        message.ChatId,
 		ChatName:      libs.AS.Get(currentAcc).TdApi.GetChatName(message.ChatId),
 		SenderId:      senderChatId,

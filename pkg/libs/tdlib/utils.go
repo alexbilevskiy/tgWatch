@@ -4,24 +4,10 @@ import (
 	"encoding/base64"
 	"fmt"
 	"github.com/alexbilevskiy/tgWatch/pkg/config"
-	"github.com/alexbilevskiy/tgWatch/pkg/libs"
+	"github.com/alexbilevskiy/tgWatch/pkg/libs/helpers"
 	"github.com/alexbilevskiy/tgWatch/pkg/structs"
 	"github.com/zelenin/go-tdlib/client"
 	"log"
-)
-
-const (
-	ClCached        int32 = 0
-	ClMain          int32 = -1
-	ClArchive       int32 = -2
-	ClOwned         int32 = -3
-	ClNotSubscribed int32 = -4
-	ClNotAssigned   int32 = -5
-)
-
-const (
-	AccStatusNew    = "new"
-	AccStatusActive = "active"
 )
 
 var TdlibOptions map[string]structs.TdlibOption
@@ -63,7 +49,7 @@ func GetUsername(usernames *client.Usernames) string {
 		return ""
 	}
 	if len(usernames.ActiveUsernames) > 1 {
-		log.Printf("whoa, multiple usernames? %s", libs.JsonMarshalStr(usernames.ActiveUsernames))
+		log.Printf("whoa, multiple usernames? %s", helpers.JsonMarshalStr(usernames.ActiveUsernames))
 		return usernames.ActiveUsernames[0]
 	}
 
@@ -115,7 +101,7 @@ func GetContentWithText(content client.MessageContent, chatId int64) structs.Mes
 	case client.TypeMessageChatAddMembers:
 		msg := content.(*client.MessageChatAddMembers)
 
-		return structs.MessageTextContent{Text: fmt.Sprintf("Added users %s", libs.JsonMarshalStr(msg.MemberUserIds))}
+		return structs.MessageTextContent{Text: fmt.Sprintf("Added users %s", helpers.JsonMarshalStr(msg.MemberUserIds))}
 	case client.TypeMessagePinMessage:
 		msg := content.(*client.MessagePinMessage)
 		var url client.TextEntityType
@@ -157,7 +143,7 @@ func GetContentWithText(content client.MessageContent, chatId int64) structs.Mes
 	default:
 		log.Printf("unknown text type: %s", content.MessageContentType())
 
-		return structs.MessageTextContent{Text: libs.JsonMarshalStr(content)}
+		return structs.MessageTextContent{Text: helpers.JsonMarshalStr(content)}
 	}
 }
 
@@ -227,7 +213,7 @@ func GetContentAttachments(content client.MessageContent) []structs.MessageAttac
 
 			return cnt
 		}
-		log.Printf("Invalid sticker in messsage (probably it's webp photo): %s", libs.JsonMarshalStr(msg))
+		log.Printf("Invalid sticker in messsage (probably it's webp photo): %s", helpers.JsonMarshalStr(msg))
 
 		return nil
 	case client.TypeMessageVoiceNote:

@@ -102,7 +102,7 @@ func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		}
 		chatId, _ := strconv.ParseInt(m[1], 10, 64)
 		if m[1] == "" {
-			chatId = libs.AS.Get(currentAcc).Id
+			chatId = libs.AS.Get(currentAcc).DbData.Id
 		}
 		ids := req.FormValue("ids")
 		if ids != "" {

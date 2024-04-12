@@ -2,7 +2,8 @@ package tdAccount
 
 import (
 	"github.com/alexbilevskiy/tgWatch/pkg/config"
-	"github.com/alexbilevskiy/tgWatch/pkg/libs"
+	"github.com/alexbilevskiy/tgWatch/pkg/consts"
+	"github.com/alexbilevskiy/tgWatch/pkg/libs/helpers"
 	"github.com/alexbilevskiy/tgWatch/pkg/libs/mongo"
 	"github.com/alexbilevskiy/tgWatch/pkg/libs/tdlib"
 	"github.com/zelenin/go-tdlib/client"
@@ -10,11 +11,11 @@ import (
 	"path/filepath"
 )
 
-func RunTdlib(acc libs.Account) (*client.Client, *client.User) {
+func RunTdlib(dbData *mongo.DbAccountData) (*client.Client, *client.User) {
 	authorizer := client.ClientAuthorizer()
 	go client.CliInteractor(authorizer)
 
-	authorizer.TdlibParameters <- createTdlibParameters(acc.DataDir)
+	authorizer.TdlibParameters <- createTdlibParameters(dbData.DataDir)
 	logVerbosity := client.WithLogVerbosity(&client.SetLogVerbosityLevelRequest{
 		NewVerbosityLevel: 1,
 	})
@@ -50,7 +51,7 @@ func RunTdlib(acc libs.Account) (*client.Client, *client.User) {
 			if err != nil {
 				log.Printf("failed to set online option: %s", err)
 			} else {
-				log.Printf("Set online status: %s", libs.JsonMarshalStr(ok))
+				log.Printf("Set online status: %s", helpers.JsonMarshalStr(ok))
 			}
 			//time.Sleep(10 * time.Second)
 		}
@@ -68,21 +69,22 @@ func RunTdlib(acc libs.Account) (*client.Client, *client.User) {
 }
 
 var AuthParams chan string
-var CurrentAuthorizingAcc *libs.Account
+var CurrentAuthorizingAcc *mongo.DbAccountData
 
 func CreateAccount(phone string) {
-	CurrentAuthorizingAcc = mongo.GetSavedAccount(phone)
-	if CurrentAuthorizingAcc == nil {
+	mongoAcc := mongo.GetSavedAccount(phone)
+	if mongoAcc == nil {
 		log.Printf("Starting new account creation for phone %s", phone)
-		CurrentAuthorizingAcc = &libs.Account{
+		CurrentAuthorizingAcc = &mongo.DbAccountData{
 			Phone:    phone,
 			DataDir:  ".tdlib" + phone,
 			DbPrefix: "tg",
-			Status:   tdlib.AccStatusNew,
+			Status:   consts.AccStatusNew,
 		}
 		mongo.SaveAccount(CurrentAuthorizingAcc)
 	} else {
-		if CurrentAuthorizingAcc.Status == tdlib.AccStatusActive {
+		CurrentAuthorizingAcc = mongoAcc
+		if CurrentAuthorizingAcc.Status == consts.AccStatusActive {
 			log.Printf("Not creating new account again for phone %s", phone)
 
 			return
@@ -124,7 +126,6 @@ func CreateAccount(phone string) {
 
 		meLocal, err = tdlibClientLocal.GetMe()
 		id := meLocal.Id
-		phoneLocal := meLocal.PhoneNumber
 		if err != nil {
 			log.Fatalf("GetMe error: %s", err)
 		}
@@ -132,8 +133,7 @@ func CreateAccount(phone string) {
 		log.Printf("NEW Me: %s %s [%s]", meLocal.FirstName, meLocal.LastName, tdlib.GetUsername(meLocal.Usernames))
 
 		CurrentAuthorizingAcc.Id = id
-		CurrentAuthorizingAcc.Status = tdlib.AccStatusActive
-		CurrentAuthorizingAcc.Username = tdlib.GetUsername(meLocal.Usernames)
+		CurrentAuthorizingAcc.Status = consts.AccStatusActive
 
 		mongo.SaveAccount(CurrentAuthorizingAcc)
 
@@ -145,10 +145,10 @@ func CreateAccount(phone string) {
 
 		CurrentAuthorizingAcc = nil
 
-		log.Printf("create normal client instance for new account %d", id)
-
-		mongo.LoadAccounts(phoneLocal)
-		libs.AS.Get(id).RunAccount()
+		//@TODO: does not work again!!!
+		//log.Printf("create normal client instance for new account %d", id)
+		//mongo.LoadAccounts(meLocal.PhoneNumber)
+		//libs.AS.Get(id).RunAccount()
 	}()
 }
 

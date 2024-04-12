@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/alexbilevskiy/tgWatch/pkg/libs"
+	"github.com/alexbilevskiy/tgWatch/pkg/libs/helpers"
 	"github.com/alexbilevskiy/tgWatch/pkg/libs/tdlib"
 	"github.com/alexbilevskiy/tgWatch/pkg/structs"
 	"github.com/zelenin/go-tdlib/client"
@@ -18,7 +19,7 @@ func renderTemplates(req *http.Request, w http.ResponseWriter, templateData inte
 	var errParse error
 	if verbose {
 		w.Header().Set("Content-Type", "application/json")
-		_, err := w.Write(libs.JsonMarshalPretty(templateData))
+		_, err := w.Write(helpers.JsonMarshalPretty(templateData))
 		if err != nil {
 			log.Printf("failed writing debug body: %s", err.Error())
 		}
@@ -43,7 +44,7 @@ func renderTemplates(req *http.Request, w http.ResponseWriter, templateData inte
 				return accounts
 			},
 			"isMe": func(chatId int64) bool {
-				if chatId == libs.AS.Get(currentAcc).Id {
+				if chatId == libs.AS.Get(currentAcc).DbData.Id {
 
 					return true
 				}
@@ -51,7 +52,7 @@ func renderTemplates(req *http.Request, w http.ResponseWriter, templateData inte
 				return false
 			},
 			"isCurrentAcc": func(acc int64) bool {
-				if acc == libs.AS.Get(currentAcc).Id {
+				if acc == libs.AS.Get(currentAcc).DbData.Id {
 
 					return true
 				}
@@ -86,13 +87,13 @@ func renderTemplates(req *http.Request, w http.ResponseWriter, templateData inte
 				return libs.AS.Get(currentAcc).TdApi.GetLink(chatId, messageId)
 			},
 			"DateTime": func(date int32) string {
-				return libs.FormatDateTime(date)
+				return helpers.FormatDateTime(date)
 			},
 			"Date": func(date int32) string {
-				return libs.FormatDate(date)
+				return helpers.FormatDate(date)
 			},
 			"Time": func(date int32) string {
-				return libs.FormatTime(date)
+				return helpers.FormatTime(date)
 			},
 			"SetNestedMsg": func(info structs.MessageInfo, text *client.FormattedText, simple string, attachments []structs.MessageAttachment) structs.MessageInfo {
 				info.FormattedText = text

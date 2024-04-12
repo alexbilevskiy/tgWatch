@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/alexbilevskiy/tgWatch/pkg/config"
+	"github.com/alexbilevskiy/tgWatch/pkg/consts"
 	"github.com/alexbilevskiy/tgWatch/pkg/libs"
 	"github.com/alexbilevskiy/tgWatch/pkg/libs/mongo"
 	"github.com/alexbilevskiy/tgWatch/pkg/libs/tdlib"
@@ -18,26 +19,25 @@ func main() {
 
 	args := os.Args
 
+	var accounts []*mongo.DbAccountData
 	if len(args) == 1 {
-		mongo.LoadAccounts("")
+		accounts = mongo.LoadAccounts("")
 	} else if len(args) == 2 {
 		log.Printf("Using single account %s", args[1])
-		mongo.LoadAccounts(args[1])
+		accounts = mongo.LoadAccounts(args[1])
 	} else {
 		log.Fatalf("Invalid argument")
 	}
 
-	libs.AS.Range(func(accId any, accInt any) bool {
-		acc := accInt.(*libs.Account)
-		if acc.Status != tdlib.AccStatusActive {
-			log.Printf("Wont use account %d, because its not active yet: `%s`", acc.Id, acc.Status)
-			return true
+	for _, mongoAcc := range accounts {
+		if mongoAcc.Status != consts.AccStatusActive {
+			log.Printf("Wont use account %d, because its not active yet: `%s`", mongoAcc.Id, mongoAcc.Status)
+			continue
 		}
-		log.Printf("Init account %d", acc.Id)
-
-		acc.RunAccount()
-		return true
-	})
+		log.Printf("Create account %d", mongoAcc.Id)
+		libs.AS.Create(mongoAcc)
+		libs.AS.Get(mongoAcc.Id).RunAccount()
+	}
 	log.Printf("starting web server...")
 
 	web.InitWeb()

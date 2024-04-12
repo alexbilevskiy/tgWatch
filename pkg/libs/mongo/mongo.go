@@ -3,13 +3,20 @@ package mongo
 import (
 	"context"
 	"github.com/alexbilevskiy/tgWatch/pkg/config"
-	"github.com/alexbilevskiy/tgWatch/pkg/libs"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
 	"time"
 )
+
+type DbAccountData struct {
+	Id       int64
+	Phone    string
+	DbPrefix string
+	DataDir  string
+	Status   string
+}
 
 var mongoClient *mongo.Client
 var mongoContext context.Context
@@ -43,7 +50,7 @@ func InitGlobalMongo() {
 	accountColl = mongoClient.Database(config.Config.Mongo["db"]).Collection("accounts")
 }
 
-func LoadAccounts(phone string) {
+func LoadAccounts(phone string) []*DbAccountData {
 	var crit bson.M
 	if phone == "" {
 		crit = bson.M{}
@@ -53,30 +60,33 @@ func LoadAccounts(phone string) {
 	accountsCursor, err := accountColl.Find(mongoContext, crit)
 	if err != nil {
 		log.Fatalf("Accounts load error: %s", err.Error())
-		return
+		return nil
 	}
 	var accountsBson []bson.M
 	err = accountsCursor.All(mongoContext, &accountsBson)
 	if err != nil {
 		log.Fatalf("Accounts cursor error: %s", err.Error())
-		return
+		return nil
 	}
 	counter := 0
+	accs := make([]*DbAccountData, 0)
 	for _, accObj := range accountsBson {
 		counter++
-		acc := libs.Account{
+		acc := &DbAccountData{
 			Id:       accObj["id"].(int64),
 			Phone:    accObj["phone"].(string),
 			DbPrefix: accObj["dbprefix"].(string),
 			DataDir:  accObj["datadir"].(string),
 			Status:   accObj["status"].(string),
 		}
-		libs.AS.Store(&acc)
+		accs = append(accs, acc)
 	}
 	log.Printf("Loaded %d accounts", counter)
+
+	return accs
 }
 
-func SaveAccount(account *libs.Account) {
+func SaveAccount(account *DbAccountData) {
 	crit := bson.D{{"phone", account.Phone}}
 	update := bson.D{{"$set", account}}
 	t := true
@@ -89,8 +99,8 @@ func SaveAccount(account *libs.Account) {
 	log.Printf("Saved new account id:%d", account.Id)
 }
 
-func GetSavedAccount(phone string) *libs.Account {
-	var acc *libs.Account
+func GetSavedAccount(phone string) *DbAccountData {
+	var acc *DbAccountData
 
 	crit := bson.D{{"phone", phone}}
 	accObj := accountColl.FindOne(mongoContext, crit)

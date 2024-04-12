@@ -2,7 +2,7 @@ package tdlib
 
 import (
 	"encoding/json"
-	"github.com/alexbilevskiy/tgWatch/pkg/libs"
+	"github.com/alexbilevskiy/tgWatch/pkg/libs/helpers"
 	"github.com/alexbilevskiy/tgWatch/pkg/libs/modules"
 	"github.com/zelenin/go-tdlib/client"
 	"log"
@@ -86,7 +86,7 @@ func (t *TdApi) ListenUpdates() {
 
 			case client.TypeUpdateChatHasProtectedContent:
 				upd := update.(*client.UpdateChatHasProtectedContent)
-				log.Printf("Chat id:%d `%s` now has protected content: %s", upd.ChatId, t.GetChatName(upd.ChatId), libs.JsonMarshalStr(upd.HasProtectedContent))
+				log.Printf("Chat id:%d `%s` now has protected content: %s", upd.ChatId, t.GetChatName(upd.ChatId), helpers.JsonMarshalStr(upd.HasProtectedContent))
 
 			case client.TypeUpdateNewChat:
 				//dont need to cache chat here, because chat info is empty, @see case client.ClassChat below
@@ -134,7 +134,7 @@ func (t *TdApi) ListenUpdates() {
 			case client.TypeUpdateOption:
 				upd := update.(*client.UpdateOption)
 				if upd.Name != "unix_time" {
-					log.Printf("Update option %s: %s", upd.Name, libs.JsonMarshalStr(upd.Value))
+					log.Printf("Update option %s: %s", upd.Name, helpers.JsonMarshalStr(upd.Value))
 				}
 
 			case client.TypeUpdateChatPosition:
@@ -173,7 +173,7 @@ func (t *TdApi) ListenUpdates() {
 					t.MarkJoinAsRead(upd.Message.ChatId, upd.Message.Id)
 				}
 
-				modules.CustomNewMessageRoutine(t.acc.Id, t.tdlibClient, upd)
+				modules.CustomNewMessageRoutine(t.dbData.Id, t.tdlibClient, upd)
 
 			case client.TypeUpdateMessageEdited:
 				upd := update.(*client.UpdateMessageEdited)
@@ -207,7 +207,7 @@ func (t *TdApi) ListenUpdates() {
 				//intLink := fmt.Sprintf("http://%s/m/%d/%d", config.Config.WebListen, upd.ChatId, upd.MessageId)
 				//fmt.Printf("EDITED content! Chat: %d, msg %d, %s, %s, %s", upd.ChatId, upd.MessageId, chatName, link, intLink))
 
-				modules.CustomMessageContentRoutine(t.acc.Id, t.tdlibClient, upd)
+				modules.CustomMessageContentRoutine(t.dbData.Id, t.tdlibClient, upd)
 
 			case client.TypeUpdateFile:
 				upd := update.(*client.UpdateFile)
