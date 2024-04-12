@@ -132,23 +132,19 @@ func CreateAccount(phone string) {
 
 		log.Printf("NEW Me: %s %s [%s]", meLocal.FirstName, meLocal.LastName, tdlib.GetUsername(meLocal.Usernames))
 
+		log.Printf("closing authorizing instance")
+		_, err = tdlibClientLocal.Close()
+
 		CurrentAuthorizingAcc.Id = id
 		CurrentAuthorizingAcc.Status = consts.AccStatusActive
 
 		mongo.SaveAccount(CurrentAuthorizingAcc)
 
-		log.Printf("closing authorizing instance")
-		_, err = tdlibClientLocal.Close()
 		if err != nil {
 			log.Printf("failed to close authorizing instance: %s", err.Error())
 		}
 
 		CurrentAuthorizingAcc = nil
-
-		//@TODO: does not work again!!!
-		//log.Printf("create normal client instance for new account %d", id)
-		//mongo.LoadAccounts(meLocal.PhoneNumber)
-		//libs.AS.Get(id).RunAccount()
 	}()
 }
 
