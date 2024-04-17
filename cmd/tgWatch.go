@@ -28,7 +28,7 @@ func main() {
 	}
 
 	if phone == "" {
-		libs.AS.Run()
+		go libs.AS.Run()
 	} else {
 		libs.AS.RunOne(phone)
 	}

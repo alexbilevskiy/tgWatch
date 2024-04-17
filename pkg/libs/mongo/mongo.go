@@ -81,7 +81,7 @@ func LoadAccounts(phone string) []*DbAccountData {
 		}
 		accs = append(accs, acc)
 	}
-	log.Printf("Loaded %d accounts", counter)
+	//log.Printf("Loaded %d accounts", counter)
 
 	return accs
 }
