@@ -4,6 +4,7 @@ import (
 	"github.com/alexbilevskiy/tgWatch/pkg/config"
 	"github.com/alexbilevskiy/tgWatch/pkg/libs"
 	"github.com/alexbilevskiy/tgWatch/pkg/libs/mongo"
+	"github.com/alexbilevskiy/tgWatch/pkg/libs/rpc"
 	"github.com/alexbilevskiy/tgWatch/pkg/libs/tdlib"
 	"github.com/alexbilevskiy/tgWatch/pkg/libs/web"
 	"log"
@@ -36,6 +37,9 @@ func main() {
 	log.Printf("starting web server...")
 
 	web.InitWeb()
+
+	api := rpc.NewTgRpcApi()
+	api.RunServer()
 
 	select {}
 }

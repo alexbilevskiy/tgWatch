@@ -600,6 +600,12 @@ func (t *TdApi) GetChatMember(chatId int64) (*client.ChatMember, error) {
 	return t.tdlibClient.GetChatMember(req)
 }
 
+func (t *TdApi) GetScheduledMessages(chatId int64) (*client.Messages, error) {
+	req := &client.GetChatScheduledMessagesRequest{ChatId: chatId}
+
+	return t.tdlibClient.GetChatScheduledMessages(req)
+}
+
 func (t *TdApi) GetStorage() *mongo.TdMongo {
 	//@TODO: mutex?
 	return t.db
