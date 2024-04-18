@@ -146,6 +146,14 @@ func (t *TdApi) ListenUpdates() {
 				upd := update.(*client.UpdateChatFolders)
 				t.SaveChatFilters(upd)
 
+			case client.TypeUpdateChatAddedToList:
+				upd := update.(*client.UpdateChatAddedToList)
+				t.SaveChatAddedToList(upd)
+
+			case client.TypeUpdateChatRemovedFromList:
+				upd := update.(*client.UpdateChatRemovedFromList)
+				t.RemoveChatRemovedFromList(upd)
+
 			case client.TypeUpdateDeleteMessages:
 				upd := update.(*client.UpdateDeleteMessages)
 				if !upd.IsPermanent || upd.FromCache {

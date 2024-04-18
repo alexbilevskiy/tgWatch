@@ -1,6 +1,7 @@
 package tdlib
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/alexbilevskiy/tgWatch/pkg/consts"
@@ -52,6 +53,8 @@ type tdApiInterface interface {
 	GetChatUsername(chatId int64) string
 
 	SaveChatFilters(chatFoldersUpdate *client.UpdateChatFolders)
+	SaveChatAddedToList(upd *client.UpdateChatAddedToList)
+	RemoveChatRemovedFromList(upd *client.UpdateChatRemovedFromList)
 	LoadChatsList(listId int32)
 	GetChatFolders() []structs.ChatFilter
 	GetLocalChats() map[int64]*client.Chat
@@ -559,6 +562,73 @@ func (t *TdApi) SaveChatFilters(chatFoldersUpdate *client.UpdateChatFolders) {
 	}
 
 	t.chatFolders = t.db.LoadChatFolders()
+}
+
+func (t *TdApi) SaveChatAddedToList(upd *client.UpdateChatAddedToList) {
+	j, _ := json.Marshal(upd)
+	log.Printf("saving chat added to list %s : %s", string(j))
+	switch upd.ChatList.ChatListType() {
+	case client.TypeChatListMain:
+		position := client.ChatPosition{
+			List:     &client.ChatListMain{},
+			Order:    0,
+			IsPinned: false,
+			Source:   nil,
+		}
+		t.db.SaveChatPosition(upd.ChatId, &position)
+	case client.TypeChatListArchive:
+		position := client.ChatPosition{
+			List:     &client.ChatListArchive{},
+			Order:    0,
+			IsPinned: false,
+			Source:   nil,
+		}
+		t.db.SaveChatPosition(upd.ChatId, &position)
+	case client.TypeChatListFolder:
+		position := client.ChatPosition{
+			List:     &client.ChatListFolder{ChatFolderId: upd.ChatList.(*client.ChatListFolder).ChatFolderId},
+			Order:    0,
+			IsPinned: false,
+			Source:   nil,
+		}
+		t.db.SaveChatPosition(upd.ChatId, &position)
+	default:
+		log.Printf("unknown chatlist type: %s", upd.ChatList.ChatListType())
+	}
+}
+
+func (t *TdApi) RemoveChatRemovedFromList(upd *client.UpdateChatRemovedFromList) {
+	j, _ := json.Marshal(upd)
+	log.Printf("NOT IMPLEMENTED: removing chat removed from list %s : %s", string(j))
+	return
+	switch upd.ChatList.ChatListType() {
+	case client.TypeChatListMain:
+		position := client.ChatPosition{
+			List:     &client.ChatListMain{},
+			Order:    0,
+			IsPinned: false,
+			Source:   nil,
+		}
+		t.db.SaveChatPosition(upd.ChatId, &position)
+	case client.TypeChatListArchive:
+		position := client.ChatPosition{
+			List:     &client.ChatListArchive{},
+			Order:    0,
+			IsPinned: false,
+			Source:   nil,
+		}
+		t.db.SaveChatPosition(upd.ChatId, &position)
+	case client.TypeChatListFolder:
+		position := client.ChatPosition{
+			List:     &client.ChatListFolder{ChatFolderId: upd.ChatList.(*client.ChatListFolder).ChatFolderId},
+			Order:    0,
+			IsPinned: false,
+			Source:   nil,
+		}
+		t.db.SaveChatPosition(upd.ChatId, &position)
+	default:
+		log.Printf("unknown chatlist type: %s", upd.ChatList.ChatListType())
+	}
 }
 
 func (t *TdApi) GetChatFolders() []structs.ChatFilter {
