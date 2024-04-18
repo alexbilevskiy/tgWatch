@@ -310,13 +310,6 @@ func (t *TdApi) GetMessage(chatId int64, messageId int64) (*client.Message, erro
 	return message, nil
 }
 
-func (t *TdApi) loadChats(chatList client.ChatList) error {
-	chatsRequest := &client.LoadChatsRequest{ChatList: chatList, Limit: 500}
-	_, err := t.tdlibClient.LoadChats(chatsRequest)
-
-	return err
-}
-
 func (t *TdApi) getChatFolder(folderId int32) (*client.ChatFolder, error) {
 	req := &client.GetChatFolderRequest{ChatFolderId: folderId}
 	return t.tdlibClient.GetChatFolder(req)
@@ -456,31 +449,50 @@ func (t *TdApi) LoadChatsList(listId int32) {
 	var chatList client.ChatList
 	d, err := t.db.DeleteChatFolder(listId)
 	if err != nil {
-		log.Printf("Failed to delete chats by list %d: %s\n", listId, err.Error())
+		log.Printf("failed to delete chats by list %d: %s\n", listId, err.Error())
 	} else {
-		log.Printf("Deleted %d chats by listid %d because refresh was called\n", d.DeletedCount, listId)
+		log.Printf("deleted %d chats by listid %d because refresh was called\n", d.DeletedCount, listId)
 	}
 
 	switch listId {
 	case consts.ClMain:
 		chatList = &client.ChatListMain{}
-		log.Printf("Requesting LoadChats for main list: %s", chatList.ChatListType())
+		log.Printf("requesting LoadChats for main list: %s", chatList.ChatListType())
 	case consts.ClArchive:
 		chatList = &client.ChatListArchive{}
-		log.Printf("Requesting LoadChats for archive: %s", chatList.ChatListType())
+		log.Printf("requesting LoadChats for archive: %s", chatList.ChatListType())
 	default:
 		chatList = &client.ChatListFolder{ChatFolderId: listId}
-		log.Printf("Requesting LoadChats for folder: %d", chatList.(*client.ChatListFolder).ChatFolderId)
+		log.Printf("requesting LoadChats for folder: %d", chatList.(*client.ChatListFolder).ChatFolderId)
 	}
 
-	err = t.loadChats(chatList)
+	loadChatsReq := &client.LoadChatsRequest{ChatList: chatList, Limit: 500}
+	_, err = t.tdlibClient.LoadChats(loadChatsReq)
+
+	if err == nil {
+		//everything ok
+		return
+	}
+	if err.Error() != "404 Not Found" {
+		//dunno what to do yet
+		log.Fatalf("[ERROR] LoadChats: %s", err)
+	}
+	//@see https://github.com/tdlib/td/blob/fb39e5d74667db915a75a5e58065c59af8e7d8d6/td/generate/scheme/td_api.tl#L4171
+
+	log.Printf("all chats already loaded, trying to get them")
+	getChatsReq := &client.GetChatsRequest{ChatList: chatList, Limit: 500}
+	chats, err := t.tdlibClient.GetChats(getChatsReq)
 	if err != nil {
-		//@see https://github.com/tdlib/td/blob/fb39e5d74667db915a75a5e58065c59af8e7d8d6/td/generate/scheme/td_api.tl#L4171
-		if err.Error() == "404 Not Found" {
-			log.Printf("All chats already loaded")
-		} else {
-			log.Fatalf("[ERROR] LoadChats: %s", err)
-		}
+		log.Fatalf("failed to get loaded chats: %s", err.Error())
+	}
+	for _, chat := range chats.ChatIds {
+		log.Printf("saving chat %d", chat)
+		t.db.SaveChatPosition(chat, &client.ChatPosition{
+			List:     chatList,
+			Order:    0,
+			IsPinned: false,
+			Source:   nil,
+		})
 	}
 }
 
