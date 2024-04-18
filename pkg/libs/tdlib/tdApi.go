@@ -44,6 +44,7 @@ type tdApiInterface interface {
 	GetChatHistory(chatId int64, lastId int64) (*client.Messages, error)
 	DeleteMessages(chatId int64, messageIds []int64) (*client.Ok, error)
 	GetChatMember(chatId int64) (*client.ChatMember, error)
+	GetScheduledMessages(chatId int64) (*client.Messages, error)
 
 	GetSenderName(sender client.MessageSender) string
 	GetSenderObj(sender client.MessageSender) (interface{}, error)
