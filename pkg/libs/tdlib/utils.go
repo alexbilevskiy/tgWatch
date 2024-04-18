@@ -49,7 +49,7 @@ func GetUsername(usernames *client.Usernames) string {
 		return ""
 	}
 	if len(usernames.ActiveUsernames) > 1 {
-		log.Printf("whoa, multiple usernames? %s", helpers.JsonMarshalStr(usernames.ActiveUsernames))
+		//log.Printf("whoa, multiple usernames? %s", helpers.JsonMarshalStr(usernames.ActiveUsernames))
 		return usernames.ActiveUsernames[0]
 	}
 

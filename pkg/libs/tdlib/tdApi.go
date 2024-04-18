@@ -470,6 +470,7 @@ func (t *TdApi) LoadChatsList(listId int32) {
 	_, err = t.tdlibClient.LoadChats(loadChatsReq)
 
 	if err == nil {
+		log.Printf("load chats ok, chat list updated will be received asynchronous")
 		//everything ok
 		return
 	}
@@ -486,7 +487,7 @@ func (t *TdApi) LoadChatsList(listId int32) {
 		log.Fatalf("failed to get loaded chats: %s", err.Error())
 	}
 	for _, chat := range chats.ChatIds {
-		log.Printf("saving chat %d", chat)
+		//log.Printf("saving chat %d", chat)
 		t.db.SaveChatPosition(chat, &client.ChatPosition{
 			List:     chatList,
 			Order:    0,
