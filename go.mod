@@ -3,6 +3,7 @@ module github.com/alexbilevskiy/tgWatch
 go 1.22
 
 require (
+	github.com/alexbilevskiy/tgWatch-proto v0.0.0-20240417191550-83460d193727
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.1.0
 	github.com/zelenin/go-tdlib v0.0.0-00010101000000-000000000000
 	go.mongodb.org/mongo-driver v1.9.1
