@@ -66,6 +66,7 @@ func (t *TdApi) ListenUpdates() {
 			case client.TypeUpdateChatBackground:
 			case client.TypeUpdateChatActiveStories:
 			case client.TypeUpdateStoryListChatCount:
+			case client.TypeUpdateChatViewAsTopics:
 
 			case client.TypeUpdateSupergroup:
 			case client.TypeUpdateSupergroupFullInfo:
