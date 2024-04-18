@@ -36,10 +36,7 @@ func main() {
 
 	log.Printf("starting web server...")
 
-	web.InitWeb()
-
-	api := rpc.NewTgRpcApi()
-	api.RunServer()
+	web.InitWeb(web.NewWebHandler(), rpc.NewServer())
 
 	select {}
 }

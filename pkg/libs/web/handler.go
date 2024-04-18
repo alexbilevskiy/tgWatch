@@ -16,6 +16,12 @@ type HttpHandler struct {
 	Controller webController
 }
 
+func NewWebHandler() *HttpHandler {
+	return &HttpHandler{
+		Controller: webController{},
+	}
+}
+
 func (h HttpHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	log.Printf("HTTP: %s", req.URL.Path)
 	if tryFile(req, res) {

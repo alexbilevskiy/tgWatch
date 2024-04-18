@@ -10,23 +10,14 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"log"
-	"net"
 )
 
 type TgRpcApi struct {
 	*tgrpc.UnimplementedMessagesServer
 }
 
-func NewTgRpcApi() *TgRpcApi {
-	return &TgRpcApi{}
-}
-
-func (t *TgRpcApi) RunServer() {
-	listener, err := net.Listen("tcp", "0.0.0.0:5522")
-	if err != nil {
-		log.Fatalf("[start server] cant create listener: %v", err)
-	}
-	log.Printf("created listener %s...", listener.Addr().String())
+func NewServer() *grpc.Server {
+	tgApi := &TgRpcApi{}
 
 	logger := log.Default()
 
@@ -43,17 +34,10 @@ func (t *TgRpcApi) RunServer() {
 			logging.StreamServerInterceptor(InterceptorLogger(logger), opts...),
 		),
 	)
-	tgrpc.RegisterMessagesServer(g, t)
+	tgrpc.RegisterMessagesServer(g, tgApi)
 	reflection.Register(g)
 
-	err = g.Serve(listener)
-	if err != nil {
-		log.Fatalf("[start server] cant start serving: %v", err)
-	}
-	defer g.Stop()
-
-	log.Printf("shutting rpc down %s...", listener.Addr().String())
-
+	return g
 }
 
 func (t *TgRpcApi) GetScheduledMessages(ctx context.Context, req *tgrpc.GetScheduledMessagesRequest) (*tgrpc.GetScheduledMessagesResponse, error) {
