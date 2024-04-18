@@ -1,9 +1,5 @@
-github.com/alexbilevskiy/go-tdlib v0.4.2-0.20231120134730-c8e21109ba61 h1:zZBD9C3WcHhl+HJPJfNa1Sh3Ad1qKYVhXLbuiDVtOzo=
-github.com/alexbilevskiy/go-tdlib v0.4.2-0.20231120134730-c8e21109ba61/go.mod h1:Xs8fXbk5n7VaPyrSs9DP7QYoBScWYsjX+lUcWmx1DIU=
-github.com/alexbilevskiy/tgWatch-proto v0.0.0-20240417190335-05c302438e43 h1:vzYLQ1LAwRMQ1/EQeH32O1nYns7Q/tCqFxE0Hpfhaak=
-github.com/alexbilevskiy/tgWatch-proto v0.0.0-20240417190335-05c302438e43/go.mod h1:lFomnYjQKZQLXVuzJ2n8eIfsKHy/oaAniPu4fKYzh+M=
-github.com/alexbilevskiy/tgWatch-proto v0.0.0-20240417190519-4a9a4161268e h1:cEUhJ4KBoVa5g7TWmMQ+A3fbfq2IiyGiRiJOFUlQ9Lg=
-github.com/alexbilevskiy/tgWatch-proto v0.0.0-20240417190519-4a9a4161268e/go.mod h1:lFomnYjQKZQLXVuzJ2n8eIfsKHy/oaAniPu4fKYzh+M=
+github.com/alexbilevskiy/go-tdlib v0.4.2-0.20240418062540-fe5d7cbc0d3b h1:OXkxZ7WDLjgxUNlm/sbf8NPUObHqpfW5sLbtmpYq8uQ=
+github.com/alexbilevskiy/go-tdlib v0.4.2-0.20240418062540-fe5d7cbc0d3b/go.mod h1:Xs8fXbk5n7VaPyrSs9DP7QYoBScWYsjX+lUcWmx1DIU=
 github.com/alexbilevskiy/tgWatch-proto v0.0.0-20240417191550-83460d193727 h1:ef4EGjjwwTgP/+SZWPF1YoVwvbUq0ODkmwJBAnbsPk8=
 github.com/alexbilevskiy/tgWatch-proto v0.0.0-20240417191550-83460d193727/go.mod h1:lFomnYjQKZQLXVuzJ2n8eIfsKHy/oaAniPu4fKYzh+M=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

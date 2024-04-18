@@ -60,8 +60,9 @@ func (t *TdApi) ListenUpdates() {
 			case client.TypeUpdateChatIsTranslatable:
 			case client.TypeUpdateAutosaveSettings:
 			case client.TypeUpdateForumTopicInfo:
-			case client.TypeUpdateChatAccentColor:
-			case client.TypeUpdateChatBackgroundCustomEmoji:
+			case client.TypeUpdateChatAccentColors:
+			case client.TypeUpdateAccentColors:
+			case client.TypeUpdateProfileAccentColors:
 			case client.TypeUpdateChatBackground:
 			case client.TypeUpdateChatActiveStories:
 			case client.TypeUpdateStoryListChatCount:

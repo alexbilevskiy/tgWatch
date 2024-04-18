@@ -5,13 +5,12 @@ go 1.22
 require (
 	github.com/alexbilevskiy/tgWatch-proto v0.0.0-20240417191550-83460d193727
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.1.0
-	github.com/zelenin/go-tdlib v0.0.0-00010101000000-000000000000
+	github.com/zelenin/go-tdlib v0.7.1
 	go.mongodb.org/mongo-driver v1.9.1
 	google.golang.org/grpc v1.63.2
 )
 
 require (
-	github.com/alexbilevskiy/tgWatch-proto v0.0.0-20240417191550-83460d193727 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
@@ -29,4 +28,4 @@ require (
 	google.golang.org/protobuf v1.33.0 // indirect
 )
 
-replace github.com/zelenin/go-tdlib => github.com/alexbilevskiy/go-tdlib v0.4.2-0.20231120134730-c8e21109ba61
+replace github.com/zelenin/go-tdlib => github.com/alexbilevskiy/go-tdlib v0.4.2-0.20240418062540-fe5d7cbc0d3b

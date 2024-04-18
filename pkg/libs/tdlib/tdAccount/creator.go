@@ -150,20 +150,18 @@ func CreateAccount(phone string) {
 
 func createTdlibParameters(dataDir string) *client.SetTdlibParametersRequest {
 	return &client.SetTdlibParametersRequest{
-		UseTestDc:              false,
-		DatabaseDirectory:      filepath.Join(config.Config.TDataDir, dataDir, "database"),
-		FilesDirectory:         filepath.Join(config.Config.TDataDir, dataDir, "files"),
-		UseFileDatabase:        true,
-		UseChatInfoDatabase:    true,
-		UseMessageDatabase:     true,
-		UseSecretChats:         false,
-		ApiId:                  config.Config.ApiId,
-		ApiHash:                config.Config.ApiHash,
-		SystemLanguageCode:     "en",
-		DeviceModel:            "Linux",
-		SystemVersion:          "1.0.0",
-		ApplicationVersion:     "1.0.0",
-		EnableStorageOptimizer: true,
-		IgnoreFileNames:        false,
+		UseTestDc:           false,
+		DatabaseDirectory:   filepath.Join(config.Config.TDataDir, dataDir, "database"),
+		FilesDirectory:      filepath.Join(config.Config.TDataDir, dataDir, "files"),
+		UseFileDatabase:     true,
+		UseChatInfoDatabase: true,
+		UseMessageDatabase:  true,
+		UseSecretChats:      false,
+		ApiId:               config.Config.ApiId,
+		ApiHash:             config.Config.ApiHash,
+		SystemLanguageCode:  "en",
+		DeviceModel:         "Linux",
+		SystemVersion:       "1.0.0",
+		ApplicationVersion:  "1.0.0",
 	}
 }
