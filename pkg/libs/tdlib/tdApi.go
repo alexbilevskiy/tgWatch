@@ -66,11 +66,15 @@ type tdApiInterface interface {
 	getChatFolder(folderId int32) (*client.ChatFolder, error)
 
 	markAsRead(chatId int64, messageId int64) error
-	loadChats(chatList client.ChatList) error
 	cacheChat(chat *client.Chat)
 }
 
 func (t *TdApi) Init(dbData *mongo.DbAccountData, tdlibClient *client.Client, tdMongo *mongo.TdMongo) {
+
+	//var x tdApiInterface
+	//var y TdApi
+	//x = y
+
 	t.tdlibClient = tdlibClient
 	t.db = tdMongo
 	t.dbData = dbData
