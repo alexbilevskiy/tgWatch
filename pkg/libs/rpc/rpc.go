@@ -6,7 +6,10 @@ import (
 	"fmt"
 	"github.com/alexbilevskiy/tgWatch-proto/gen/go/tgrpc"
 	"github.com/alexbilevskiy/tgWatch/pkg/libs"
+	"github.com/alexbilevskiy/tgWatch/pkg/libs/tdlib"
+	"github.com/alexbilevskiy/tgWatch/pkg/libs/web"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	"github.com/zelenin/go-tdlib/client"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"log"
@@ -41,7 +44,13 @@ func NewServer() *grpc.Server {
 }
 
 func (t *TgRpcApi) GetScheduledMessages(ctx context.Context, req *tgrpc.GetScheduledMessagesRequest) (*tgrpc.GetScheduledMessagesResponse, error) {
-
+	account := libs.AS.Get(req.Account)
+	if account == nil {
+		return nil, errors.New("invalid account")
+	}
+	if req.Peer == 0 {
+		return nil, errors.New("invalid peer")
+	}
 	mess, err := libs.AS.Get(req.Account).TdApi.GetScheduledMessages(req.Peer)
 	if err != nil {
 
@@ -50,7 +59,25 @@ func (t *TgRpcApi) GetScheduledMessages(ctx context.Context, req *tgrpc.GetSched
 
 	responseMessages := make([]*tgrpc.Message, 0)
 	for _, m := range mess.Messages {
-		responseMessage := &tgrpc.Message{Id: m.Id}
+		var sendDate int32
+		switch m.SchedulingState.MessageSchedulingStateType() {
+		case client.TypeMessageSchedulingStateSendAtDate:
+			sendDate = m.SchedulingState.(*client.MessageSchedulingStateSendAtDate).SendDate
+		case client.TypeMessageSchedulingStateSendWhenOnline:
+			sendDate = 0
+		default:
+			log.Printf("invalid SchedulingState type: %s", m.SchedulingState.MessageSchedulingStateType())
+		}
+		responseMessage := &tgrpc.Message{
+			Id:          m.Id,
+			ChatId:      m.ChatId,
+			Date:        m.Date,
+			TextPreview: web.RenderText(tdlib.GetContentWithText(m.Content, m.ChatId).FormattedText),
+			SchedulingState: &tgrpc.SchedulingState{
+				SchedulingStateType: m.SchedulingState.MessageSchedulingStateType(),
+				SendDate:            sendDate,
+			},
+		}
 		responseMessages = append(responseMessages, responseMessage)
 	}
 

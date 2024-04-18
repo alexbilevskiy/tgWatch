@@ -74,7 +74,7 @@ func buildChatInfoByLocalChat(chat *client.Chat) structs.ChatInfo {
 	return info
 }
 
-func renderText(text *client.FormattedText) string {
+func RenderText(text *client.FormattedText) string {
 	utfText := utf16.Encode([]rune(text.Text))
 	result := ""
 	var prevEntityEnd int32 = 0

@@ -33,7 +33,7 @@ func renderTemplates(req *http.Request, w http.ResponseWriter, templateData inte
 				return template.HTML(b)
 			},
 			"renderText": func(text *client.FormattedText) template.HTML {
-				return template.HTML(renderText(text))
+				return template.HTML(RenderText(text))
 			},
 			"accountsList": func() []*libs.Account {
 				accounts := make([]*libs.Account, 0)
