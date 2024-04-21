@@ -13,6 +13,7 @@ import (
 )
 
 type TdApi struct {
+	tdApiInterface
 	m           sync.RWMutex
 	dbData      *mongo.DbAccountData
 	localChats  map[int64]*client.Chat
@@ -692,6 +693,13 @@ func (t *TdApi) GetScheduledMessages(chatId int64) (*client.Messages, error) {
 	req := &client.GetChatScheduledMessagesRequest{ChatId: chatId}
 
 	return t.tdlibClient.GetChatScheduledMessages(req)
+}
+
+func (t *TdApi) ScheduleForwardedMessage(targetChatId int64, fromChatId int64, messageIds []int64, sendAtDate int32) (*client.Messages, error) {
+	opts := &client.MessageSendOptions{SchedulingState: &client.MessageSchedulingStateSendAtDate{SendDate: sendAtDate}}
+	req := &client.ForwardMessagesRequest{ChatId: targetChatId, MessageIds: messageIds, FromChatId: fromChatId, Options: opts}
+
+	return t.tdlibClient.ForwardMessages(req)
 }
 
 func (t *TdApi) GetStorage() *mongo.TdMongo {

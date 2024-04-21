@@ -4,6 +4,10 @@ github.com/alexbilevskiy/tgWatch-proto v0.0.0-20240417191550-83460d193727 h1:ef4
 github.com/alexbilevskiy/tgWatch-proto v0.0.0-20240417191550-83460d193727/go.mod h1:lFomnYjQKZQLXVuzJ2n8eIfsKHy/oaAniPu4fKYzh+M=
 github.com/alexbilevskiy/tgWatch-proto v0.0.0-20240418130509-f5308ffb916b h1:pQ9kSGBstcnVnydOuzi+hJCUDQUNS9MOHyR9vxQ9aTY=
 github.com/alexbilevskiy/tgWatch-proto v0.0.0-20240418130509-f5308ffb916b/go.mod h1:lFomnYjQKZQLXVuzJ2n8eIfsKHy/oaAniPu4fKYzh+M=
+github.com/alexbilevskiy/tgWatch-proto v0.0.0-20240420205605-8be4b59a7af9 h1:Usdf231LTYZ6wAx7RQmXORDckJe6asn/U6lFWndenOU=
+github.com/alexbilevskiy/tgWatch-proto v0.0.0-20240420205605-8be4b59a7af9/go.mod h1:lFomnYjQKZQLXVuzJ2n8eIfsKHy/oaAniPu4fKYzh+M=
+github.com/alexbilevskiy/tgWatch-proto v0.0.0-20240420205920-1bd45aea7195 h1:zR90CtivPctGaP3c4c1hfM6+ouUJyG4ST4q66ls+9aQ=
+github.com/alexbilevskiy/tgWatch-proto v0.0.0-20240420205920-1bd45aea7195/go.mod h1:lFomnYjQKZQLXVuzJ2n8eIfsKHy/oaAniPu4fKYzh+M=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

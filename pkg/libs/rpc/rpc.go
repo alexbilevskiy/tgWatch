@@ -83,9 +83,47 @@ func (t *TgRpcApi) GetScheduledMessages(ctx context.Context, req *tgrpc.GetSched
 
 	return &tgrpc.GetScheduledMessagesResponse{Messages: responseMessages}, nil
 }
-func (t *TgRpcApi) GetScheduledHistory(ctx context.Context, req *tgrpc.GetScheduledHistoryRequest) (*tgrpc.GetScheduledHistoryResponse, error) {
 
-	return &tgrpc.GetScheduledHistoryResponse{Messages: make([]*tgrpc.Message, 0)}, nil
+func (t *TgRpcApi) ScheduleForwardedMessage(ctx context.Context, req *tgrpc.ScheduleForwardedMessageRequest) (*tgrpc.ScheduleForwardedMessageResponse, error) {
+	account := libs.AS.Get(req.Account)
+	if account == nil {
+		return nil, errors.New("invalid account")
+	}
+	mess, err := libs.AS.Get(req.Account).TdApi.ScheduleForwardedMessage(req.TargetChatId, req.FromChatId, req.MessageIds, req.SendAtDate)
+	if err != nil {
+
+		return nil, errors.New(fmt.Sprintf("failed to schedule messages: %s", err.Error()))
+	}
+
+	responseMessages := make([]*tgrpc.Message, 0)
+	for _, m := range mess.Messages {
+		var sendDate int32
+		if m.SchedulingState == nil {
+			log.Printf("no scheduling state??? message already sent???")
+			return nil, errors.New("message probably already sent")
+		}
+		switch m.SchedulingState.MessageSchedulingStateType() {
+		case client.TypeMessageSchedulingStateSendAtDate:
+			sendDate = m.SchedulingState.(*client.MessageSchedulingStateSendAtDate).SendDate
+		case client.TypeMessageSchedulingStateSendWhenOnline:
+			sendDate = 0
+		default:
+			log.Printf("invalid SchedulingState type: %s", m.SchedulingState.MessageSchedulingStateType())
+		}
+		responseMessage := &tgrpc.Message{
+			Id:          m.Id,
+			ChatId:      m.ChatId,
+			Date:        m.Date,
+			TextPreview: web.RenderText(tdlib.GetContentWithText(m.Content, m.ChatId).FormattedText),
+			SchedulingState: &tgrpc.SchedulingState{
+				SchedulingStateType: m.SchedulingState.MessageSchedulingStateType(),
+				SendDate:            sendDate,
+			},
+		}
+		responseMessages = append(responseMessages, responseMessage)
+	}
+
+	return &tgrpc.ScheduleForwardedMessageResponse{Messages: responseMessages}, nil
 }
 
 func InterceptorLogger(l *log.Logger) logging.Logger {
