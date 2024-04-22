@@ -47,6 +47,7 @@ type tdApiInterface interface {
 	DeleteMessages(chatId int64, messageIds []int64) (*client.Ok, error)
 	GetChatMember(chatId int64) (*client.ChatMember, error)
 	GetScheduledMessages(chatId int64) (*client.Messages, error)
+	ScheduleForwardedMessage(targetChatId int64, fromChatId int64, messageIds []int64, sendAtDate int32, sendCopy bool) (*client.Messages, error)
 
 	GetSenderName(sender client.MessageSender) string
 	GetSenderObj(sender client.MessageSender) (interface{}, error)
@@ -583,8 +584,8 @@ func (t *TdApi) SaveChatFilters(chatFoldersUpdate *client.UpdateChatFolders) {
 }
 
 func (t *TdApi) SaveChatAddedToList(upd *client.UpdateChatAddedToList) {
-	j, _ := json.Marshal(upd)
-	log.Printf("saving chat added to list %s : %s", string(j))
+	//j, _ := json.Marshal(upd)
+	//log.Printf("saving chat added to list %s : %s", string(j))
 	switch upd.ChatList.ChatListType() {
 	case client.TypeChatListMain:
 		position := client.ChatPosition{
@@ -695,9 +696,9 @@ func (t *TdApi) GetScheduledMessages(chatId int64) (*client.Messages, error) {
 	return t.tdlibClient.GetChatScheduledMessages(req)
 }
 
-func (t *TdApi) ScheduleForwardedMessage(targetChatId int64, fromChatId int64, messageIds []int64, sendAtDate int32) (*client.Messages, error) {
+func (t *TdApi) ScheduleForwardedMessage(targetChatId int64, fromChatId int64, messageIds []int64, sendAtDate int32, sendCopy bool) (*client.Messages, error) {
 	opts := &client.MessageSendOptions{SchedulingState: &client.MessageSchedulingStateSendAtDate{SendDate: sendAtDate}}
-	req := &client.ForwardMessagesRequest{ChatId: targetChatId, MessageIds: messageIds, FromChatId: fromChatId, Options: opts}
+	req := &client.ForwardMessagesRequest{ChatId: targetChatId, MessageIds: messageIds, FromChatId: fromChatId, Options: opts, SendCopy: sendCopy}
 
 	return t.tdlibClient.ForwardMessages(req)
 }

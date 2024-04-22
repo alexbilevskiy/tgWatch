@@ -89,7 +89,7 @@ func (t *TgRpcApi) ScheduleForwardedMessage(ctx context.Context, req *tgrpc.Sche
 	if account == nil {
 		return nil, errors.New("invalid account")
 	}
-	mess, err := libs.AS.Get(req.Account).TdApi.ScheduleForwardedMessage(req.TargetChatId, req.FromChatId, req.MessageIds, req.SendAtDate)
+	mess, err := libs.AS.Get(req.Account).TdApi.ScheduleForwardedMessage(req.TargetChatId, req.FromChatId, req.MessageIds, req.SendAtDate, req.SendCopy)
 	if err != nil {
 
 		return nil, errors.New(fmt.Sprintf("failed to schedule messages: %s", err.Error()))
