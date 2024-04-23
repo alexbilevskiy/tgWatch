@@ -76,7 +76,14 @@ func (t *TdApi) ListenUpdates() {
 			case client.TypeUpdateUser:
 			case client.TypeUpdateUserFullInfo:
 			case client.TypeUpdateChatPhoto:
+
 			case client.TypeUpdateMessageSendSucceeded:
+				upd := update.(*client.UpdateMessageSendSucceeded)
+				t.sentMessages.Store(upd.OldMessageId, upd.Message)
+			case client.TypeUpdateMessageSendFailed:
+				upd := update.(*client.UpdateMessageSendFailed)
+				//@TODO: also put in t.sentMessages
+				log.Printf("failed to send message %d: %s", upd.OldMessageId, upd.Error.Message)
 
 			case client.TypeUpdateMessageInteractionInfo:
 				//upd := update.(*client.UpdateMessageInteractionInfo)

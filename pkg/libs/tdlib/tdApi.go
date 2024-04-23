@@ -10,16 +10,18 @@ import (
 	"github.com/zelenin/go-tdlib/client"
 	"log"
 	"sync"
+	"time"
 )
 
 type TdApi struct {
 	tdApiInterface
-	m           sync.RWMutex
-	dbData      *mongo.DbAccountData
-	localChats  map[int64]*client.Chat
-	chatFolders []structs.ChatFilter
-	tdlibClient *client.Client
-	db          *mongo.TdMongo
+	m            sync.RWMutex
+	dbData       *mongo.DbAccountData
+	localChats   map[int64]*client.Chat
+	chatFolders  []structs.ChatFilter
+	tdlibClient  *client.Client
+	db           *mongo.TdMongo
+	sentMessages sync.Map
 }
 
 type tdApiInterface interface {
@@ -84,6 +86,7 @@ func (t *TdApi) Init(dbData *mongo.DbAccountData, tdlibClient *client.Client, td
 	t.localChats = make(map[int64]*client.Chat)
 	t.chatFolders = t.db.LoadChatFolders()
 	t.m = sync.RWMutex{}
+	t.sentMessages = sync.Map{}
 }
 
 func (t *TdApi) GetChat(chatId int64, force bool) (*client.Chat, error) {
@@ -236,6 +239,7 @@ func (t *TdApi) SendMessage(text string, chatId int64, replyToMessageId *int64) 
 		req = &client.SendMessageRequest{ChatId: chatId, ReplyTo: &replyTo, InputMessageContent: content}
 	}
 	message, err := t.tdlibClient.SendMessage(req)
+	//@TODO: use t.sentMessages etc
 	if err != nil {
 		log.Printf("Failed to send message to chat %d: %s", chatId, err.Error())
 	} else {
@@ -700,7 +704,32 @@ func (t *TdApi) ScheduleForwardedMessage(targetChatId int64, fromChatId int64, m
 	opts := &client.MessageSendOptions{SchedulingState: &client.MessageSchedulingStateSendAtDate{SendDate: sendAtDate}}
 	req := &client.ForwardMessagesRequest{ChatId: targetChatId, MessageIds: messageIds, FromChatId: fromChatId, Options: opts, SendCopy: sendCopy}
 
-	return t.tdlibClient.ForwardMessages(req)
+	res, err := t.tdlibClient.ForwardMessages(req)
+	if err != nil {
+		return res, err
+	}
+	actualMessages := make([]*client.Message, 0)
+
+	now := time.Now()
+	for {
+		for _, m := range res.Messages {
+			if sent, ok := t.sentMessages.Load(m.Id); ok {
+				actualMessages = append(actualMessages, sent.(*client.Message))
+				t.sentMessages.Delete(m.Id)
+			}
+		}
+		if len(actualMessages) == len(res.Messages) {
+			break
+		}
+		if time.Since(now) > 5*time.Second {
+
+			return nil, errors.New("timeout while waiting for actual send")
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
+	res.Messages = actualMessages
+
+	return res, err
 }
 
 func (t *TdApi) GetStorage() *mongo.TdMongo {
