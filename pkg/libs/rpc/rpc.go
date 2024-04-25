@@ -126,6 +126,14 @@ func (t *TgRpcApi) ScheduleForwardedMessage(ctx context.Context, req *tgrpc.Sche
 	return &tgrpc.ScheduleForwardedMessageResponse{Messages: responseMessages}, nil
 }
 
+func (t *TgRpcApi) EditMessageSchedulingState(ctx context.Context, req *tgrpc.EditMessageSchedulingStateRequest) (*tgrpc.EditMessageSchedulingStateResponse, error) {
+	_, err := libs.AS.Get(req.Account).TdApi.EditMessageSchedulingState(req.ChatId, req.MessageId, req.SchedulingStateType, req.SendDate)
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("failed to reschedule messages: %s", err.Error()))
+	}
+	return &tgrpc.EditMessageSchedulingStateResponse{}, nil
+}
+
 func InterceptorLogger(l *log.Logger) logging.Logger {
 	return logging.LoggerFunc(func(_ context.Context, lvl logging.Level, msg string, fields ...any) {
 		switch lvl {

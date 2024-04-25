@@ -732,6 +732,24 @@ func (t *TdApi) ScheduleForwardedMessage(targetChatId int64, fromChatId int64, m
 	return res, err
 }
 
+func (t *TdApi) EditMessageSchedulingState(chatId int64, messageId int64, schedulingStateType string, sendDate int32) (*client.Ok, error) {
+	var schedulingState client.MessageSchedulingState
+	switch schedulingStateType {
+	case client.TypeMessageSchedulingStateSendAtDate:
+		schedulingState = &client.MessageSchedulingStateSendAtDate{SendDate: sendDate}
+	case client.TypeMessageSchedulingStateSendWhenOnline:
+		schedulingState = &client.MessageSchedulingStateSendWhenOnline{}
+	}
+
+	req := &client.EditMessageSchedulingStateRequest{
+		ChatId:          chatId,
+		MessageId:       messageId,
+		SchedulingState: schedulingState,
+	}
+
+	return t.tdlibClient.EditMessageSchedulingState(req)
+}
+
 func (t *TdApi) GetStorage() *mongo.TdMongo {
 	//@TODO: mutex?
 	return t.db
