@@ -14,6 +14,8 @@ github.com/alexbilevskiy/tgWatch-proto v0.0.0-20240425190608-f03b239bfe2a h1:jvR
 github.com/alexbilevskiy/tgWatch-proto v0.0.0-20240425190608-f03b239bfe2a/go.mod h1:lFomnYjQKZQLXVuzJ2n8eIfsKHy/oaAniPu4fKYzh+M=
 github.com/alexbilevskiy/tgWatch-proto v0.0.0-20240425190845-cfbdfd5ffd4c h1:reKMk7Qd9X8QFNJvNAS2+2bGchRJRWMy4aPBhkmziXQ=
 github.com/alexbilevskiy/tgWatch-proto v0.0.0-20240425190845-cfbdfd5ffd4c/go.mod h1:lFomnYjQKZQLXVuzJ2n8eIfsKHy/oaAniPu4fKYzh+M=
+github.com/alexbilevskiy/tgWatch-proto v0.0.0-20240427183559-8a365321c81b h1:sAEcHM9S7aY1RUC7Ab0Wt1couw6Cqy8IyX3PtC4W6GE=
+github.com/alexbilevskiy/tgWatch-proto v0.0.0-20240427183559-8a365321c81b/go.mod h1:lFomnYjQKZQLXVuzJ2n8eIfsKHy/oaAniPu4fKYzh+M=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

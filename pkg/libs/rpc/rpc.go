@@ -77,6 +77,7 @@ func (t *TgRpcApi) GetScheduledMessages(ctx context.Context, req *tgrpc.GetSched
 				SchedulingStateType: m.SchedulingState.MessageSchedulingStateType(),
 				SendDate:            sendDate,
 			},
+			MediaAlbumId: int64(m.MediaAlbumId),
 		}
 		responseMessages = append(responseMessages, responseMessage)
 	}
@@ -119,6 +120,7 @@ func (t *TgRpcApi) ScheduleForwardedMessage(ctx context.Context, req *tgrpc.Sche
 				SchedulingStateType: m.SchedulingState.MessageSchedulingStateType(),
 				SendDate:            sendDate,
 			},
+			MediaAlbumId: int64(m.MediaAlbumId),
 		}
 		responseMessages = append(responseMessages, responseMessage)
 	}
