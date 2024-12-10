@@ -26,8 +26,8 @@ Cons:
 
 ### install:
 * install [tdlib](https://tdlib.github.io/td/build.html?language=Go)
+  * [compile with g++](https://tdlib.github.io/td/build.html?language=Go)
 * use forked go-tdlib `go mod edit -replace="github.com/zelenin/go-tdlib=github.com/alexbilevskiy/go-tdlib@master"`
-* compile with `-stdlib=libstdc++`
 * `run.sh`
 * Dockerfile also provided
 

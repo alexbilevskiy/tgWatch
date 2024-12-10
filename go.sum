@@ -1,5 +1,5 @@
-github.com/alexbilevskiy/go-tdlib v0.4.2-0.20240418062540-fe5d7cbc0d3b h1:OXkxZ7WDLjgxUNlm/sbf8NPUObHqpfW5sLbtmpYq8uQ=
-github.com/alexbilevskiy/go-tdlib v0.4.2-0.20240418062540-fe5d7cbc0d3b/go.mod h1:Xs8fXbk5n7VaPyrSs9DP7QYoBScWYsjX+lUcWmx1DIU=
+github.com/alexbilevskiy/go-tdlib v0.4.2-0.20241210052830-4a7dbfa1a722 h1:f01TXrszKK6gv1yO3b46JPCIwIIa60ZpsAhQjMVSabA=
+github.com/alexbilevskiy/go-tdlib v0.4.2-0.20241210052830-4a7dbfa1a722/go.mod h1:yqNbNZenZtXPKgf9hDuyZbsRz7qlxOxdfKOc+sAxxIE=
 github.com/alexbilevskiy/tgWatch-proto v0.0.0-20240427183559-8a365321c81b h1:sAEcHM9S7aY1RUC7Ab0Wt1couw6Cqy8IyX3PtC4W6GE=
 github.com/alexbilevskiy/tgWatch-proto v0.0.0-20240427183559-8a365321c81b/go.mod h1:lFomnYjQKZQLXVuzJ2n8eIfsKHy/oaAniPu4fKYzh+M=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
