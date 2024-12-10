@@ -7,7 +7,7 @@ ENV TZ=Europe/Moscow
 RUN apt-get update
 RUN apt-get install -y git cmake build-essential gperf libssl-dev zlib1g-dev
 
-RUN git clone https://github.com/tdlib/td.git && cd td && git checkout d7203eb719304866a7eb7033ef03d421459335b8
+RUN git clone --depth 1 https://github.com/tdlib/td.git && cd td && git checkout 437e7f9ab9696d186585f1d466dbdfbf93298804
 RUN cd td && mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && cmake --build . -j 4 && make install
 
 COPY --from=golang:1.22 /usr/local/go/ /usr/local/go/
@@ -22,7 +22,7 @@ COPY Makefile .
 # uncomment to build against local copy of go-tdlib;
 # also add line "replace github.com/zelenin/go-tdlib => ../go-tdlib" to go.mod
 # and use dockerBuildLocal.sh with custom build-context
-#COPY --from=gopath /src/go-tdlib /go-tdlib
+#COPY --from=local-src /go-tdlib /go-tdlib
 
 RUN make deps
 
