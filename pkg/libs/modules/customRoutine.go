@@ -8,7 +8,7 @@ import (
 
 // @TODO: create some kind of lua integration to allow writing custom message processing plugins without need to recompile
 
-var dudeChatId int64 = -1001731444904
+var dudeChatId int64 = -1002150910059
 var repostMsgId int64 = 6410335158272
 var myUserId int64 = 118137353
 
