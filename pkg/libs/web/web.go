@@ -4,7 +4,6 @@ import (
 	"github.com/alexbilevskiy/tgWatch/pkg/config"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
-	"google.golang.org/grpc"
 	"net/http"
 	"strings"
 )
@@ -12,10 +11,9 @@ import (
 var verbose bool = false
 var currentAcc int64
 
-func InitWeb(webHandler *HttpHandler, grpcHandler *grpc.Server) {
+func InitWeb(webHandler *HttpHandler) {
 	m := MultiplexerHandler{
-		WebHandler:  webHandler,
-		GrpcHandler: grpcHandler,
+		WebHandler: webHandler,
 	}
 	server := &http.Server{
 		Addr:    config.Config.WebListen,
@@ -25,14 +23,13 @@ func InitWeb(webHandler *HttpHandler, grpcHandler *grpc.Server) {
 }
 
 type MultiplexerHandler struct {
-	WebHandler  *HttpHandler
-	GrpcHandler *grpc.Server
+	WebHandler *HttpHandler
 }
 
 func (m MultiplexerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if strings.HasPrefix(
 		r.Header.Get("Content-Type"), "application/grpc") {
-		m.GrpcHandler.ServeHTTP(w, r)
+		w.WriteHeader(500)
 	} else {
 		m.WebHandler.ServeHTTP(w, r)
 	}
