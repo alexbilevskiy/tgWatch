@@ -13,8 +13,9 @@ import (
 
 func RunTdlib(dbData *mongo.DbAccountData) (*client.Client, *client.User) {
 	tdlibParameters := createTdlibParameters(dbData.DataDir)
-	authorizer := client.ClientAuthorizer(tdlibParameters)
-	go client.CliInteractor(authorizer)
+	authorizer := ClientAuthorizer(tdlibParameters)
+	authParams := make(chan string)
+	go ChanInteractor(authorizer, dbData.Phone, authParams)
 
 	logVerbosity := client.WithLogVerbosity(&client.SetLogVerbosityLevelRequest{
 		NewVerbosityLevel: 1,
@@ -93,12 +94,11 @@ func CreateAccount(phone string) {
 	}
 
 	go func() {
-		authorizer := ClientAuthorizer()
+		authorizer := ClientAuthorizer(createTdlibParameters(CurrentAuthorizingAcc.DataDir))
 		var tdlibClientLocal *client.Client
 		var meLocal *client.User
 
 		log.Println("push tdlib params")
-		authorizer.TdlibParameters <- createTdlibParameters(CurrentAuthorizingAcc.DataDir)
 		logVerbosity := client.WithLogVerbosity(&client.SetLogVerbosityLevelRequest{
 			NewVerbosityLevel: 2,
 		})
