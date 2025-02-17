@@ -49,22 +49,22 @@ func (m *TdMongo) Init(DbPrefix string, Phone string) {
 
 func (m *TdMongo) SaveChatFolder(chatFolder *client.ChatFolder, folderInfo *client.ChatFolderInfo) {
 
-	filStr := structs.ChatFilter{Id: folderInfo.Id, Title: folderInfo.Title, IncludedChats: chatFolder.IncludedChatIds}
+	filStr := structs.ChatFilter{Id: folderInfo.Id, Title: folderInfo.Name.Text.Text, IncludedChats: chatFolder.IncludedChatIds}
 	crit := bson.D{{"id", folderInfo.Id}}
 	update := bson.D{{"$set", filStr}}
 	t := true
 	opts := &options.UpdateOptions{Upsert: &t}
 	_, err := m.chatFiltersColl.UpdateOne(mongoContext, crit, update, opts)
 	if err != nil {
-		fmt.Printf("Failed to save chat filter: id: %d, n: %s, err: %s\n", folderInfo.Id, folderInfo.Title, err)
+		fmt.Printf("Failed to save chat filter: id: %d, n: %s, err: %s\n", folderInfo.Id, folderInfo.Name.Text.Text, err)
 	}
 
 	crit = bson.D{{"chatid", bson.M{"$nin": chatFolder.IncludedChatIds}}, {"listid", folderInfo.Id}}
 	dr, err := m.chatListColl.DeleteMany(mongoContext, crit)
 	if err != nil {
-		fmt.Printf("Failed to delete chats from folder id: %d, n: %s, err: %s\n", folderInfo.Id, folderInfo.Title, err)
+		fmt.Printf("Failed to delete chats from folder id: %d, n: %s, err: %s\n", folderInfo.Id, folderInfo.Name.Text.Text, err)
 	} else if dr.DeletedCount > 0 {
-		fmt.Printf("Deleted %d chats from folder id: %d, name: %s\n", dr.DeletedCount, folderInfo.Id, folderInfo.Title)
+		fmt.Printf("Deleted %d chats from folder id: %d, name: %s\n", dr.DeletedCount, folderInfo.Id, folderInfo.Name.Text.Text)
 	}
 }
 

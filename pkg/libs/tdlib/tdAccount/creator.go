@@ -12,10 +12,10 @@ import (
 )
 
 func RunTdlib(dbData *mongo.DbAccountData) (*client.Client, *client.User) {
-	authorizer := client.ClientAuthorizer()
+	tdlibParameters := createTdlibParameters(dbData.DataDir)
+	authorizer := client.ClientAuthorizer(tdlibParameters)
 	go client.CliInteractor(authorizer)
 
-	authorizer.TdlibParameters <- createTdlibParameters(dbData.DataDir)
 	logVerbosity := client.WithLogVerbosity(&client.SetLogVerbosityLevelRequest{
 		NewVerbosityLevel: 1,
 	})

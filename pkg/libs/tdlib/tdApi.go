@@ -552,19 +552,19 @@ func (t *TdApi) SaveChatFilters(chatFoldersUpdate *client.UpdateChatFolders) {
 			//log.Printf("Existing chat folder: id: %d, n: %s", folderInfo.Id, folderInfo.Title)
 			continue
 		}
-		log.Printf("New chat folder: id: %d, n: %s", folderInfo.Id, folderInfo.Title)
+		log.Printf("New chat folder: id: %d, n: %s", folderInfo.Id, folderInfo.Name.Text.Text)
 
 		wg.Add(1)
 		go func(folderInfo *client.ChatFolderInfo, wg *sync.WaitGroup) {
 			defer wg.Done()
 			chatFolder, err := t.getChatFolder(folderInfo.Id)
 			if err != nil {
-				log.Printf("Failed to load chat folder: id: %d, n: %s, reason: %s", folderInfo.Id, folderInfo.Title, err.Error())
+				log.Printf("Failed to load chat folder: id: %d, n: %s, reason: %s", folderInfo.Id, folderInfo.Name.Text.Text, err.Error())
 
 				return
 			}
 			t.db.SaveChatFolder(chatFolder, folderInfo)
-			log.Printf("Chat folder LOADED: id: %d, n: %s", folderInfo.Id, folderInfo.Title)
+			log.Printf("Chat folder LOADED: id: %d, n: %s", folderInfo.Id, folderInfo.Name.Text.Text)
 		}(folderInfo, &wg)
 		//time.Sleep(time.Second * 2)
 	}

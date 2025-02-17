@@ -46,7 +46,7 @@ func (stateHandler *clientAuthorizer) Handle(tdcl *client.Client, state client.A
 		return err
 
 	case client.TypeAuthorizationStateWaitRegistration:
-		return client.ErrNotSupportedAuthorizationState
+		return client.NotSupportedAuthorizationState(state)
 
 	case client.TypeAuthorizationStateWaitPassword:
 		_, err := tdcl.CheckAuthenticationPassword(&client.CheckAuthenticationPasswordRequest{
@@ -58,7 +58,7 @@ func (stateHandler *clientAuthorizer) Handle(tdcl *client.Client, state client.A
 		return nil
 
 	case client.TypeAuthorizationStateLoggingOut:
-		return client.ErrNotSupportedAuthorizationState
+		return client.NotSupportedAuthorizationState(state)
 
 	case client.TypeAuthorizationStateClosing:
 		return nil
@@ -67,7 +67,7 @@ func (stateHandler *clientAuthorizer) Handle(tdcl *client.Client, state client.A
 		return nil
 	}
 
-	return client.ErrNotSupportedAuthorizationState
+	return client.NotSupportedAuthorizationState(state)
 }
 
 func (stateHandler *clientAuthorizer) Close() {

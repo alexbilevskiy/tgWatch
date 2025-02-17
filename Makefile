@@ -1,5 +1,5 @@
 deps:
-	go mod download
+	go mod download -x
 build:
 	go build cmd/tgWatch.go
 build-local:
