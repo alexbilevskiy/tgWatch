@@ -1,8 +1,9 @@
 package web
 
 import (
+	"context"
+	"errors"
 	"github.com/alexbilevskiy/tgWatch/pkg/libs"
-	"github.com/alexbilevskiy/tgWatch/pkg/structs"
 	"log"
 	"net/http"
 	"os"
@@ -15,20 +16,25 @@ func middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		err := req.ParseForm()
 		if err != nil {
-			errorResponse(structs.WebError{T: "Unknown error", Error: err.Error()}, 504, req, w)
+			errorResponse(WebError{T: "Unknown error", Error: err.Error()}, http.StatusInternalServerError, req, w)
 			return
 		}
+		ctx := req.Context()
 
-		verbose = false
+		verbose := false
 		if req.FormValue("a") == "1" {
 			verbose = true
 		}
-
-		if detectAccount(req, w) == false {
-			errorResponse(structs.WebError{T: "Invalid account", Error: "no such account"}, 504, req, w)
+		newCtx := context.WithValue(ctx, "verbose", verbose)
+		var currentAcc int64
+		if currentAcc, err = detectAccount(req, w); err != nil {
+			errorResponse(WebError{T: "Invalid account", Error: err.Error()}, http.StatusInternalServerError, req, w)
 			return
 		}
-		next.ServeHTTP(w, req)
+		newCtx = context.WithValue(newCtx, "current_acc", currentAcc)
+		newReq := req.WithContext(newCtx)
+
+		next.ServeHTTP(w, newReq)
 	})
 }
 
@@ -63,34 +69,33 @@ func tryFile(req *http.Request, w http.ResponseWriter) bool {
 	return false
 }
 
-func detectAccount(req *http.Request, res http.ResponseWriter) bool {
+func detectAccount(req *http.Request, res http.ResponseWriter) (int64, error) {
+	var currentAcc int64
 	accCookie, err := req.Cookie("acc")
 	if err != nil {
 		log.Printf("Cookie errror: %s", err.Error())
 
-		currentAcc = -1
 		renderTemplates(req, res, nil, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/account_select.gohtml`)
 
-		return false
+		return -1, errors.New("missing cookie `acc`")
 	}
 	currentAcc, err = strconv.ParseInt(accCookie.Value, 10, 64)
 	if err != nil {
 
-		return false
+		return -1, errors.New("failed to convert cookie value")
 	}
 
 	if libs.AS.Get(currentAcc) == nil {
-
-		return false
+		return -1, errors.New("account from cookie does not exist")
 	}
 
 	cookie := http.Cookie{Name: "acc", Value: strconv.FormatInt(currentAcc, 10), Path: "/"}
 	http.SetCookie(res, &cookie)
 
-	return true
+	return currentAcc, nil
 }
 
-func errorResponse(error structs.WebError, code int, req *http.Request, w http.ResponseWriter) {
+func errorResponse(error WebError, code int, req *http.Request, w http.ResponseWriter) {
 	w.WriteHeader(code)
 	renderTemplates(req, w, error, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/error.gohtml`)
 }

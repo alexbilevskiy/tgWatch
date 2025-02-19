@@ -1,4 +1,4 @@
-package structs
+package mongo
 
 type ChatFilter struct {
 	Id            int32
@@ -11,11 +11,6 @@ type ChatPosition struct {
 	ListId   int32
 	Order    int64
 	IsPinned bool
-}
-
-type ChatCounters struct {
-	ChatId   int64
-	Counters map[string]int32
 }
 
 type IgnoreLists struct {

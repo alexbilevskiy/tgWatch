@@ -3,13 +3,9 @@ package web
 import (
 	"github.com/alexbilevskiy/tgWatch/pkg/config"
 	"github.com/alexbilevskiy/tgWatch/pkg/libs"
-	"github.com/alexbilevskiy/tgWatch/pkg/structs"
 	"net/http"
 	"strconv"
 )
-
-var verbose bool = false
-var currentAcc int64
 
 func InitWeb() {
 
@@ -17,22 +13,15 @@ func InitWeb() {
 
 	mux := http.NewServeMux()
 
-	mux.Handle("/{$}", middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		renderTemplates(r, w, nil, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/index.gohtml`)
-	})))
+	mux.Handle("/{$}", middleware(http.HandlerFunc(controller.processRoot)))
 
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if tryFile(r, w) {
-			return
-		}
-		errorResponse(structs.WebError{T: "Not found", Error: r.URL.Path}, 404, r, w)
-	})
+	mux.HandleFunc("/", controller.catchAll)
 
 	mux.Handle("/to", middleware(http.HandlerFunc(controller.processTdlibOptions)))
 	mux.Handle("/as", middleware(http.HandlerFunc(controller.processTgActiveSessions)))
 	mux.Handle("/m/{chat_id}/{message_id}", middleware(http.HandlerFunc(controller.processTgSingleMessage)))
 	mux.Handle("/h", middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		controller.processTgChatHistoryOnline(libs.AS.Get(currentAcc).DbData.Id, r, w)
+		controller.processTgChatHistoryOnline(libs.AS.Get(r.Context().Value("current_acc").(int64)).DbData.Id, r, w)
 	})))
 	mux.Handle("/h/{chat_id}", middleware(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		chatId, _ := strconv.ParseInt(req.PathValue("chat_id"), 10, 64)

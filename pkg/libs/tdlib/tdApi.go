@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/alexbilevskiy/tgWatch/pkg/consts"
 	"github.com/alexbilevskiy/tgWatch/pkg/libs/mongo"
-	"github.com/alexbilevskiy/tgWatch/pkg/structs"
 	"github.com/zelenin/go-tdlib/client"
 	"log"
 	"sync"
@@ -18,7 +17,7 @@ type TdApi struct {
 	m            sync.RWMutex
 	dbData       *mongo.DbAccountData
 	localChats   map[int64]*client.Chat
-	chatFolders  []structs.ChatFilter
+	chatFolders  []mongo.ChatFilter
 	tdlibClient  *client.Client
 	db           *mongo.TdMongo
 	sentMessages sync.Map
@@ -60,7 +59,7 @@ type tdApiInterface interface {
 	SaveChatAddedToList(upd *client.UpdateChatAddedToList)
 	RemoveChatRemovedFromList(upd *client.UpdateChatRemovedFromList)
 	LoadChatsList(listId int32)
-	GetChatFolders() []structs.ChatFilter
+	GetChatFolders() []mongo.ChatFilter
 	GetLocalChats() map[int64]*client.Chat
 
 	GetStorage() *mongo.TdMongo
@@ -455,6 +454,7 @@ func (t *TdApi) GetChatUsername(chatId int64) string {
 
 	return ""
 }
+
 func (t *TdApi) LoadChatsList(listId int32) {
 	var chatList client.ChatList
 	d, err := t.db.DeleteChatFolder(listId)
@@ -654,7 +654,7 @@ func (t *TdApi) RemoveChatRemovedFromList(upd *client.UpdateChatRemovedFromList)
 	}
 }
 
-func (t *TdApi) GetChatFolders() []structs.ChatFilter {
+func (t *TdApi) GetChatFolders() []mongo.ChatFilter {
 	//@TODO: mutex?
 	return t.chatFolders
 }

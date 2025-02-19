@@ -1,22 +1,22 @@
 package web
 
 import (
+	"context"
 	"fmt"
 	"github.com/alexbilevskiy/tgWatch/pkg/config"
 	"github.com/alexbilevskiy/tgWatch/pkg/libs"
 	"github.com/alexbilevskiy/tgWatch/pkg/libs/helpers"
 	"github.com/alexbilevskiy/tgWatch/pkg/libs/tdlib"
-	"github.com/alexbilevskiy/tgWatch/pkg/structs"
 	"github.com/zelenin/go-tdlib/client"
 	"html"
 	"strings"
 	"unicode/utf16"
 )
 
-func parseMessage(message *client.Message) structs.MessageInfo {
+func parseMessage(message *client.Message, currentAcc int64, verbose bool) MessageInfo {
 	senderChatId := tdlib.GetChatIdBySender(message.SenderId)
-	ct := tdlib.GetContentWithText(message.Content, message.ChatId)
-	messageInfo := structs.MessageInfo{
+	ct := GetContentWithText(message.Content, message.ChatId)
+	messageInfo := MessageInfo{
 		T:             "NewMessage",
 		MessageId:     message.Id,
 		Date:          message.Date,
@@ -30,7 +30,7 @@ func parseMessage(message *client.Message) structs.MessageInfo {
 		MediaAlbumId:  int64(message.MediaAlbumId),
 		SimpleText:    ct.Text,
 		FormattedText: ct.FormattedText,
-		Attachments:   tdlib.GetContentAttachments(message.Content),
+		Attachments:   GetContentAttachments(message.Content),
 		Edited:        message.EditDate != 0,
 		ContentRaw:    nil,
 	}
@@ -42,12 +42,13 @@ func parseMessage(message *client.Message) structs.MessageInfo {
 	return messageInfo
 }
 
-func buildChatInfoByLocalChat(chat *client.Chat) structs.ChatInfo {
+func buildChatInfoByLocalChat(ctx context.Context, chat *client.Chat) ChatInfo {
 	if chat == nil {
 
-		return structs.ChatInfo{ChatId: -1, Username: "ERROR", ChatName: "NULL CHAT"}
+		return ChatInfo{ChatId: -1, Username: "ERROR", ChatName: "NULL CHAT"}
 	}
-	info := structs.ChatInfo{ChatId: chat.Id, ChatName: libs.AS.Get(currentAcc).TdApi.GetChatName(chat.Id), Username: libs.AS.Get(currentAcc).TdApi.GetChatUsername(chat.Id)}
+	currentAcc := ctx.Value("current_acc").(int64)
+	info := ChatInfo{ChatId: chat.Id, ChatName: libs.AS.Get(currentAcc).TdApi.GetChatName(chat.Id), Username: libs.AS.Get(currentAcc).TdApi.GetChatUsername(chat.Id)}
 	switch chat.Type.ChatTypeType() {
 	case client.TypeChatTypeSupergroup:
 		t := chat.Type.(*client.ChatTypeSupergroup)
@@ -74,7 +75,7 @@ func buildChatInfoByLocalChat(chat *client.Chat) structs.ChatInfo {
 	return info
 }
 
-func RenderText(text *client.FormattedText) string {
+func RenderText(ctx context.Context, text *client.FormattedText) string {
 	utfText := utf16.Encode([]rune(text.Text))
 	result := ""
 	var prevEntityEnd int32 = 0
@@ -83,7 +84,7 @@ func RenderText(text *client.FormattedText) string {
 	for i, entity := range text.Entities {
 		if entity.Offset < prevEntityEnd {
 			//fmt.Printf("ENT IS SAME AS PREV\n")
-			wrapped = wrapEntity(entity, wrapped)
+			wrapped = wrapEntity(ctx, entity, wrapped)
 			result += wrapped
 
 			continue
@@ -97,7 +98,7 @@ func RenderText(text *client.FormattedText) string {
 		//extract clean string from message
 		repl := ut2hs(utfText[entity.Offset : entity.Offset+entity.Length])
 		//wrap in html tags according to entity
-		wrapped = wrapEntity(entity, repl)
+		wrapped = wrapEntity(ctx, entity, repl)
 
 		//if next entity has same offset and length as current, theses entities are nested
 		ne := i + 1
@@ -117,7 +118,8 @@ func RenderText(text *client.FormattedText) string {
 	return result
 }
 
-func wrapEntity(entity *client.TextEntity, text string) string {
+func wrapEntity(ctx context.Context, entity *client.TextEntity, text string) string {
+	currentAcc := ctx.Value("current_acc").(int64)
 	var wrapped string
 	switch entity.Type.TextEntityTypeType() {
 	case client.TypeTextEntityTypeBold:

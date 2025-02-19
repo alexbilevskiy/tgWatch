@@ -1,4 +1,4 @@
-package structs
+package tdlib
 
 type TdlibOption struct {
 	Name        string `json:"Name"`

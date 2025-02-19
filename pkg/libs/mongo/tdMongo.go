@@ -3,7 +3,6 @@ package mongo
 import (
 	"fmt"
 	"github.com/alexbilevskiy/tgWatch/pkg/consts"
-	"github.com/alexbilevskiy/tgWatch/pkg/structs"
 	"github.com/zelenin/go-tdlib/client"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -16,24 +15,24 @@ type TdMongo struct {
 	chatFiltersColl *mongo.Collection
 	chatListColl    *mongo.Collection
 	settingsColl    *mongo.Collection
-	settings        structs.IgnoreLists
+	settings        IgnoreLists
 }
 
 type TdStorageInterface interface {
 	Init(DbPrefix string, Phone string)
 	DeleteChatFolder(folderId int32) (*mongo.DeleteResult, error)
 	ClearChatFilters()
-	LoadChatFolders() []structs.ChatFilter
-	GetSettings() structs.IgnoreLists
+	LoadChatFolders() []ChatFilter
+	GetSettings() IgnoreLists
 
 	SaveChatFolder(chatFolder *client.ChatFolder, folderInfo *client.ChatFolderInfo)
 	SaveAllChatPositions(chatId int64, positions []*client.ChatPosition)
 	SaveChatPosition(chatId int64, chatPosition *client.ChatPosition)
 
-	GetSavedChats(listId int32) []structs.ChatPosition
+	GetSavedChats(listId int32) []ChatPosition
 
 	loadSettings()
-	SaveSettings(il structs.IgnoreLists)
+	SaveSettings(il IgnoreLists)
 }
 
 func (m *TdMongo) Init(DbPrefix string, Phone string) {
@@ -49,7 +48,7 @@ func (m *TdMongo) Init(DbPrefix string, Phone string) {
 
 func (m *TdMongo) SaveChatFolder(chatFolder *client.ChatFolder, folderInfo *client.ChatFolderInfo) {
 
-	filStr := structs.ChatFilter{Id: folderInfo.Id, Title: folderInfo.Name.Text.Text, IncludedChats: chatFolder.IncludedChatIds}
+	filStr := ChatFilter{Id: folderInfo.Id, Title: folderInfo.Name.Text.Text, IncludedChats: chatFolder.IncludedChatIds}
 	crit := bson.D{{"id", folderInfo.Id}}
 	update := bson.D{{"$set", filStr}}
 	t := true
@@ -100,7 +99,7 @@ func (m *TdMongo) SaveChatPosition(chatId int64, chatPosition *client.ChatPositi
 	}
 	//fmt.Printf("ChatPosition update: %d | %d | %d | %s\n", chatId, chatPosition.Order, listId, chatPosition.List.ChatListType())
 
-	filStr := structs.ChatPosition{ChatId: chatId, Order: int64(chatPosition.Order), IsPinned: chatPosition.IsPinned, ListId: listId}
+	filStr := ChatPosition{ChatId: chatId, Order: int64(chatPosition.Order), IsPinned: chatPosition.IsPinned, ListId: listId}
 	crit := bson.D{{"chatid", chatId}, {"listid", listId}}
 	update := bson.D{{"$set", filStr}}
 	t := true
@@ -111,11 +110,11 @@ func (m *TdMongo) SaveChatPosition(chatId int64, chatPosition *client.ChatPositi
 	}
 }
 
-func (m *TdMongo) GetSavedChats(listId int32) []structs.ChatPosition {
+func (m *TdMongo) GetSavedChats(listId int32) []ChatPosition {
 	crit := bson.D{{"listid", listId}}
 	opts := options.FindOptions{Sort: bson.M{"order": -1}}
 	cur, err := m.chatListColl.Find(mongoContext, crit, &opts)
-	var list []structs.ChatPosition
+	var list []ChatPosition
 	if err != nil {
 		fmt.Printf("Chat list error: %s", err)
 
@@ -129,9 +128,9 @@ func (m *TdMongo) GetSavedChats(listId int32) []structs.ChatPosition {
 
 		return list
 	}
-	var chats []structs.ChatPosition
+	var chats []ChatPosition
 	for _, chatObj := range chatsMongo {
-		chat := structs.ChatPosition{
+		chat := ChatPosition{
 			IsPinned: chatObj["ispinned"].(bool),
 			Order:    chatObj["order"].(int64),
 			ChatId:   chatObj["chatid"].(int64),
@@ -151,9 +150,9 @@ func (m *TdMongo) ClearChatFilters() {
 	log.Printf("Removed %d chat folders from db", removed.DeletedCount)
 }
 
-func (m *TdMongo) LoadChatFolders() []structs.ChatFilter {
+func (m *TdMongo) LoadChatFolders() []ChatFilter {
 	cur, _ := m.chatFiltersColl.Find(mongoContext, bson.M{})
-	fi := make([]structs.ChatFilter, 0)
+	fi := make([]ChatFilter, 0)
 	err := cur.All(mongoContext, &fi)
 	if err != nil {
 		errmsg := fmt.Sprintf("ERROR load chat filters: %s", err)
@@ -169,10 +168,10 @@ func (m *TdMongo) LoadChatFolders() []structs.ChatFilter {
 func (m *TdMongo) loadSettings() {
 	crit := bson.D{{"t", "ignore_lists"}}
 	ignoreListsDoc := m.settingsColl.FindOne(mongoContext, crit)
-	var il structs.IgnoreLists
+	var il IgnoreLists
 	if ignoreListsDoc.Err() == mongo.ErrNoDocuments {
 		log.Printf("No ignore lists in DB!")
-		il = structs.IgnoreLists{
+		il = IgnoreLists{
 			T:               "ignore_lists",
 			IgnoreAuthorIds: make(map[string]bool),
 			IgnoreChatIds:   make(map[string]bool),
@@ -191,7 +190,7 @@ func (m *TdMongo) loadSettings() {
 	m.settings = il
 }
 
-func (m *TdMongo) GetSettings() structs.IgnoreLists {
+func (m *TdMongo) GetSettings() IgnoreLists {
 	//@TODO: how to check empty struct?
 	if m.settings.IgnoreAuthorIds == nil {
 		m.loadSettings()
@@ -200,7 +199,7 @@ func (m *TdMongo) GetSettings() structs.IgnoreLists {
 	return m.settings
 }
 
-func (m *TdMongo) SaveSettings(il structs.IgnoreLists) {
+func (m *TdMongo) SaveSettings(il IgnoreLists) {
 	crit := bson.D{{"t", "ignore_lists"}}
 	update := bson.D{{"$set", il}}
 	t := true

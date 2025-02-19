@@ -6,7 +6,6 @@ import (
 	"github.com/alexbilevskiy/tgWatch/pkg/libs"
 	"github.com/alexbilevskiy/tgWatch/pkg/libs/helpers"
 	"github.com/alexbilevskiy/tgWatch/pkg/libs/tdlib"
-	"github.com/alexbilevskiy/tgWatch/pkg/structs"
 	"github.com/zelenin/go-tdlib/client"
 	"html/template"
 	"log"
@@ -17,7 +16,8 @@ import (
 func renderTemplates(req *http.Request, w http.ResponseWriter, templateData interface{}, templates ...string) {
 	var t *template.Template
 	var errParse error
-	if verbose {
+	currentAcc := req.Context().Value("current_acc").(int64)
+	if req.Context().Value("verbose").(bool) {
 		w.Header().Set("Content-Type", "application/json")
 		_, err := w.Write(helpers.JsonMarshalPretty(templateData))
 		if err != nil {
@@ -33,7 +33,7 @@ func renderTemplates(req *http.Request, w http.ResponseWriter, templateData inte
 				return template.HTML(b)
 			},
 			"renderText": func(text *client.FormattedText) template.HTML {
-				return template.HTML(RenderText(text))
+				return template.HTML(RenderText(req.Context(), text))
 			},
 			"accountsList": func() []*libs.Account {
 				accounts := make([]*libs.Account, 0)
@@ -59,29 +59,29 @@ func renderTemplates(req *http.Request, w http.ResponseWriter, templateData inte
 
 				return false
 			},
-			"chatInfoLocal": func(chatIdstr string) structs.ChatInfo {
+			"chatInfoLocal": func(chatIdstr string) ChatInfo {
 				chatId, _ := strconv.ParseInt(chatIdstr, 10, 64)
 				localChat, err := libs.AS.Get(currentAcc).TdApi.GetChat(chatId, false)
 				if err == nil {
 
-					return structs.ChatInfo{ChatId: chatId, ChatName: "_NOT_FOUND_"}
+					return ChatInfo{ChatId: chatId, ChatName: "_NOT_FOUND_"}
 				}
 
-				return buildChatInfoByLocalChat(localChat)
+				return buildChatInfoByLocalChat(req.Context(), localChat)
 			},
-			"chatInfo": func(chatIdstr string) structs.ChatInfo {
+			"chatInfo": func(chatIdstr string) ChatInfo {
 				chatId, _ := strconv.ParseInt(chatIdstr, 10, 64)
 				c, err := libs.AS.Get(currentAcc).TdApi.GetChat(chatId, false)
 				if err != nil {
 					user, err := libs.AS.Get(currentAcc).TdApi.GetUser(chatId)
 					if err != nil {
-						return structs.ChatInfo{ChatId: chatId, ChatName: fmt.Sprintf("ERROR: %s", err.Error())}
+						return ChatInfo{ChatId: chatId, ChatName: fmt.Sprintf("ERROR: %s", err.Error())}
 					}
 
-					return structs.ChatInfo{ChatId: chatId, ChatName: tdlib.GetUserFullname(user)}
+					return ChatInfo{ChatId: chatId, ChatName: tdlib.GetUserFullname(user)}
 				}
 
-				return buildChatInfoByLocalChat(c)
+				return buildChatInfoByLocalChat(req.Context(), c)
 			},
 			"GetLink": func(chatId int64, messageId int64) string {
 				return libs.AS.Get(currentAcc).TdApi.GetLink(chatId, messageId)
@@ -95,7 +95,7 @@ func renderTemplates(req *http.Request, w http.ResponseWriter, templateData inte
 			"Time": func(date int32) string {
 				return helpers.FormatTime(date)
 			},
-			"SetNestedMsg": func(info structs.MessageInfo, text *client.FormattedText, simple string, attachments []structs.MessageAttachment) structs.MessageInfo {
+			"SetNestedMsg": func(info MessageInfo, text *client.FormattedText, simple string, attachments []MessageAttachment) MessageInfo {
 				info.FormattedText = text
 				info.SimpleText = simple
 				info.Attachments = attachments
