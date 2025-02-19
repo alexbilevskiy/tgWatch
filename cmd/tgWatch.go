@@ -35,7 +35,7 @@ func main() {
 
 	log.Printf("starting web server...")
 
-	web.InitWeb(web.NewWebHandler())
+	web.InitWeb()
 
 	select {}
 }

@@ -2,35 +2,58 @@ package web
 
 import (
 	"github.com/alexbilevskiy/tgWatch/pkg/config"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
+	"github.com/alexbilevskiy/tgWatch/pkg/libs"
+	"github.com/alexbilevskiy/tgWatch/pkg/structs"
 	"net/http"
-	"strings"
+	"strconv"
 )
 
 var verbose bool = false
 var currentAcc int64
 
-func InitWeb(webHandler *HttpHandler) {
-	m := MultiplexerHandler{
-		WebHandler: webHandler,
-	}
+func InitWeb() {
+
+	controller := webController{}
+
+	mux := http.NewServeMux()
+
+	mux.Handle("/{$}", middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		renderTemplates(r, w, nil, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/index.gohtml`)
+	})))
+
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if tryFile(r, w) {
+			return
+		}
+		errorResponse(structs.WebError{T: "Not found", Error: r.URL.Path}, 404, r, w)
+	})
+
+	mux.Handle("/to", middleware(http.HandlerFunc(controller.processTdlibOptions)))
+	mux.Handle("/as", middleware(http.HandlerFunc(controller.processTgActiveSessions)))
+	mux.Handle("/m/{chat_id}/{message_id}", middleware(http.HandlerFunc(controller.processTgSingleMessage)))
+	mux.Handle("/h", middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		controller.processTgChatHistoryOnline(libs.AS.Get(currentAcc).DbData.Id, r, w)
+	})))
+	mux.Handle("/h/{chat_id}", middleware(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		chatId, _ := strconv.ParseInt(req.PathValue("chat_id"), 10, 64)
+		ids := req.FormValue("ids")
+		if ids != "" {
+			controller.processTgMessagesByIds(chatId, req, w)
+		} else {
+			controller.processTgChatHistoryOnline(chatId, req, w)
+		}
+	})))
+	mux.Handle("/l", middleware(http.HandlerFunc(controller.processTgChatList)))
+	mux.Handle("/li", middleware(http.HandlerFunc(controller.processTgLink)))
+	mux.Handle("/c/{chat_id}", middleware(http.HandlerFunc(controller.processTgChatInfo)))
+	mux.Handle("/s", middleware(http.HandlerFunc(controller.processSettings)))
+	mux.Handle("/f/{file_id}", middleware(http.HandlerFunc(controller.processFile)))
+	mux.Handle("/delete/{chat_id}", middleware(http.HandlerFunc(controller.processTgDelete)))
+	mux.HandleFunc("/new", controller.processAddAccount)
+
 	server := &http.Server{
 		Addr:    config.Config.WebListen,
-		Handler: h2c.NewHandler(m, &http2.Server{}), //https://kennethjenkins.net/posts/go-nginx-grpc/
+		Handler: logging(mux),
 	}
 	go server.ListenAndServe()
-}
-
-type MultiplexerHandler struct {
-	WebHandler *HttpHandler
-}
-
-func (m MultiplexerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if strings.HasPrefix(
-		r.Header.Get("Content-Type"), "application/grpc") {
-		w.WriteHeader(500)
-	} else {
-		m.WebHandler.ServeHTTP(w, r)
-	}
 }

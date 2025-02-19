@@ -1,6 +1,7 @@
 package web
 
 import (
+	"encoding/base64"
 	"fmt"
 	"github.com/alexbilevskiy/tgWatch/pkg/consts"
 	"github.com/alexbilevskiy/tgWatch/pkg/libs"
@@ -18,10 +19,7 @@ import (
 type webController struct {
 }
 
-func (wc *webController) Init() {
-}
-
-func (wc *webController) processTdlibOptions(req *http.Request, w http.ResponseWriter) {
+func (wc *webController) processTdlibOptions(w http.ResponseWriter, req *http.Request) {
 	actualOptions := make(map[string]structs.TdlibOption, len(tdlib.TdlibOptions))
 	for optionName, optionValue := range tdlib.TdlibOptions {
 		res, err := libs.AS.Get(currentAcc).TdApi.GetTdlibOption(optionName)
@@ -49,7 +47,7 @@ func (wc *webController) processTdlibOptions(req *http.Request, w http.ResponseW
 	renderTemplates(req, w, data, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/tdlib_options.gohtml`)
 }
 
-func (wc *webController) processTgActiveSessions(req *http.Request, w http.ResponseWriter) {
+func (wc *webController) processTgActiveSessions(w http.ResponseWriter, req *http.Request) {
 	sessions, err := libs.AS.Get(currentAcc).TdApi.GetActiveSessions()
 	if err != nil {
 		fmt.Printf("Get sessions error: %s", err)
@@ -63,7 +61,9 @@ func (wc *webController) processTgActiveSessions(req *http.Request, w http.Respo
 	renderTemplates(req, w, data, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/sessions_list.gohtml`)
 }
 
-func (wc *webController) processTgSingleMessage(chatId int64, messageId int64, req *http.Request, w http.ResponseWriter) {
+func (wc *webController) processTgSingleMessage(w http.ResponseWriter, req *http.Request) {
+	chatId, _ := strconv.ParseInt(req.PathValue("chat_id"), 10, 64)
+	messageId, _ := strconv.ParseInt(req.PathValue("message_id"), 10, 64)
 
 	message, err := libs.AS.Get(currentAcc).TdApi.GetMessage(chatId, messageId)
 	if err != nil {
@@ -128,7 +128,8 @@ func (wc *webController) processTgMessagesByIds(chatId int64, req *http.Request,
 	renderTemplates(req, w, res, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/chat_history_filtered.gohtml`, `templates/messages_list.gohtml`, `templates/message.gohtml`)
 }
 
-func (wc *webController) processTgChatInfo(chatId int64, req *http.Request, w http.ResponseWriter) {
+func (wc *webController) processTgChatInfo(w http.ResponseWriter, req *http.Request) {
+	chatId, _ := strconv.ParseInt(req.PathValue("chat_id"), 10, 64)
 	var chat *client.Chat
 	var err error
 	chat, err = libs.AS.Get(currentAcc).TdApi.GetChat(chatId, false)
@@ -198,7 +199,7 @@ func (wc *webController) processTgChatHistoryOnline(chatId int64, req *http.Requ
 	renderTemplates(req, w, res, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/chat_history_online.gohtml`, `templates/messages_list.gohtml`, `templates/message.gohtml`)
 }
 
-func (wc *webController) processTgChatList(req *http.Request, w http.ResponseWriter) {
+func (wc *webController) processTgChatList(w http.ResponseWriter, req *http.Request) {
 	refresh := false
 	if req.FormValue("refresh") == "1" {
 		refresh = true
@@ -341,11 +342,16 @@ func (wc *webController) processTgChatList(req *http.Request, w http.ResponseWri
 	renderTemplates(req, w, res, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/overview_table.gohtml`, `templates/chatlist.gohtml`)
 }
 
-func (wc *webController) processTgDelete(chatId int64, req *http.Request, w http.ResponseWriter) {
+func (wc *webController) processTgDelete(w http.ResponseWriter, req *http.Request) {
+	chatId, err := strconv.ParseInt(req.PathValue("chat_id"), 10, 64)
+	if chatId == 0 || err != nil {
+		errorResponse(structs.WebError{T: "Not found", Error: req.URL.Path}, 404, req, w)
+		return
+	}
 
 	pattern := req.FormValue("pattern")
 	if pattern == "" || len(pattern) < 3 {
-		wc.errorResponse(structs.WebError{T: "Invalid pattern", Error: pattern}, 503, req, w)
+		errorResponse(structs.WebError{T: "Invalid pattern", Error: pattern}, 503, req, w)
 
 		return
 	}
@@ -401,7 +407,7 @@ func (wc *webController) processTgDelete(chatId int64, req *http.Request, w http
 	w.Write(data)
 }
 
-func (wc *webController) processSettings(req *http.Request, w http.ResponseWriter) {
+func (wc *webController) processSettings(w http.ResponseWriter, req *http.Request) {
 	var res structs.IgnoreLists
 	if req.Method == "POST" {
 		//@TODO: VALIDATE FORM DATA!! Only int acceptable as chat ID, only valid names for folders
@@ -453,7 +459,7 @@ func (wc *webController) processSettings(req *http.Request, w http.ResponseWrite
 
 var st = structs.NewAccountState{}
 
-func (wc *webController) processAddAccount(req *http.Request, w http.ResponseWriter) {
+func (wc *webController) processAddAccount(w http.ResponseWriter, req *http.Request) {
 
 	if tdAccount.CurrentAuthorizingAcc == nil && req.Method == "GET" {
 		st = structs.NewAccountState{}
@@ -511,18 +517,18 @@ func (wc *webController) processAddAccount(req *http.Request, w http.ResponseWri
 	}
 }
 
-func (wc *webController) processTgLink(req *http.Request, w http.ResponseWriter) {
+func (wc *webController) processTgLink(w http.ResponseWriter, req *http.Request) {
 	var link string
 	if req.FormValue("link") != "" {
 		link = req.FormValue("link")
 	} else {
-		wc.errorResponse(structs.WebError{T: "Bad request", Error: "Invalid link"}, 400, req, w)
+		errorResponse(structs.WebError{T: "Bad request", Error: "Invalid link"}, 400, req, w)
 		return
 	}
 
 	linkInfo, LinkData, err := libs.AS.Get(currentAcc).TdApi.GetLinkInfo(link)
 	if err != nil {
-		wc.errorResponse(structs.WebError{T: "Bad request", Error: err.Error()}, 400, req, w)
+		errorResponse(structs.WebError{T: "Bad request", Error: err.Error()}, 400, req, w)
 		return
 	}
 	respStruct := struct {
@@ -535,7 +541,33 @@ func (wc *webController) processTgLink(req *http.Request, w http.ResponseWriter)
 	renderTemplates(req, w, respStruct, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/link_info.gohtml`)
 }
 
-func (wc *webController) errorResponse(error structs.WebError, code int, req *http.Request, w http.ResponseWriter) {
-	w.WriteHeader(code)
-	renderTemplates(req, w, error, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/error.gohtml`)
+func (wc *webController) processFile(res http.ResponseWriter, req *http.Request) {
+	if tryFile(req, res) {
+		return
+	}
+
+	fileId := req.PathValue("file_id")
+	file, err := libs.AS.Get(currentAcc).TdApi.DownloadFileByRemoteId(fileId)
+
+	if err != nil {
+		errorResponse(structs.WebError{T: "Attachment error", Error: err.Error()}, 502, req, res)
+
+		return
+	}
+	if verbose {
+		renderTemplates(req, res, file)
+
+		return
+	}
+	if file.Local.Path != "" {
+		res.Header().Add("X-Local-path", base64.StdEncoding.EncodeToString([]byte(file.Local.Path)))
+		http.ServeFile(res, req, file.Local.Path)
+
+		return
+	}
+
+	errorResponse(structs.WebError{T: "Invalid file", Error: file.Extra}, 504, req, res)
+
+	return
+
 }
