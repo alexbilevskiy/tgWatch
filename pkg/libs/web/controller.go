@@ -6,7 +6,6 @@ import (
 	"github.com/alexbilevskiy/tgWatch/pkg/consts"
 	"github.com/alexbilevskiy/tgWatch/pkg/libs"
 	"github.com/alexbilevskiy/tgWatch/pkg/libs/helpers"
-	"github.com/alexbilevskiy/tgWatch/pkg/libs/mongo"
 	"github.com/alexbilevskiy/tgWatch/pkg/libs/tdlib"
 	"github.com/alexbilevskiy/tgWatch/pkg/libs/tdlib/tdAccount"
 	"github.com/zelenin/go-tdlib/client"
@@ -426,57 +425,6 @@ func (wc *webController) processTgDelete(w http.ResponseWriter, req *http.Reques
 	}
 	data := []byte(fmt.Sprintf("Deleted from chat %d `%s`", chatId, pattern))
 	w.Write(data)
-}
-
-func (wc *webController) processSettings(w http.ResponseWriter, req *http.Request) {
-	var res mongo.IgnoreLists
-	currentAcc := req.Context().Value("current_acc").(int64)
-	if req.Method == "POST" {
-		//@TODO: VALIDATE FORM DATA!! Only int acceptable as chat ID, only valid names for folders
-		IgnoreChatIds := make(map[string]bool, 0)
-		if _, ok := req.PostForm["ignoreChatIds"]; ok {
-			for _, chatId := range req.PostForm["ignoreChatIds"] {
-				if chatId == "" {
-					continue
-				}
-				IgnoreChatIds[chatId] = true
-			}
-		}
-		IgnoreAuthorIds := make(map[string]bool, 0)
-		if _, ok := req.PostForm["ignoreAuthorIds"]; ok {
-			for _, authorId := range req.PostForm["ignoreAuthorIds"] {
-				if authorId == "" {
-					continue
-				}
-				IgnoreAuthorIds[authorId] = true
-			}
-		}
-		IgnoreFolders := make(map[string]bool, 0)
-		if _, ok := req.PostForm["ignoreFolders"]; ok {
-			for _, folder := range req.PostForm["ignoreFolders"] {
-				if folder == "" {
-					continue
-				}
-				IgnoreFolders[folder] = true
-			}
-		}
-		il := mongo.IgnoreLists{
-			T:               "ignore_lists",
-			IgnoreChatIds:   IgnoreChatIds,
-			IgnoreAuthorIds: IgnoreAuthorIds,
-			IgnoreFolders:   IgnoreFolders,
-		}
-		libs.AS.Get(currentAcc).TdApi.GetStorage().SaveSettings(il)
-		res = libs.AS.Get(currentAcc).TdApi.GetStorage().GetSettings()
-		res.T = "Settings"
-		http.Redirect(w, req, "/s", 302)
-		return
-	} else {
-		res = libs.AS.Get(currentAcc).TdApi.GetStorage().GetSettings()
-		res.T = "Settings"
-	}
-
-	renderTemplates(req, w, res, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/settings.gohtml`)
 }
 
 func (wc *webController) processAddAccount(w http.ResponseWriter, req *http.Request) {

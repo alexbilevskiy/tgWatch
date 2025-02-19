@@ -35,7 +35,6 @@ func InitWeb() {
 	mux.Handle("/l", middleware(http.HandlerFunc(controller.processTgChatList)))
 	mux.Handle("/li", middleware(http.HandlerFunc(controller.processTgLink)))
 	mux.Handle("/c/{chat_id}", middleware(http.HandlerFunc(controller.processTgChatInfo)))
-	mux.Handle("/s", middleware(http.HandlerFunc(controller.processSettings)))
 	mux.Handle("/f/{file_id}", middleware(http.HandlerFunc(controller.processFile)))
 	mux.Handle("/delete/{chat_id}", middleware(http.HandlerFunc(controller.processTgDelete)))
 	mux.HandleFunc("/new", controller.processAddAccount)

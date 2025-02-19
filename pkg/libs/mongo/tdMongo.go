@@ -15,24 +15,6 @@ type TdMongo struct {
 	chatFiltersColl *mongo.Collection
 	chatListColl    *mongo.Collection
 	settingsColl    *mongo.Collection
-	settings        IgnoreLists
-}
-
-type TdStorageInterface interface {
-	Init(DbPrefix string, Phone string)
-	DeleteChatFolder(folderId int32) (*mongo.DeleteResult, error)
-	ClearChatFilters()
-	LoadChatFolders() []ChatFilter
-	GetSettings() IgnoreLists
-
-	SaveChatFolder(chatFolder *client.ChatFolder, folderInfo *client.ChatFolderInfo)
-	SaveAllChatPositions(chatId int64, positions []*client.ChatPosition)
-	SaveChatPosition(chatId int64, chatPosition *client.ChatPosition)
-
-	GetSavedChats(listId int32) []ChatPosition
-
-	loadSettings()
-	SaveSettings(il IgnoreLists)
 }
 
 func (m *TdMongo) Init(DbPrefix string, Phone string) {
@@ -42,7 +24,6 @@ func (m *TdMongo) Init(DbPrefix string, Phone string) {
 	m.chatListColl = mongoClient.Database(db).Collection("chatList")
 	m.settingsColl = mongoClient.Database(db).Collection("settings")
 
-	m.loadSettings()
 	m.LoadChatFolders()
 }
 
@@ -165,53 +146,9 @@ func (m *TdMongo) LoadChatFolders() []ChatFilter {
 	return fi
 }
 
-func (m *TdMongo) loadSettings() {
-	crit := bson.D{{"t", "ignore_lists"}}
-	ignoreListsDoc := m.settingsColl.FindOne(mongoContext, crit)
-	var il IgnoreLists
-	if ignoreListsDoc.Err() == mongo.ErrNoDocuments {
-		log.Printf("No ignore lists in DB!")
-		il = IgnoreLists{
-			T:               "ignore_lists",
-			IgnoreAuthorIds: make(map[string]bool),
-			IgnoreChatIds:   make(map[string]bool),
-			IgnoreFolders:   make(map[string]bool),
-		}
-		m.settings = il
-		return
-	}
-
-	err := ignoreListsDoc.Decode(&il)
-	if err != nil {
-		log.Fatalf("Cannot load ignore lists: %s", err.Error())
-	}
-	log.Printf("Loaded settings OK!")
-
-	m.settings = il
-}
-
-func (m *TdMongo) GetSettings() IgnoreLists {
-	//@TODO: how to check empty struct?
-	if m.settings.IgnoreAuthorIds == nil {
-		m.loadSettings()
-	}
-
-	return m.settings
-}
-
-func (m *TdMongo) SaveSettings(il IgnoreLists) {
-	crit := bson.D{{"t", "ignore_lists"}}
-	update := bson.D{{"$set", il}}
-	t := true
-	opts := &options.UpdateOptions{Upsert: &t}
-	_, err := m.settingsColl.UpdateOne(mongoContext, crit, update, opts)
-	if err != nil {
-		fmt.Printf("Failed to save ignoreLists: %s", err)
-	}
-}
-
-func (m *TdMongo) DeleteChatFolder(folderId int32) (*mongo.DeleteResult, error) {
+func (m *TdMongo) DeleteChatFolder(folderId int32) (int64, error) {
 	crit := bson.D{{"listid", folderId}}
+	d, err := m.chatListColl.DeleteMany(mongoContext, crit)
 
-	return m.chatListColl.DeleteMany(mongoContext, crit)
+	return d.DeletedCount, err
 }

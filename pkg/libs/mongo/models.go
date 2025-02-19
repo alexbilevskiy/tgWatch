@@ -12,10 +12,3 @@ type ChatPosition struct {
 	Order    int64
 	IsPinned bool
 }
-
-type IgnoreLists struct {
-	T               string
-	IgnoreChatIds   map[string]bool
-	IgnoreAuthorIds map[string]bool
-	IgnoreFolders   map[string]bool
-}

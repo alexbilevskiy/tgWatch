@@ -13,66 +13,29 @@ import (
 )
 
 type TdApi struct {
-	tdApiInterface
 	m            sync.RWMutex
 	dbData       *mongo.DbAccountData
 	localChats   map[int64]*client.Chat
 	chatFolders  []mongo.ChatFilter
 	tdlibClient  *client.Client
-	db           *mongo.TdMongo
+	db           TdStorageInterface
 	sentMessages sync.Map
 }
 
-type tdApiInterface interface {
-	Init(dbData *mongo.DbAccountData, tdlibClient *client.Client, tdMongo *mongo.TdMongo)
-	ListenUpdates()
-	Close()
+type TdStorageInterface interface {
+	Init(DbPrefix string, Phone string)
+	DeleteChatFolder(folderId int32) (int64, error)
+	ClearChatFilters()
+	LoadChatFolders() []mongo.ChatFilter
 
-	GetChat(chatId int64, force bool) (*client.Chat, error)
-	GetUser(userId int64) (*client.User, error)
-	GetSuperGroup(sgId int64) (*client.Supergroup, error)
-	GetBasicGroup(groupId int64) (*client.BasicGroup, error)
-	GetGroupsInCommon(userId int64) (*client.Chats, error)
-	DownloadFile(id int32) (*client.File, error)
-	DownloadFileByRemoteId(id string) (*client.File, error)
-	GetLink(chatId int64, messageId int64) string
-	AddChatsToFolder(chats []int64, folder int32) error
-	SendMessage(text string, chatId int64, replyToMessageId *int64)
-	GetLinkInfo(link string) (client.InternalLinkType, interface{}, error)
-	GetMessage(chatId int64, messageId int64) (*client.Message, error)
-	LoadChatHistory(chatId int64, fromMessageId int64, offset int32) (*client.Messages, error)
-	MarkJoinAsRead(chatId int64, messageId int64)
-	GetTdlibOption(optionName string) (client.OptionValue, error)
-	GetActiveSessions() (*client.Sessions, error)
-	GetChatHistory(chatId int64, lastId int64) (*client.Messages, error)
-	DeleteMessages(chatId int64, messageIds []int64) (*client.Ok, error)
-	GetChatMember(chatId int64) (*client.ChatMember, error)
-	GetScheduledMessages(chatId int64) (*client.Messages, error)
-	ScheduleForwardedMessage(targetChatId int64, fromChatId int64, messageIds []int64, sendAtDate int32, sendCopy bool) (*client.Messages, error)
+	SaveChatFolder(chatFolder *client.ChatFolder, folderInfo *client.ChatFolderInfo)
+	SaveAllChatPositions(chatId int64, positions []*client.ChatPosition)
+	SaveChatPosition(chatId int64, chatPosition *client.ChatPosition)
 
-	GetSenderName(sender client.MessageSender) string
-	GetSenderObj(sender client.MessageSender) (interface{}, error)
-	GetChatName(chatId int64) string
-	GetChatUsername(chatId int64) string
-
-	SaveChatFilters(chatFoldersUpdate *client.UpdateChatFolders)
-	SaveChatAddedToList(upd *client.UpdateChatAddedToList)
-	RemoveChatRemovedFromList(upd *client.UpdateChatRemovedFromList)
-	LoadChatsList(listId int32)
-	GetChatFolders() []mongo.ChatFilter
-	GetLocalChats() map[int64]*client.Chat
-
-	GetStorage() *mongo.TdMongo
-
-	checkSkippedChat(chatId string) bool
-	checkChatFilter(chatId int64) bool
-	getChatFolder(folderId int32) (*client.ChatFolder, error)
-
-	markAsRead(chatId int64, messageId int64) error
-	cacheChat(chat *client.Chat)
+	GetSavedChats(listId int32) []mongo.ChatPosition
 }
 
-func (t *TdApi) Init(dbData *mongo.DbAccountData, tdlibClient *client.Client, tdMongo *mongo.TdMongo) {
+func (t *TdApi) Init(dbData *mongo.DbAccountData, tdlibClient *client.Client, tdMongo TdStorageInterface) {
 
 	//var x tdApiInterface
 	//var y TdApi
@@ -461,7 +424,7 @@ func (t *TdApi) LoadChatsList(listId int32) {
 	if err != nil {
 		log.Printf("failed to delete chats by list %d: %s\n", listId, err.Error())
 	} else {
-		log.Printf("deleted %d chats by listid %d because refresh was called\n", d.DeletedCount, listId)
+		log.Printf("deleted %d chats by listid %d because refresh was called\n", d, listId)
 	}
 
 	switch listId {
@@ -505,33 +468,6 @@ func (t *TdApi) LoadChatsList(listId int32) {
 			Source:   nil,
 		})
 	}
-}
-
-func (t *TdApi) checkSkippedChat(chatId string) bool {
-	if _, ok := t.db.GetSettings().IgnoreAuthorIds[chatId]; ok {
-
-		return true
-	}
-	if _, ok := t.db.GetSettings().IgnoreChatIds[chatId]; ok {
-
-		return true
-	}
-
-	return false
-}
-
-func (t *TdApi) checkChatFilter(chatId int64) bool {
-	for _, filter := range t.chatFolders {
-		for _, chatInFilter := range filter.IncludedChats {
-			if chatInFilter == chatId && t.db.GetSettings().IgnoreFolders[filter.Title] {
-				//log.Printf("Skip chat %d because it's in skipped folder %s", chatId, filter.Title)
-
-				return true
-			}
-		}
-	}
-
-	return false
 }
 
 func (t *TdApi) SaveChatFilters(chatFoldersUpdate *client.UpdateChatFolders) {
@@ -750,7 +686,7 @@ func (t *TdApi) EditMessageSchedulingState(chatId int64, messageId int64, schedu
 	return t.tdlibClient.EditMessageSchedulingState(req)
 }
 
-func (t *TdApi) GetStorage() *mongo.TdMongo {
+func (t *TdApi) GetStorage() TdStorageInterface {
 	//@TODO: mutex?
 	return t.db
 }

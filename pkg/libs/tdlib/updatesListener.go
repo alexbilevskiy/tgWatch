@@ -6,7 +6,6 @@ import (
 	"github.com/alexbilevskiy/tgWatch/pkg/libs/modules"
 	"github.com/zelenin/go-tdlib/client"
 	"log"
-	"strconv"
 	"time"
 )
 
@@ -180,16 +179,6 @@ func (t *TdApi) ListenUpdates() {
 
 			case client.TypeUpdateNewMessage:
 				upd := update.(*client.UpdateNewMessage)
-				if t.checkSkippedChat(strconv.FormatInt(upd.Message.ChatId, 10)) || t.checkSkippedChat(strconv.FormatInt(GetChatIdBySender(upd.Message.SenderId), 10)) || t.checkChatFilter(upd.Message.ChatId) {
-
-					break
-				}
-				//senderChatId := GetChatIdBySender(upd.Message.Sender)
-				//mongoId := SaveUpdate(t, upd, upd.Message.Date)
-				//link := GetLink(tdlibClient, upd.Message.ChatId, upd.Message.Id)
-				//chatName := GetChatName(upd.Message.ChatId)
-				//intLink := fmt.Sprintf("http://%s/m/%d/%d", config.Config.WebListen, upd.Message.ChatId, upd.Message.Id)
-				//log.Printf("[%s] New Message from chat: %d, `%s`, %s, %s", mongoId, upd.Message.ChatId, chatName, link, intLink)
 				if upd.Message.Content.MessageContentType() == client.TypeMessageChatAddMembers ||
 					upd.Message.Content.MessageContentType() == client.TypeMessageChatJoinByLink {
 					t.MarkJoinAsRead(upd.Message.ChatId, upd.Message.Id)
@@ -199,35 +188,17 @@ func (t *TdApi) ListenUpdates() {
 
 			case client.TypeUpdateMessageEdited:
 				upd := update.(*client.UpdateMessageEdited)
-				if t.checkSkippedChat(strconv.FormatInt(upd.ChatId, 10)) || t.checkChatFilter(upd.ChatId) {
-
-					break
-				}
 				if upd.ReplyMarkup != nil {
 					//messages with buttons - reactions, likes etc
 					break
 				}
 
-				//mongoId := SaveUpdate(t, upd, upd.EditDate)
-				//link := GetLink(tdlibClient, upd.ChatId, upd.MessageId)
-				//chatName := GetChatName(upd.ChatId)
-				//intLink := fmt.Sprintf("http://%s/m/%d/%d", config.Config.WebListen, upd.ChatId, upd.MessageId)
-				//log.Printf("[%s] EDITED msg! Chat: %d, msg %d, `%s`, %s, %s", mongoId, upd.ChatId, upd.MessageId, chatName, link, intLink)
-
 			case client.TypeUpdateMessageContent:
 				upd := update.(*client.UpdateMessageContent)
-				if t.checkSkippedChat(strconv.FormatInt(upd.ChatId, 10)) || t.checkChatFilter(upd.ChatId) {
-
-					break
-				}
 				if upd.NewContent.MessageContentType() == client.TypeMessagePoll {
 					//dont save "poll" updates - that's just counters, users cannot update polls manually
 					break
 				}
-				//link := t.GetLink(upd.ChatId, upd.MessageId)
-				//chatName := t.GetChatName(upd.ChatId)
-				//intLink := fmt.Sprintf("http://%s/m/%d/%d", config.Config.WebListen, upd.ChatId, upd.MessageId)
-				//fmt.Printf("EDITED content! Chat: %d, msg %d, %s, %s, %s", upd.ChatId, upd.MessageId, chatName, link, intLink))
 
 				modules.CustomMessageContentRoutine(t.dbData.Id, t.tdlibClient, upd)
 
