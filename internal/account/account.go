@@ -1,9 +1,9 @@
 package account
 
 import (
+	"github.com/alexbilevskiy/tgWatch/internal/config"
 	"github.com/alexbilevskiy/tgWatch/internal/db"
 	"github.com/alexbilevskiy/tgWatch/internal/tdlib"
-	"github.com/alexbilevskiy/tgWatch/internal/tdlib/tdAccount"
 	"github.com/zelenin/go-tdlib/client"
 )
 
@@ -56,9 +56,9 @@ type tdApiInterface interface {
 	GetStorage() tdlib.TdStorageInterface
 }
 
-func NewAccount(tdMongo *db.TdMongo, dbData *db.DbAccountData) *Account {
-	tdlibClient, me := tdAccount.RunTdlib(dbData)
-	tdApi := tdlib.NewTdApi(dbData, tdlibClient, tdMongo)
+func NewAccount(cfg *config.Config, tdMongo *db.TdMongo, dbData *db.DbAccountData) *Account {
+	tdApi := tdlib.NewTdApi(cfg, dbData, tdMongo)
+	me := tdApi.RunTdlib()
 
 	acc := &Account{
 		Username: tdlib.GetUsername(me.Usernames),

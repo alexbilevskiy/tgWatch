@@ -5,28 +5,28 @@ import (
 	"sync"
 	"time"
 
+	"github.com/alexbilevskiy/tgWatch/internal/config"
 	"github.com/alexbilevskiy/tgWatch/internal/consts"
 	"github.com/alexbilevskiy/tgWatch/internal/db"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var AS AccountStore
-
-type AccountStore struct {
+type AccountsStore struct {
+	cfg         *config.Config
 	storage     *db.AccountsStorage
 	mongoClient *mongo.Client
-	accounts    sync.Map
+	accounts    *sync.Map
 }
 
-func NewAccountsStore(mongoClient *mongo.Client, as *db.AccountsStorage) *AccountStore {
-	return &AccountStore{storage: as, mongoClient: mongoClient, accounts: sync.Map{}}
+func NewAccountsStore(cfg *config.Config, mongoClient *mongo.Client, as *db.AccountsStorage) *AccountsStore {
+	return &AccountsStore{cfg: cfg, storage: as, mongoClient: mongoClient, accounts: &sync.Map{}}
 }
 
-func (as *AccountStore) Put(id int64, acc *Account) {
+func (as *AccountsStore) Put(id int64, acc *Account) {
 	as.accounts.Store(id, acc)
 }
 
-func (as *AccountStore) Get(accId int64) *Account {
+func (as *AccountsStore) Get(accId int64) *Account {
 	acc, ok := as.accounts.Load(accId)
 	if !ok {
 		return nil
@@ -35,17 +35,17 @@ func (as *AccountStore) Get(accId int64) *Account {
 	return acc.(*Account)
 }
 
-func (as *AccountStore) Delete(accId int64) {
+func (as *AccountsStore) Delete(accId int64) {
 
 	as.accounts.Delete(accId)
 }
 
-func (as *AccountStore) Range(f func(key any, value any) bool) {
+func (as *AccountsStore) Range(f func(key any, value any) bool) {
 
 	as.accounts.Range(f)
 }
 
-func (as *AccountStore) RunOne(phone string) {
+func (as *AccountsStore) RunOne(phone string) {
 	accounts := as.storage.LoadAccounts(phone)
 	for _, mongoAcc := range accounts {
 		if mongoAcc.Status != consts.AccStatusActive {
@@ -54,22 +54,22 @@ func (as *AccountStore) RunOne(phone string) {
 		}
 		log.Printf("create Account %d", mongoAcc.Id)
 		tdm := db.NewTdMongo(as.mongoClient, mongoAcc.DbPrefix, mongoAcc.Phone)
-		acc := NewAccount(tdm, mongoAcc)
-		AS.Put(mongoAcc.Id, acc)
-		AS.Get(mongoAcc.Id).Run()
+		acc := NewAccount(as.cfg, tdm, mongoAcc)
+		as.Put(mongoAcc.Id, acc)
+		as.Get(mongoAcc.Id).Run()
 	}
 }
 
-func (as *AccountStore) Run() {
+func (as *AccountsStore) Run() {
 	for {
 		accounts := as.storage.LoadAccounts("")
 		for _, mongoAcc := range accounts {
-			if AS.Get(mongoAcc.Id) != nil {
+			if as.Get(mongoAcc.Id) != nil {
 				if mongoAcc.Status != consts.AccStatusActive {
 					//not implemented actually. No one updates status to non-active axcept when upating manually in DB
 					log.Printf("need to stop Account %d, because it became active: `%s`", mongoAcc.Id, mongoAcc.Status)
-					AS.Get(mongoAcc.Id).TdApi.Close()
-					AS.Delete(mongoAcc.Id)
+					as.Get(mongoAcc.Id).TdApi.Close()
+					as.Delete(mongoAcc.Id)
 				} else {
 					//already running
 				}
@@ -81,9 +81,9 @@ func (as *AccountStore) Run() {
 			}
 			log.Printf("create Account %d", mongoAcc.Id)
 			tdm := db.NewTdMongo(as.mongoClient, mongoAcc.DbPrefix, mongoAcc.Phone)
-			acc := NewAccount(tdm, mongoAcc)
-			AS.Put(mongoAcc.Id, acc)
-			AS.Get(mongoAcc.Id).Run()
+			acc := NewAccount(as.cfg, tdm, mongoAcc)
+			as.Put(mongoAcc.Id, acc)
+			as.Get(mongoAcc.Id).Run()
 		}
 		time.Sleep(5 * time.Second)
 	}

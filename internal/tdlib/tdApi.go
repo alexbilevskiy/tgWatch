@@ -5,16 +5,20 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"path/filepath"
 	"sync"
 	"time"
 
+	"github.com/alexbilevskiy/tgWatch/internal/config"
 	"github.com/alexbilevskiy/tgWatch/internal/consts"
 	"github.com/alexbilevskiy/tgWatch/internal/db"
+	"github.com/alexbilevskiy/tgWatch/internal/helpers"
 	"github.com/zelenin/go-tdlib/client"
 )
 
 type TdApi struct {
 	m            sync.RWMutex
+	cfg          *config.Config
 	dbData       *db.DbAccountData
 	localChats   map[int64]*client.Chat
 	chatFolders  []db.ChatFilter
@@ -35,9 +39,10 @@ type TdStorageInterface interface {
 	GetSavedChats(listId int32) []db.ChatPosition
 }
 
-func NewTdApi(dbData *db.DbAccountData, tdlibClient *client.Client, tdMongo TdStorageInterface) *TdApi {
-	t := &TdApi{}
-	t.tdlibClient = tdlibClient
+func NewTdApi(cfg *config.Config, dbData *db.DbAccountData, tdMongo TdStorageInterface) *TdApi {
+	t := &TdApi{
+		cfg: cfg,
+	}
 	t.db = tdMongo
 	t.dbData = dbData
 
@@ -47,6 +52,65 @@ func NewTdApi(dbData *db.DbAccountData, tdlibClient *client.Client, tdMongo TdSt
 	t.sentMessages = sync.Map{}
 
 	return t
+}
+
+func (t *TdApi) RunTdlib() *client.User {
+	tdlibParameters := createTdlibParameters(t.cfg, t.dbData.DataDir)
+	authorizer := ClientAuthorizer(tdlibParameters)
+	authParams := make(chan string)
+	go ChanInteractor(authorizer, t.dbData.Phone, authParams)
+
+	logVerbosity := client.WithLogVerbosity(&client.SetLogVerbosityLevelRequest{
+		NewVerbosityLevel: 1,
+	})
+	//client.WithCatchTimeout(60)
+
+	tdlibClient, err := client.NewClient(authorizer, logVerbosity)
+	if err != nil {
+		log.Fatalf("NewClient error: %s", err)
+	}
+
+	optionValue, err := tdlibClient.GetOption(&client.GetOptionRequest{
+		Name: "version",
+	})
+	if err != nil {
+		log.Fatalf("GetOption error: %s", err)
+	}
+
+	log.Printf("TDLib version: %s", optionValue.(*client.OptionValueString).Value)
+
+	me, err := tdlibClient.GetMe()
+	if err != nil {
+		log.Fatalf("GetMe error: %s", err)
+	}
+
+	log.Printf("Me: %s %s [%s]", me.FirstName, me.LastName, GetUsername(me.Usernames))
+
+	//@NOTE: https://github.com/tdlib/td/issues/1005#issuecomment-613839507
+	go func() {
+		//for true {
+		{
+			req := &client.SetOptionRequest{Name: "online", Value: &client.OptionValueBoolean{Value: true}}
+			ok, err := tdlibClient.SetOption(req)
+			if err != nil {
+				log.Printf("failed to set online option: %s", err)
+			} else {
+				log.Printf("Set online status: %s", helpers.JsonMarshalStr(ok))
+			}
+			//time.Sleep(10 * time.Second)
+		}
+	}()
+
+	//req := &client.SetOptionRequest{Name: "ignore_background_updates", Value: &client.OptionValueBoolean{Value: false}}
+	//ok, err := tdlibClient[acc].SetOption(req)
+	//if err != nil {
+	//	log.Printf("failed to set ignore_background_updates option: %s", err)
+	//} else {
+	//	log.Printf("Set ignore_background_updates option: %s", JsonMarshalStr(ok))
+	//}
+	t.tdlibClient = tdlibClient
+
+	return me
 }
 
 func (t *TdApi) GetChat(chatId int64, force bool) (*client.Chat, error) {
@@ -688,7 +752,26 @@ func (t *TdApi) GetStorage() TdStorageInterface {
 	//@TODO: mutex?
 	return t.db
 }
+
 func (t *TdApi) Close() {
 
 	t.tdlibClient.Close()
+}
+
+func createTdlibParameters(cfg *config.Config, dataDir string) *client.SetTdlibParametersRequest {
+	return &client.SetTdlibParametersRequest{
+		UseTestDc:           false,
+		DatabaseDirectory:   filepath.Join(cfg.TDataDir, dataDir, "database"),
+		FilesDirectory:      filepath.Join(cfg.TDataDir, dataDir, "files"),
+		UseFileDatabase:     true,
+		UseChatInfoDatabase: true,
+		UseMessageDatabase:  true,
+		UseSecretChats:      false,
+		ApiId:               cfg.ApiId,
+		ApiHash:             cfg.ApiHash,
+		SystemLanguageCode:  "en",
+		DeviceModel:         "Linux",
+		SystemVersion:       "1.0.0",
+		ApplicationVersion:  "1.0.0",
+	}
 }

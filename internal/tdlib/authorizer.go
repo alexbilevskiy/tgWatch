@@ -1,4 +1,4 @@
-package tdAccount
+package tdlib
 
 import (
 	"log"

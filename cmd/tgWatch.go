@@ -34,7 +34,8 @@ func main() {
 		log.Fatalf("Invalid argument")
 	}
 	astorage := db.NewAccountsStorage(cfg, mongoClient)
-	astore := account.NewAccountsStore(mongoClient, astorage)
+	astore := account.NewAccountsStore(cfg, mongoClient, astorage)
+	creator := tdlib.NewAccountCreator(cfg, astorage)
 
 	if phone == "" {
 		go astore.Run()
@@ -44,7 +45,7 @@ func main() {
 
 	log.Printf("starting web server...")
 
-	web.InitWeb(cfg)
+	web.InitWeb(cfg, astore, creator)
 
 	select {}
 }
