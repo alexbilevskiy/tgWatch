@@ -190,8 +190,12 @@ func (t *TdApi) DownloadFileByRemoteId(id string) (*client.File, error) {
 	return t.DownloadFile(remoteFile.Id)
 }
 
-func (t *TdApi) GetCustomEmoji(customEmojisIds []client.JsonInt64) (*client.Stickers, error) {
-	customEmojisReq := client.GetCustomEmojiStickersRequest{CustomEmojiIds: customEmojisIds}
+func (t *TdApi) GetCustomEmoji(customEmojisIds []int64) (*client.Stickers, error) {
+	customEmojisIdsJson := make([]client.JsonInt64, 0)
+	for _, id := range customEmojisIds {
+		customEmojisIdsJson = append(customEmojisIdsJson, client.JsonInt64(id))
+	}
+	customEmojisReq := client.GetCustomEmojiStickersRequest{CustomEmojiIds: customEmojisIdsJson}
 	customEmojis, err := t.tdlibClient.GetCustomEmojiStickers(&customEmojisReq)
 	if err != nil {
 		return nil, errors.New("custom emoji error: " + err.Error())

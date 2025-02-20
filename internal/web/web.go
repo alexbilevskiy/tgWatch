@@ -39,6 +39,7 @@ func InitWeb(cfg *config.Config, astore *account.AccountsStore, creator *tdlib.A
 	mux.Handle("/li", asm.middleware(true, http.HandlerFunc(controller.processTgLink)))
 	mux.Handle("/c/{chat_id}", asm.middleware(true, http.HandlerFunc(controller.processTgChatInfo)))
 	mux.Handle("/f/{file_id}", asm.middleware(true, http.HandlerFunc(controller.processFile)))
+	mux.Handle("/e/{emoji_id}", asm.middleware(true, http.HandlerFunc(controller.processCustomEmoji)))
 	mux.Handle("/delete/{chat_id}", asm.middleware(true, http.HandlerFunc(controller.processTgDelete)))
 	mux.Handle("/new", asm.middleware(false, http.HandlerFunc(controller.processAddAccount)))
 

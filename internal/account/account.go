@@ -39,7 +39,7 @@ type tdApiInterface interface {
 	GetChatMember(chatId int64) (*client.ChatMember, error)
 	GetScheduledMessages(chatId int64) (*client.Messages, error)
 	ScheduleForwardedMessage(targetChatId int64, fromChatId int64, messageIds []int64, sendAtDate int32, sendCopy bool) (*client.Messages, error)
-	GetCustomEmoji(customEmojisIds []client.JsonInt64) (*client.Stickers, error)
+	GetCustomEmoji(customEmojisIds []int64) (*client.Stickers, error)
 
 	GetSenderName(sender client.MessageSender) string
 	GetSenderObj(sender client.MessageSender) (interface{}, error)

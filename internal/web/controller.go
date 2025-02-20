@@ -518,12 +518,34 @@ func (wc *webController) processTgLink(w http.ResponseWriter, req *http.Request)
 	renderTemplates(req, w, respStruct, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/link_info.gohtml`)
 }
 
+func (wc *webController) processCustomEmoji(res http.ResponseWriter, req *http.Request) {
+	currentAcc := req.Context().Value("current_acc").(*account.Account)
+	emojiId, err := strconv.ParseInt(req.PathValue("emoji_id"), 10, 64)
+	if emojiId == 0 || err != nil {
+		errorResponse(WebError{T: "Not found", Error: "missing emoji_id"}, 404, req, res)
+		return
+	}
+	customEmojiIds := make([]int64, 0)
+	customEmojiIds = append(customEmojiIds, emojiId)
+	customEmojis, err := currentAcc.TdApi.GetCustomEmoji(customEmojiIds)
+	if err != nil {
+		errorResponse(WebError{T: "Internal error", Error: err.Error()}, http.StatusInternalServerError, req, res)
+		return
+	}
+	fileId := customEmojis.Stickers[0].Thumbnail.File.Remote.Id
+	wc.processFileById(fileId, res, req)
+}
+
 func (wc *webController) processFile(res http.ResponseWriter, req *http.Request) {
 	if tryFile(req, res) {
 		return
 	}
 
 	fileId := req.PathValue("file_id")
+	wc.processFileById(fileId, res, req)
+}
+
+func (wc *webController) processFileById(fileId string, res http.ResponseWriter, req *http.Request) {
 	file, err := req.Context().Value("current_acc").(*account.Account).TdApi.DownloadFileByRemoteId(fileId)
 
 	if err != nil {
@@ -546,7 +568,6 @@ func (wc *webController) processFile(res http.ResponseWriter, req *http.Request)
 	errorResponse(WebError{T: "Invalid file", Error: file.Extra}, 504, req, res)
 
 	return
-
 }
 
 func (wc *webController) catchAll(w http.ResponseWriter, r *http.Request) {
