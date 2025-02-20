@@ -2,7 +2,8 @@ package tdlib
 
 import (
 	"fmt"
-	"github.com/alexbilevskiy/tgWatch/pkg/config"
+
+	"github.com/alexbilevskiy/tgWatch/internal/config"
 	"github.com/zelenin/go-tdlib/client"
 )
 
@@ -52,9 +53,14 @@ func GetUsername(usernames *client.Usernames) string {
 	return usernames.ActiveUsernames[0]
 }
 
-func LoadOptionsList() {
+func LoadOptionsList() error {
 	var opts map[string]TdlibOption
 	opts = make(map[string]TdlibOption)
-	config.UnmarshalJsonFile("tdlib_options.json", &opts)
+	err := config.UnmarshalJsonFile("tdlib_options.json", &opts)
+	if err != nil {
+		return fmt.Errorf("failed to read tdlib options desc: %w", err)
+	}
 	TdlibOptions = opts
+
+	return nil
 }

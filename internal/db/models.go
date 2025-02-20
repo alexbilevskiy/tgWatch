@@ -1,4 +1,4 @@
-package mongo
+package db
 
 type ChatFilter struct {
 	Id            int32

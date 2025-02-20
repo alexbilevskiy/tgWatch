@@ -1,15 +1,16 @@
 package web
 
 import (
-	"github.com/alexbilevskiy/tgWatch/pkg/config"
-	"github.com/alexbilevskiy/tgWatch/pkg/libs"
 	"net/http"
 	"strconv"
+
+	"github.com/alexbilevskiy/tgWatch/internal/account"
+	"github.com/alexbilevskiy/tgWatch/internal/config"
 )
 
-func InitWeb() {
+func InitWeb(cfg *config.Config) {
 
-	controller := webController{}
+	controller := newWebController(cfg)
 
 	mux := http.NewServeMux()
 
@@ -21,7 +22,7 @@ func InitWeb() {
 	mux.Handle("/as", middleware(http.HandlerFunc(controller.processTgActiveSessions)))
 	mux.Handle("/m/{chat_id}/{message_id}", middleware(http.HandlerFunc(controller.processTgSingleMessage)))
 	mux.Handle("/h", middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		controller.processTgChatHistoryOnline(libs.AS.Get(r.Context().Value("current_acc").(int64)).DbData.Id, r, w)
+		controller.processTgChatHistoryOnline(account.AS.Get(r.Context().Value("current_acc").(int64)).DbData.Id, r, w)
 	})))
 	mux.Handle("/h/{chat_id}", middleware(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		chatId, _ := strconv.ParseInt(req.PathValue("chat_id"), 10, 64)
@@ -40,7 +41,7 @@ func InitWeb() {
 	mux.HandleFunc("/new", controller.processAddAccount)
 
 	server := &http.Server{
-		Addr:    config.Config.WebListen,
+		Addr:    cfg.WebListen,
 		Handler: logging(mux),
 	}
 	go server.ListenAndServe()

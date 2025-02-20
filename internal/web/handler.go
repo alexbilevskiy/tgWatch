@@ -3,13 +3,14 @@ package web
 import (
 	"context"
 	"errors"
-	"github.com/alexbilevskiy/tgWatch/pkg/libs"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/alexbilevskiy/tgWatch/internal/account"
 )
 
 func middleware(next http.Handler) http.Handler {
@@ -85,7 +86,7 @@ func detectAccount(req *http.Request, res http.ResponseWriter) (int64, error) {
 		return -1, errors.New("failed to convert cookie value")
 	}
 
-	if libs.AS.Get(currentAcc) == nil {
+	if account.AS.Get(currentAcc) == nil {
 		return -1, errors.New("account from cookie does not exist")
 	}
 

@@ -1,7 +1,7 @@
 package web
 
 import (
-	"github.com/alexbilevskiy/tgWatch/pkg/libs/tdlib"
+	"github.com/alexbilevskiy/tgWatch/internal/tdlib"
 	"github.com/zelenin/go-tdlib/client"
 )
 

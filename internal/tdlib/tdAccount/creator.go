@@ -1,17 +1,18 @@
 package tdAccount
 
 import (
-	"github.com/alexbilevskiy/tgWatch/pkg/config"
-	"github.com/alexbilevskiy/tgWatch/pkg/consts"
-	"github.com/alexbilevskiy/tgWatch/pkg/libs/helpers"
-	"github.com/alexbilevskiy/tgWatch/pkg/libs/mongo"
-	"github.com/alexbilevskiy/tgWatch/pkg/libs/tdlib"
-	"github.com/zelenin/go-tdlib/client"
 	"log"
 	"path/filepath"
+
+	"github.com/alexbilevskiy/tgWatch/internal/config"
+	"github.com/alexbilevskiy/tgWatch/internal/consts"
+	"github.com/alexbilevskiy/tgWatch/internal/db"
+	"github.com/alexbilevskiy/tgWatch/internal/helpers"
+	"github.com/alexbilevskiy/tgWatch/internal/tdlib"
+	"github.com/zelenin/go-tdlib/client"
 )
 
-func RunTdlib(dbData *mongo.DbAccountData) (*client.Client, *client.User) {
+func RunTdlib(dbData *db.DbAccountData) (*client.Client, *client.User) {
 	tdlibParameters := createTdlibParameters(dbData.DataDir)
 	authorizer := ClientAuthorizer(tdlibParameters)
 	authParams := make(chan string)
@@ -70,19 +71,19 @@ func RunTdlib(dbData *mongo.DbAccountData) (*client.Client, *client.User) {
 }
 
 var AuthParams chan string
-var CurrentAuthorizingAcc *mongo.DbAccountData
+var CurrentAuthorizingAcc *db.DbAccountData
 
 func CreateAccount(phone string) {
-	mongoAcc := mongo.GetSavedAccount(phone)
+	mongoAcc := db.GetSavedAccount(phone)
 	if mongoAcc == nil {
 		log.Printf("Starting new account creation for phone %s", phone)
-		CurrentAuthorizingAcc = &mongo.DbAccountData{
+		CurrentAuthorizingAcc = &db.DbAccountData{
 			Phone:    phone,
 			DataDir:  ".tdlib" + phone,
 			DbPrefix: "tg",
 			Status:   consts.AccStatusNew,
 		}
-		mongo.SaveAccount(CurrentAuthorizingAcc)
+		db.SaveAccount(CurrentAuthorizingAcc)
 	} else {
 		CurrentAuthorizingAcc = mongoAcc
 		if CurrentAuthorizingAcc.Status == consts.AccStatusActive {
@@ -138,7 +139,7 @@ func CreateAccount(phone string) {
 		CurrentAuthorizingAcc.Id = id
 		CurrentAuthorizingAcc.Status = consts.AccStatusActive
 
-		mongo.SaveAccount(CurrentAuthorizingAcc)
+		db.SaveAccount(CurrentAuthorizingAcc)
 
 		if err != nil {
 			log.Printf("failed to close authorizing instance: %s", err.Error())
@@ -151,14 +152,14 @@ func CreateAccount(phone string) {
 func createTdlibParameters(dataDir string) *client.SetTdlibParametersRequest {
 	return &client.SetTdlibParametersRequest{
 		UseTestDc:           false,
-		DatabaseDirectory:   filepath.Join(config.Config.TDataDir, dataDir, "database"),
-		FilesDirectory:      filepath.Join(config.Config.TDataDir, dataDir, "files"),
+		DatabaseDirectory:   filepath.Join(config.Cfg.TDataDir, dataDir, "database"),
+		FilesDirectory:      filepath.Join(config.Cfg.TDataDir, dataDir, "files"),
 		UseFileDatabase:     true,
 		UseChatInfoDatabase: true,
 		UseMessageDatabase:  true,
 		UseSecretChats:      false,
-		ApiId:               config.Config.ApiId,
-		ApiHash:             config.Config.ApiHash,
+		ApiId:               config.Cfg.ApiId,
+		ApiHash:             config.Cfg.ApiHash,
 		SystemLanguageCode:  "en",
 		DeviceModel:         "Linux",
 		SystemVersion:       "1.0.0",

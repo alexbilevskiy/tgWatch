@@ -2,11 +2,12 @@ package tdlib
 
 import (
 	"encoding/json"
-	"github.com/alexbilevskiy/tgWatch/pkg/libs/helpers"
-	"github.com/alexbilevskiy/tgWatch/pkg/libs/modules"
-	"github.com/zelenin/go-tdlib/client"
 	"log"
 	"time"
+
+	"github.com/alexbilevskiy/tgWatch/internal/helpers"
+	"github.com/alexbilevskiy/tgWatch/internal/modules"
+	"github.com/zelenin/go-tdlib/client"
 )
 
 func (t *TdApi) ListenUpdates() {

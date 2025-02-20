@@ -1,9 +1,10 @@
 package modules
 
 import (
-	"github.com/zelenin/go-tdlib/client"
 	"log"
 	"strings"
+
+	"github.com/zelenin/go-tdlib/client"
 )
 
 // @TODO: create some kind of lua integration to allow writing custom message processing plugins without need to recompile
@@ -11,6 +12,8 @@ import (
 var dudeChatId int64 = -1002150910059
 var repostMsgId int64 = 6410335158272
 var myUserId int64 = 118137353
+var tgChatId int64 = 777000
+var myUsername string = "alexbilevskiy"
 
 func sendCoffee(tdlibClient *client.Client, content client.MessageContent) {
 	if content.MessageContentType() != client.TypeMessageText {
@@ -30,8 +33,41 @@ func sendCoffee(tdlibClient *client.Client, content client.MessageContent) {
 	}
 }
 
+func sendTgNotification(acc int64, tdlibClient *client.Client, update *client.UpdateNewMessage) {
+	gcReq := client.GetChatRequest{ChatId: myUserId}
+	_, err := tdlibClient.GetChat(&gcReq)
+	if err != nil {
+		log.Printf("Failed to get chat (%s), trying to create", err.Error())
+
+		srReq := client.SearchPublicChatRequest{Username: myUsername}
+		_, err := tdlibClient.SearchPublicChat(&srReq)
+		if err != nil {
+			log.Printf("Failed to search public chat: %s", err.Error())
+			return
+		}
+		chReq := client.CreatePrivateChatRequest{UserId: myUserId}
+		_, err = tdlibClient.CreatePrivateChat(&chReq)
+		if err != nil {
+			log.Printf("Failed to create private chat: %s", err.Error())
+			return
+		}
+	}
+	req := client.SendMessageRequest{ChatId: myUserId, InputMessageContent: &client.InputMessageText{Text: &client.FormattedText{Text: "got new message from tg"}}}
+	_, err = tdlibClient.SendMessage(&req)
+	if err != nil {
+		log.Printf("Failed to notify: %s", err.Error())
+		return
+	}
+	log.Printf("[%d] New notification from tg: %d", acc, update.Message.Id)
+
+}
+
 func CustomNewMessageRoutine(acc int64, tdlibClient *client.Client, update *client.UpdateNewMessage) {
 	if acc != myUserId {
+		if update.Message.ChatId == tgChatId {
+			sendTgNotification(acc, tdlibClient, update)
+		}
+
 		return
 	}
 

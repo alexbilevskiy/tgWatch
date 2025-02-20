@@ -3,10 +3,10 @@ package web
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/alexbilevskiy/tgWatch/pkg/config"
-	"github.com/alexbilevskiy/tgWatch/pkg/libs/helpers"
-	"github.com/zelenin/go-tdlib/client"
 	"log"
+
+	"github.com/alexbilevskiy/tgWatch/internal/helpers"
+	"github.com/zelenin/go-tdlib/client"
 )
 
 func GetContentWithText(content client.MessageContent, chatId int64) MessageTextContent {
@@ -118,7 +118,7 @@ func GetContentAttachments(content client.MessageContent) []MessageAttachment {
 			s.Thumb = base64.StdEncoding.EncodeToString(msg.Photo.Minithumbnail.Data)
 		}
 		for _, size := range msg.Photo.Sizes {
-			s.Link = append(s.Link, fmt.Sprintf("http://%s/f/%s", config.Config.WebListen, size.Photo.Remote.Id))
+			s.Link = append(s.Link, fmt.Sprintf("/f/%s", size.Photo.Remote.Id))
 		}
 		cnt = append(cnt, s)
 
@@ -128,7 +128,7 @@ func GetContentAttachments(content client.MessageContent) []MessageAttachment {
 		s := MessageAttachment{
 			T:    msg.Video.Type,
 			Id:   msg.Video.Video.Remote.Id,
-			Link: append(make([]string, 0), fmt.Sprintf("http://%s/f/%s", config.Config.WebListen, msg.Video.Video.Remote.Id)),
+			Link: append(make([]string, 0), fmt.Sprintf("/f/%s", msg.Video.Video.Remote.Id)),
 		}
 		if msg.Video.Minithumbnail != nil {
 			s.Thumb = base64.StdEncoding.EncodeToString(msg.Video.Minithumbnail.Data)
@@ -141,7 +141,7 @@ func GetContentAttachments(content client.MessageContent) []MessageAttachment {
 		s := MessageAttachment{
 			T:    msg.Animation.Type,
 			Id:   msg.Animation.Animation.Remote.Id,
-			Link: append(make([]string, 0), fmt.Sprintf("http://%s/f/%s", config.Config.WebListen, msg.Animation.Animation.Remote.Id)),
+			Link: append(make([]string, 0), fmt.Sprintf("/f/%s", msg.Animation.Animation.Remote.Id)),
 		}
 		if msg.Animation.Minithumbnail != nil {
 			s.Thumb = base64.StdEncoding.EncodeToString(msg.Animation.Minithumbnail.Data)
@@ -156,11 +156,11 @@ func GetContentAttachments(content client.MessageContent) []MessageAttachment {
 			s := MessageAttachment{
 				T:    msg.Sticker.FullType.StickerFullTypeType(),
 				Id:   msg.Sticker.Sticker.Remote.Id,
-				Link: append(make([]string, 0), fmt.Sprintf("http://%s/f/%s", config.Config.WebListen, msg.Sticker.Sticker.Remote.Id)),
+				Link: append(make([]string, 0), fmt.Sprintf("/f/%s", msg.Sticker.Sticker.Remote.Id)),
 				Name: msg.Sticker.FullType.StickerFullTypeType(),
 			}
 			if msg.Sticker.Thumbnail != nil {
-				s.ThumbLink = fmt.Sprintf("http://%s/f/%s", config.Config.WebListen, msg.Sticker.Thumbnail.File.Remote.Id)
+				s.ThumbLink = fmt.Sprintf("/f/%s", msg.Sticker.Thumbnail.File.Remote.Id)
 			}
 			cnt = append(cnt, s)
 
@@ -175,7 +175,7 @@ func GetContentAttachments(content client.MessageContent) []MessageAttachment {
 			T:    msg.VoiceNote.Type,
 			Id:   msg.VoiceNote.Voice.Remote.Id,
 			Name: fmt.Sprintf("Voice (%ds.)", msg.VoiceNote.Duration),
-			Link: append(make([]string, 0), fmt.Sprintf("http://%s/v/%s", config.Config.WebListen, msg.VoiceNote.Voice.Remote.Id)),
+			Link: append(make([]string, 0), fmt.Sprintf("/v/%s", msg.VoiceNote.Voice.Remote.Id)),
 		}
 		cnt = append(cnt, s)
 
@@ -186,7 +186,7 @@ func GetContentAttachments(content client.MessageContent) []MessageAttachment {
 			T:    msg.VideoNote.Type,
 			Id:   msg.VideoNote.Video.Remote.Id,
 			Name: fmt.Sprintf("Video note (%ds.)", msg.VideoNote.Duration),
-			Link: append(make([]string, 0), fmt.Sprintf("http://%s/v/%s", config.Config.WebListen, msg.VideoNote.Video.Remote.Id)),
+			Link: append(make([]string, 0), fmt.Sprintf("/v/%s", msg.VideoNote.Video.Remote.Id)),
 		}
 		if msg.VideoNote.Minithumbnail != nil {
 			s.Thumb = base64.StdEncoding.EncodeToString(msg.VideoNote.Minithumbnail.Data)
@@ -200,7 +200,7 @@ func GetContentAttachments(content client.MessageContent) []MessageAttachment {
 			T:    msg.Document.Type,
 			Id:   msg.Document.Document.Remote.Id,
 			Name: msg.Document.FileName,
-			Link: append(make([]string, 0), fmt.Sprintf("http://%s/f/%s", config.Config.WebListen, msg.Document.Document.Remote.Id)),
+			Link: append(make([]string, 0), fmt.Sprintf("/f/%s", msg.Document.Document.Remote.Id)),
 		}
 		cnt = append(cnt, s)
 
@@ -211,7 +211,7 @@ func GetContentAttachments(content client.MessageContent) []MessageAttachment {
 	//		T:    msg.AnimatedEmoji.Type,
 	//		Id:   msg.AnimatedEmoji.Sticker.Sticker.Remote.Id,
 	//		Name: msg.AnimatedEmoji.Sticker.Emoji,
-	//		Link: append(make([]string, 0), fmt.Sprintf("http://%s/f/%s", config.Config.WebListen, msg.AnimatedEmoji.Sticker.Thumbnail.File.Remote)),
+	//		Link: append(make([]string, 0), fmt.Sprintf("/f/%s", msg.AnimatedEmoji.Sticker.Thumbnail.File.Remote)),
 	//	}
 	//	cnt = append(cnt, s)
 	//

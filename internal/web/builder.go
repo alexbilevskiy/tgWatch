@@ -3,14 +3,14 @@ package web
 import (
 	"context"
 	"fmt"
-	"github.com/alexbilevskiy/tgWatch/pkg/config"
-	"github.com/alexbilevskiy/tgWatch/pkg/libs"
-	"github.com/alexbilevskiy/tgWatch/pkg/libs/helpers"
-	"github.com/alexbilevskiy/tgWatch/pkg/libs/tdlib"
-	"github.com/zelenin/go-tdlib/client"
 	"html"
 	"strings"
 	"unicode/utf16"
+
+	"github.com/alexbilevskiy/tgWatch/internal/account"
+	"github.com/alexbilevskiy/tgWatch/internal/helpers"
+	"github.com/alexbilevskiy/tgWatch/internal/tdlib"
+	"github.com/zelenin/go-tdlib/client"
 )
 
 func parseMessage(message *client.Message, currentAcc int64, verbose bool) MessageInfo {
@@ -24,9 +24,9 @@ func parseMessage(message *client.Message, currentAcc int64, verbose bool) Messa
 		DateStr:       helpers.FormatDate(message.Date),
 		TimeStr:       helpers.FormatTime(message.Date),
 		ChatId:        message.ChatId,
-		ChatName:      libs.AS.Get(currentAcc).TdApi.GetChatName(message.ChatId),
+		ChatName:      account.AS.Get(currentAcc).TdApi.GetChatName(message.ChatId),
 		SenderId:      senderChatId,
-		SenderName:    libs.AS.Get(currentAcc).TdApi.GetSenderName(message.SenderId),
+		SenderName:    account.AS.Get(currentAcc).TdApi.GetSenderName(message.SenderId),
 		MediaAlbumId:  int64(message.MediaAlbumId),
 		SimpleText:    ct.Text,
 		FormattedText: ct.FormattedText,
@@ -48,11 +48,11 @@ func buildChatInfoByLocalChat(ctx context.Context, chat *client.Chat) ChatInfo {
 		return ChatInfo{ChatId: -1, Username: "ERROR", ChatName: "NULL CHAT"}
 	}
 	currentAcc := ctx.Value("current_acc").(int64)
-	info := ChatInfo{ChatId: chat.Id, ChatName: libs.AS.Get(currentAcc).TdApi.GetChatName(chat.Id), Username: libs.AS.Get(currentAcc).TdApi.GetChatUsername(chat.Id)}
+	info := ChatInfo{ChatId: chat.Id, ChatName: account.AS.Get(currentAcc).TdApi.GetChatName(chat.Id), Username: account.AS.Get(currentAcc).TdApi.GetChatUsername(chat.Id)}
 	switch chat.Type.ChatTypeType() {
 	case client.TypeChatTypeSupergroup:
 		t := chat.Type.(*client.ChatTypeSupergroup)
-		sg, err := libs.AS.Get(currentAcc).TdApi.GetSuperGroup(t.SupergroupId)
+		sg, err := account.AS.Get(currentAcc).TdApi.GetSuperGroup(t.SupergroupId)
 		if err != nil {
 			info.Type = "Error " + err.Error()
 		} else {
@@ -75,7 +75,7 @@ func buildChatInfoByLocalChat(ctx context.Context, chat *client.Chat) ChatInfo {
 	return info
 }
 
-func RenderText(ctx context.Context, text *client.FormattedText) string {
+func RenderText(text *client.FormattedText) string {
 	utfText := utf16.Encode([]rune(text.Text))
 	result := ""
 	var prevEntityEnd int32 = 0
@@ -84,7 +84,7 @@ func RenderText(ctx context.Context, text *client.FormattedText) string {
 	for i, entity := range text.Entities {
 		if entity.Offset < prevEntityEnd {
 			//fmt.Printf("ENT IS SAME AS PREV\n")
-			wrapped = wrapEntity(ctx, entity, wrapped)
+			wrapped = wrapEntity(entity, wrapped)
 			result += wrapped
 
 			continue
@@ -98,7 +98,7 @@ func RenderText(ctx context.Context, text *client.FormattedText) string {
 		//extract clean string from message
 		repl := ut2hs(utfText[entity.Offset : entity.Offset+entity.Length])
 		//wrap in html tags according to entity
-		wrapped = wrapEntity(ctx, entity, repl)
+		wrapped = wrapEntity(entity, repl)
 
 		//if next entity has same offset and length as current, theses entities are nested
 		ne := i + 1
@@ -118,8 +118,7 @@ func RenderText(ctx context.Context, text *client.FormattedText) string {
 	return result
 }
 
-func wrapEntity(ctx context.Context, entity *client.TextEntity, text string) string {
-	currentAcc := ctx.Value("current_acc").(int64)
+func wrapEntity(entity *client.TextEntity, text string) string {
 	var wrapped string
 	switch entity.Type.TextEntityTypeType() {
 	case client.TypeTextEntityTypeBold:
@@ -156,19 +155,9 @@ func wrapEntity(ctx context.Context, entity *client.TextEntity, text string) str
 		wrapped = fmt.Sprintf(`<span class="spoiler">%s</span>`, text)
 	case client.TypeTextEntityTypeCustomEmoji:
 		t := entity.Type.(*client.TextEntityTypeCustomEmoji)
-		customEmojisIds := append(make([]client.JsonInt64, 1), t.CustomEmojiId)
-		customEmojis, err := libs.AS.Get(currentAcc).TdApi.GetCustomEmoji(customEmojisIds)
-		if err != nil {
-			wrapped = fmt.Sprintf(`<span title="%s" class="badge bg-warning">%s</span>`, entity.Type.TextEntityTypeType(), text)
-			break
-		}
-		if customEmojis.Stickers[0].Thumbnail != nil {
-			thumbLink := fmt.Sprintf("/f/%s", customEmojis.Stickers[0].Thumbnail.File.Remote.Id)
-			wrapped = fmt.Sprintf(`<img width=20 src="%s" alt="%s" title="%s">`, thumbLink, text, text)
-			break
-		}
-		wrapped = fmt.Sprintf(`<span title="%s" class="badge bg-info">%s</span>`, entity.Type.TextEntityTypeType(), text)
-
+		thumbLink := fmt.Sprintf("/e/%d", t.CustomEmojiId)
+		wrapped = fmt.Sprintf(`<img width=20 src="%s" alt="%s" title="%s">`, thumbLink, text, text)
+		//wrapped = fmt.Sprintf(`<span title="%s" class="badge bg-info">%s</span>`, entity.Type.TextEntityTypeType(), text)
 	default:
 		wrapped = fmt.Sprintf(`<span title="%s" class="badge bg-danger">%s</span>`, entity.Type.TextEntityTypeType(), text)
 	}
@@ -181,5 +170,5 @@ func ut2hs(r []uint16) string { //utf text to html string
 }
 
 func BuildMessageLink(chatId int64, messageId int64) string {
-	return fmt.Sprintf("http://%s/m/%d/%d", config.Config.WebListen, chatId, messageId)
+	return fmt.Sprintf("/m/%d/%d", chatId, messageId)
 }

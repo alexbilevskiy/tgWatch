@@ -1,20 +1,27 @@
 package main
 
 import (
-	"github.com/alexbilevskiy/tgWatch/pkg/config"
-	"github.com/alexbilevskiy/tgWatch/pkg/libs"
-	"github.com/alexbilevskiy/tgWatch/pkg/libs/mongo"
-	"github.com/alexbilevskiy/tgWatch/pkg/libs/tdlib"
-	"github.com/alexbilevskiy/tgWatch/pkg/libs/web"
 	"log"
 	"os"
+
+	"github.com/alexbilevskiy/tgWatch/internal/account"
+	"github.com/alexbilevskiy/tgWatch/internal/config"
+	"github.com/alexbilevskiy/tgWatch/internal/db"
+	"github.com/alexbilevskiy/tgWatch/internal/tdlib"
+	"github.com/alexbilevskiy/tgWatch/internal/web"
 )
 
 func main() {
-	config.InitConfiguration()
+	cfg, err := config.InitConfiguration()
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = tdlib.LoadOptionsList()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	tdlib.LoadOptionsList()
-	mongo.InitGlobalMongo()
+	mongoClient := db.NewClient(cfg)
 
 	args := os.Args
 	var phone string
@@ -26,16 +33,18 @@ func main() {
 	} else {
 		log.Fatalf("Invalid argument")
 	}
+	astorage := db.NewAccountsStorage(cfg, mongoClient)
+	astore := account.NewAccountsStore(mongoClient, astorage)
 
 	if phone == "" {
-		go libs.AS.Run()
+		go astore.Run()
 	} else {
-		libs.AS.RunOne(phone)
+		astore.RunOne(phone)
 	}
 
 	log.Printf("starting web server...")
 
-	web.InitWeb()
+	web.InitWeb(cfg)
 
 	select {}
 }

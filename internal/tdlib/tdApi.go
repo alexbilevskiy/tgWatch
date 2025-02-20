@@ -4,43 +4,39 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/alexbilevskiy/tgWatch/pkg/consts"
-	"github.com/alexbilevskiy/tgWatch/pkg/libs/mongo"
-	"github.com/zelenin/go-tdlib/client"
 	"log"
 	"sync"
 	"time"
+
+	"github.com/alexbilevskiy/tgWatch/internal/consts"
+	"github.com/alexbilevskiy/tgWatch/internal/db"
+	"github.com/zelenin/go-tdlib/client"
 )
 
 type TdApi struct {
 	m            sync.RWMutex
-	dbData       *mongo.DbAccountData
+	dbData       *db.DbAccountData
 	localChats   map[int64]*client.Chat
-	chatFolders  []mongo.ChatFilter
+	chatFolders  []db.ChatFilter
 	tdlibClient  *client.Client
 	db           TdStorageInterface
 	sentMessages sync.Map
 }
 
 type TdStorageInterface interface {
-	Init(DbPrefix string, Phone string)
 	DeleteChatFolder(folderId int32) (int64, error)
 	ClearChatFilters()
-	LoadChatFolders() []mongo.ChatFilter
+	LoadChatFolders() []db.ChatFilter
 
 	SaveChatFolder(chatFolder *client.ChatFolder, folderInfo *client.ChatFolderInfo)
 	SaveAllChatPositions(chatId int64, positions []*client.ChatPosition)
 	SaveChatPosition(chatId int64, chatPosition *client.ChatPosition)
 
-	GetSavedChats(listId int32) []mongo.ChatPosition
+	GetSavedChats(listId int32) []db.ChatPosition
 }
 
-func (t *TdApi) Init(dbData *mongo.DbAccountData, tdlibClient *client.Client, tdMongo TdStorageInterface) {
-
-	//var x tdApiInterface
-	//var y TdApi
-	//x = y
-
+func NewTdApi(dbData *db.DbAccountData, tdlibClient *client.Client, tdMongo TdStorageInterface) *TdApi {
+	t := &TdApi{}
 	t.tdlibClient = tdlibClient
 	t.db = tdMongo
 	t.dbData = dbData
@@ -49,6 +45,8 @@ func (t *TdApi) Init(dbData *mongo.DbAccountData, tdlibClient *client.Client, td
 	t.chatFolders = t.db.LoadChatFolders()
 	t.m = sync.RWMutex{}
 	t.sentMessages = sync.Map{}
+
+	return t
 }
 
 func (t *TdApi) GetChat(chatId int64, force bool) (*client.Chat, error) {
@@ -590,7 +588,7 @@ func (t *TdApi) RemoveChatRemovedFromList(upd *client.UpdateChatRemovedFromList)
 	}
 }
 
-func (t *TdApi) GetChatFolders() []mongo.ChatFilter {
+func (t *TdApi) GetChatFolders() []db.ChatFilter {
 	//@TODO: mutex?
 	return t.chatFolders
 }

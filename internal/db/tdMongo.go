@@ -1,13 +1,16 @@
-package mongo
+package db
 
 import (
+	"context"
 	"fmt"
-	"github.com/alexbilevskiy/tgWatch/pkg/consts"
+	"log"
+	"time"
+
+	"github.com/alexbilevskiy/tgWatch/internal/consts"
 	"github.com/zelenin/go-tdlib/client"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"log"
 )
 
 type TdMongo struct {
@@ -17,14 +20,17 @@ type TdMongo struct {
 	settingsColl    *mongo.Collection
 }
 
-func (m *TdMongo) Init(DbPrefix string, Phone string) {
+func NewTdMongo(mongoClient *mongo.Client, DbPrefix string, Phone string) *TdMongo {
 	db := DbPrefix + Phone
+	m := &TdMongo{}
 	m.updatesColl = mongoClient.Database(db).Collection("updates")
 	m.chatFiltersColl = mongoClient.Database(db).Collection("chatFilters")
 	m.chatListColl = mongoClient.Database(db).Collection("chatList")
 	m.settingsColl = mongoClient.Database(db).Collection("settings")
 
 	m.LoadChatFolders()
+
+	return m
 }
 
 func (m *TdMongo) SaveChatFolder(chatFolder *client.ChatFolder, folderInfo *client.ChatFolderInfo) {
@@ -33,14 +39,16 @@ func (m *TdMongo) SaveChatFolder(chatFolder *client.ChatFolder, folderInfo *clie
 	crit := bson.D{{"id", folderInfo.Id}}
 	update := bson.D{{"$set", filStr}}
 	t := true
+	mctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 	opts := &options.UpdateOptions{Upsert: &t}
-	_, err := m.chatFiltersColl.UpdateOne(mongoContext, crit, update, opts)
+	_, err := m.chatFiltersColl.UpdateOne(mctx, crit, update, opts)
 	if err != nil {
 		fmt.Printf("Failed to save chat filter: id: %d, n: %s, err: %s\n", folderInfo.Id, folderInfo.Name.Text.Text, err)
 	}
 
 	crit = bson.D{{"chatid", bson.M{"$nin": chatFolder.IncludedChatIds}}, {"listid", folderInfo.Id}}
-	dr, err := m.chatListColl.DeleteMany(mongoContext, crit)
+	dr, err := m.chatListColl.DeleteMany(mctx, crit)
 	if err != nil {
 		fmt.Printf("Failed to delete chats from folder id: %d, n: %s, err: %s\n", folderInfo.Id, folderInfo.Name.Text.Text, err)
 	} else if dr.DeletedCount > 0 {
@@ -84,17 +92,21 @@ func (m *TdMongo) SaveChatPosition(chatId int64, chatPosition *client.ChatPositi
 	crit := bson.D{{"chatid", chatId}, {"listid", listId}}
 	update := bson.D{{"$set", filStr}}
 	t := true
+	mctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 	opts := &options.UpdateOptions{Upsert: &t}
-	_, err := m.chatListColl.UpdateOne(mongoContext, crit, update, opts)
+	_, err := m.chatListColl.UpdateOne(mctx, crit, update, opts)
 	if err != nil {
 		fmt.Printf("Failed to save chatPosition: %d | %d: %s", chatId, chatPosition.Order, err)
 	}
 }
 
 func (m *TdMongo) GetSavedChats(listId int32) []ChatPosition {
+	mctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 	crit := bson.D{{"listid", listId}}
 	opts := options.FindOptions{Sort: bson.M{"order": -1}}
-	cur, err := m.chatListColl.Find(mongoContext, crit, &opts)
+	cur, err := m.chatListColl.Find(mctx, crit, &opts)
 	var list []ChatPosition
 	if err != nil {
 		fmt.Printf("Chat list error: %s", err)
@@ -102,7 +114,7 @@ func (m *TdMongo) GetSavedChats(listId int32) []ChatPosition {
 		return list
 	}
 	var chatsMongo []bson.M
-	err = cur.All(mongoContext, &chatsMongo)
+	err = cur.All(mctx, &chatsMongo)
 	if err != nil {
 		errmsg := fmt.Sprintf("ERROR mongo select: %s", err)
 		fmt.Printf(errmsg)
@@ -123,7 +135,9 @@ func (m *TdMongo) GetSavedChats(listId int32) []ChatPosition {
 }
 
 func (m *TdMongo) ClearChatFilters() {
-	removed, err := m.chatFiltersColl.DeleteMany(mongoContext, bson.M{})
+	mctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	removed, err := m.chatFiltersColl.DeleteMany(mctx, bson.M{})
 	if err != nil {
 		log.Printf("Failed to remove chat folders from db: %s", err.Error())
 		return
@@ -132,9 +146,11 @@ func (m *TdMongo) ClearChatFilters() {
 }
 
 func (m *TdMongo) LoadChatFolders() []ChatFilter {
-	cur, _ := m.chatFiltersColl.Find(mongoContext, bson.M{})
+	mctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	cur, _ := m.chatFiltersColl.Find(mctx, bson.M{})
 	fi := make([]ChatFilter, 0)
-	err := cur.All(mongoContext, &fi)
+	err := cur.All(mctx, &fi)
 	if err != nil {
 		errmsg := fmt.Sprintf("ERROR load chat filters: %s", err)
 		fmt.Printf(errmsg)
@@ -147,8 +163,10 @@ func (m *TdMongo) LoadChatFolders() []ChatFilter {
 }
 
 func (m *TdMongo) DeleteChatFolder(folderId int32) (int64, error) {
+	mctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 	crit := bson.D{{"listid", folderId}}
-	d, err := m.chatListColl.DeleteMany(mongoContext, crit)
+	d, err := m.chatListColl.DeleteMany(mctx, crit)
 
 	return d.DeletedCount, err
 }

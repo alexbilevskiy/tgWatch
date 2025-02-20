@@ -3,16 +3,18 @@ package web
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/alexbilevskiy/tgWatch/pkg/consts"
-	"github.com/alexbilevskiy/tgWatch/pkg/libs"
-	"github.com/alexbilevskiy/tgWatch/pkg/libs/helpers"
-	"github.com/alexbilevskiy/tgWatch/pkg/libs/tdlib"
-	"github.com/alexbilevskiy/tgWatch/pkg/libs/tdlib/tdAccount"
-	"github.com/zelenin/go-tdlib/client"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/alexbilevskiy/tgWatch/internal/account"
+	"github.com/alexbilevskiy/tgWatch/internal/config"
+	"github.com/alexbilevskiy/tgWatch/internal/consts"
+	"github.com/alexbilevskiy/tgWatch/internal/helpers"
+	"github.com/alexbilevskiy/tgWatch/internal/tdlib"
+	"github.com/alexbilevskiy/tgWatch/internal/tdlib/tdAccount"
+	"github.com/zelenin/go-tdlib/client"
 )
 
 type newAccountState struct {
@@ -24,7 +26,12 @@ type newAccountState struct {
 }
 
 type webController struct {
-	st newAccountState
+	cfg *config.Config
+	st  newAccountState
+}
+
+func newWebController(cfg *config.Config) *webController {
+	return &webController{cfg: cfg}
 }
 
 func (wc *webController) processRoot(w http.ResponseWriter, r *http.Request) {
@@ -34,7 +41,7 @@ func (wc *webController) processRoot(w http.ResponseWriter, r *http.Request) {
 func (wc *webController) processTdlibOptions(w http.ResponseWriter, req *http.Request) {
 	actualOptions := make(map[string]tdlib.TdlibOption, len(tdlib.TdlibOptions))
 	for optionName, optionValue := range tdlib.TdlibOptions {
-		res, err := libs.AS.Get(req.Context().Value("current_acc").(int64)).TdApi.GetTdlibOption(optionName)
+		res, err := account.AS.Get(req.Context().Value("current_acc").(int64)).TdApi.GetTdlibOption(optionName)
 		if err != nil {
 			log.Printf("Failed to get option %s: %s", optionName, err)
 			continue
@@ -60,7 +67,7 @@ func (wc *webController) processTdlibOptions(w http.ResponseWriter, req *http.Re
 }
 
 func (wc *webController) processTgActiveSessions(w http.ResponseWriter, req *http.Request) {
-	sessions, err := libs.AS.Get(req.Context().Value("current_acc").(int64)).TdApi.GetActiveSessions()
+	sessions, err := account.AS.Get(req.Context().Value("current_acc").(int64)).TdApi.GetActiveSessions()
 	if err != nil {
 		fmt.Printf("Get sessions error: %s", err)
 		return
@@ -78,7 +85,7 @@ func (wc *webController) processTgSingleMessage(w http.ResponseWriter, req *http
 	messageId, _ := strconv.ParseInt(req.PathValue("message_id"), 10, 64)
 
 	currentAcc := req.Context().Value("current_acc").(int64)
-	message, err := libs.AS.Get(currentAcc).TdApi.GetMessage(chatId, messageId)
+	message, err := account.AS.Get(currentAcc).TdApi.GetMessage(chatId, messageId)
 	if err != nil {
 		m := MessageError{T: "Error", MessageId: messageId, Error: fmt.Sprintf("Error: %s", err)}
 		renderTemplates(req, w, m, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/error.gohtml`)
@@ -93,9 +100,9 @@ func (wc *webController) processTgSingleMessage(w http.ResponseWriter, req *http
 		MessageId:     message.Id,
 		Date:          message.Date,
 		ChatId:        message.ChatId,
-		ChatName:      libs.AS.Get(currentAcc).TdApi.GetChatName(message.ChatId),
+		ChatName:      account.AS.Get(currentAcc).TdApi.GetChatName(message.ChatId),
 		SenderId:      senderChatId,
-		SenderName:    libs.AS.Get(currentAcc).TdApi.GetSenderName(message.SenderId),
+		SenderName:    account.AS.Get(currentAcc).TdApi.GetSenderName(message.SenderId),
 		MediaAlbumId:  int64(message.MediaAlbumId),
 		SimpleText:    ct.Text,
 		FormattedText: ct.FormattedText,
@@ -103,7 +110,7 @@ func (wc *webController) processTgSingleMessage(w http.ResponseWriter, req *http
 		Edited:        message.EditDate != 0,
 		ContentRaw:    message,
 	}
-	chat, _ := libs.AS.Get(currentAcc).TdApi.GetChat(message.ChatId, false)
+	chat, _ := account.AS.Get(currentAcc).TdApi.GetChat(message.ChatId, false)
 	res := SingleMessage{
 		T:       "Message",
 		Message: msg,
@@ -120,7 +127,7 @@ func (wc *webController) processTgMessagesByIds(chatId int64, req *http.Request,
 		Messages: make([]MessageInfo, 0),
 	}
 	currentAcc := req.Context().Value("current_acc").(int64)
-	chat, err := libs.AS.Get(currentAcc).TdApi.GetChat(chatId, false)
+	chat, err := account.AS.Get(currentAcc).TdApi.GetChat(chatId, false)
 	if err != nil {
 
 	} else {
@@ -128,7 +135,7 @@ func (wc *webController) processTgMessagesByIds(chatId int64, req *http.Request,
 	}
 
 	for _, messageId := range messageIds {
-		message, err := libs.AS.Get(currentAcc).TdApi.GetMessage(chatId, messageId)
+		message, err := account.AS.Get(currentAcc).TdApi.GetMessage(chatId, messageId)
 		if err != nil {
 			m := MessageInfo{T: "Error", MessageId: messageId, SimpleText: fmt.Sprintf("Error: %s", err)}
 			res.Messages = append(res.Messages, m)
@@ -146,7 +153,7 @@ func (wc *webController) processTgChatInfo(w http.ResponseWriter, req *http.Requ
 	chatId, _ := strconv.ParseInt(req.PathValue("chat_id"), 10, 64)
 	var chat *client.Chat
 	var err error
-	chat, err = libs.AS.Get(req.Context().Value("current_acc").(int64)).TdApi.GetChat(chatId, false)
+	chat, err = account.AS.Get(req.Context().Value("current_acc").(int64)).TdApi.GetChat(chatId, false)
 	if err != nil {
 		fmt.Printf("Error get chat: %s\n", err)
 		return
@@ -186,14 +193,14 @@ func (wc *webController) processTgChatHistoryOnline(chatId int64, req *http.Requ
 		offset = int32(offset64)
 	}
 	currentAcc := req.Context().Value("current_acc").(int64)
-	messages, err := libs.AS.Get(currentAcc).TdApi.LoadChatHistory(chatId, fromMessageId, offset)
+	messages, err := account.AS.Get(currentAcc).TdApi.LoadChatHistory(chatId, fromMessageId, offset)
 	if err != nil {
 		log.Printf("error load history: %s", err.Error())
 		errorResponse(WebError{T: "No messages", Error: err.Error()}, http.StatusBadRequest, req, w)
 
 		return
 	}
-	chat, _ := libs.AS.Get(currentAcc).TdApi.GetChat(chatId, false)
+	chat, _ := account.AS.Get(currentAcc).TdApi.GetChat(chatId, false)
 	if len(messages.Messages) == 0 {
 		errorResponse(WebError{T: "No messages", Error: "no saved messages"}, http.StatusBadRequest, req, w)
 		return
@@ -241,48 +248,48 @@ func (wc *webController) processTgChatList(w http.ResponseWriter, req *http.Requ
 	folders = append(folders, ChatFolder{T: "ChatFolder", Id: consts.ClOwned, Title: "Owned chats"})
 	folders = append(folders, ChatFolder{T: "ChatFolder", Id: consts.ClNotSubscribed, Title: "Not subscribed chats"})
 	folders = append(folders, ChatFolder{T: "ChatFolder", Id: consts.ClNotAssigned, Title: "Chats not in any folder"})
-	for _, filter := range libs.AS.Get(currentAcc).TdApi.GetChatFolders() {
+	for _, filter := range account.AS.Get(currentAcc).TdApi.GetChatFolders() {
 		folders = append(folders, ChatFolder{T: "ChatFolder", Id: filter.Id, Title: filter.Title})
 	}
 
 	res := ChatList{T: "Chat list", ChatFolders: folders, SelectedFolder: folder}
 	if folder == consts.ClCached {
-		for _, chat := range libs.AS.Get(currentAcc).TdApi.GetLocalChats() {
+		for _, chat := range account.AS.Get(currentAcc).TdApi.GetLocalChats() {
 			info := buildChatInfoByLocalChat(req.Context(), chat)
 			res.Chats = append(res.Chats, info)
 		}
 	} else if folder == consts.ClOwned {
-		for _, chat := range libs.AS.Get(currentAcc).TdApi.GetLocalChats() {
-			cm, err := libs.AS.Get(currentAcc).TdApi.GetChatMember(chat.Id)
+		for _, chat := range account.AS.Get(currentAcc).TdApi.GetLocalChats() {
+			cm, err := account.AS.Get(currentAcc).TdApi.GetChatMember(chat.Id)
 			if err != nil && err.Error() != "400 CHANNEL_PRIVATE" {
-				fmt.Printf("failed to get chat member status: %d, `%s`, %s\n", chat.Id, libs.AS.Get(currentAcc).TdApi.GetChatName(chat.Id), err)
+				fmt.Printf("failed to get chat member status: %d, `%s`, %s\n", chat.Id, account.AS.Get(currentAcc).TdApi.GetChatName(chat.Id), err)
 				continue
 			}
 			switch cm.Status.ChatMemberStatusType() {
 			case client.TypeChatMemberStatusCreator:
-				res.Chats = append(res.Chats, ChatInfo{ChatId: chat.Id, ChatName: libs.AS.Get(currentAcc).TdApi.GetChatName(chat.Id)})
+				res.Chats = append(res.Chats, ChatInfo{ChatId: chat.Id, ChatName: account.AS.Get(currentAcc).TdApi.GetChatName(chat.Id)})
 			case client.TypeChatMemberStatusAdministrator:
 			case client.TypeChatMemberStatusMember:
 			case client.TypeChatMemberStatusLeft:
 			case client.TypeChatMemberStatusRestricted:
 				//@todo: print restrictions
 			default:
-				fmt.Printf("Unusual chat memer status: %d, `%s`, %s\n", chat.Id, libs.AS.Get(currentAcc).TdApi.GetChatName(chat.Id), cm.Status.ChatMemberStatusType())
+				fmt.Printf("Unusual chat memer status: %d, `%s`, %s\n", chat.Id, account.AS.Get(currentAcc).TdApi.GetChatName(chat.Id), cm.Status.ChatMemberStatusType())
 
 			}
 		}
 	} else if folder == consts.ClNotSubscribed {
-		for _, chat := range libs.AS.Get(currentAcc).TdApi.GetLocalChats() {
+		for _, chat := range account.AS.Get(currentAcc).TdApi.GetLocalChats() {
 			if chat.LastMessage == nil && chat.LastReadInboxMessageId == 0 {
 				info := buildChatInfoByLocalChat(req.Context(), chat)
 				res.Chats = append(res.Chats, info)
 			}
 		}
 	} else if folder == consts.ClNotAssigned {
-		for _, chat := range libs.AS.Get(currentAcc).TdApi.GetLocalChats() {
+		for _, chat := range account.AS.Get(currentAcc).TdApi.GetLocalChats() {
 			saved := false
-			for _, filter := range libs.AS.Get(currentAcc).TdApi.GetChatFolders() {
-				savedChats := libs.AS.Get(currentAcc).TdApi.GetStorage().GetSavedChats(filter.Id)
+			for _, filter := range account.AS.Get(currentAcc).TdApi.GetChatFolders() {
+				savedChats := account.AS.Get(currentAcc).TdApi.GetStorage().GetSavedChats(filter.Id)
 				for _, pos := range savedChats {
 					if pos.ChatId == chat.Id {
 						saved = true
@@ -298,7 +305,7 @@ func (wc *webController) processTgChatList(w http.ResponseWriter, req *http.Requ
 			}
 		}
 	} else if refresh {
-		libs.AS.Get(currentAcc).TdApi.LoadChatsList(folder)
+		account.AS.Get(currentAcc).TdApi.LoadChatsList(folder)
 		http.Redirect(w, req, fmt.Sprintf("/l?folder=%d", folder), 302)
 		return
 	} else if groupsInCommonUserId != 0 {
@@ -322,21 +329,21 @@ func (wc *webController) processTgChatList(w http.ResponseWriter, req *http.Requ
 			}
 			if len(addChatsToFolder) > 0 {
 				//@TODO: errors validation
-				libs.AS.Get(currentAcc).TdApi.AddChatsToFolder(addChatsToFolder, addToFolder)
+				account.AS.Get(currentAcc).TdApi.AddChatsToFolder(addChatsToFolder, addToFolder)
 			}
 			http.Redirect(w, req, fmt.Sprintf("/l?groups_in_common_userid=%d", groupsInCommonUserId), 302)
 		}
-		partnerChat, _ := libs.AS.Get(currentAcc).TdApi.GetChat(groupsInCommonUserId, false)
+		partnerChat, _ := account.AS.Get(currentAcc).TdApi.GetChat(groupsInCommonUserId, false)
 		res.PartnerChat = buildChatInfoByLocalChat(req.Context(), partnerChat)
-		chats, err := libs.AS.Get(currentAcc).TdApi.GetGroupsInCommon(groupsInCommonUserId)
+		chats, err := account.AS.Get(currentAcc).TdApi.GetGroupsInCommon(groupsInCommonUserId)
 		if err != nil {
-			log.Printf("failed to get groups in common: %d, `%s`, %s", groupsInCommonUserId, libs.AS.Get(currentAcc).TdApi.GetChatName(groupsInCommonUserId), err)
+			log.Printf("failed to get groups in common: %d, `%s`, %s", groupsInCommonUserId, account.AS.Get(currentAcc).TdApi.GetChatName(groupsInCommonUserId), err)
 		}
 		for _, chatId := range chats.ChatIds {
-			chat, err := libs.AS.Get(currentAcc).TdApi.GetChat(chatId, true)
+			chat, err := account.AS.Get(currentAcc).TdApi.GetChat(chatId, true)
 			var chatInfo ChatInfo
 			if err != nil {
-				chatInfo = ChatInfo{ChatId: chatId, ChatName: libs.AS.Get(currentAcc).TdApi.GetChatName(chatId), Username: "ERROR " + err.Error()}
+				chatInfo = ChatInfo{ChatId: chatId, ChatName: account.AS.Get(currentAcc).TdApi.GetChatName(chatId), Username: "ERROR " + err.Error()}
 			} else {
 				chatInfo = buildChatInfoByLocalChat(req.Context(), chat)
 			}
@@ -344,12 +351,12 @@ func (wc *webController) processTgChatList(w http.ResponseWriter, req *http.Requ
 			res.Chats = append(res.Chats, chatInfo)
 		}
 	} else {
-		chatList := libs.AS.Get(currentAcc).TdApi.GetStorage().GetSavedChats(folder)
+		chatList := account.AS.Get(currentAcc).TdApi.GetStorage().GetSavedChats(folder)
 		for _, chatPos := range chatList {
-			chat, err := libs.AS.Get(currentAcc).TdApi.GetChat(chatPos.ChatId, true)
+			chat, err := account.AS.Get(currentAcc).TdApi.GetChat(chatPos.ChatId, true)
 			var chatInfo ChatInfo
 			if err != nil {
-				chatInfo = ChatInfo{ChatId: chatPos.ChatId, ChatName: libs.AS.Get(currentAcc).TdApi.GetChatName(chatPos.ChatId), Username: "ERROR " + err.Error()}
+				chatInfo = ChatInfo{ChatId: chatPos.ChatId, ChatName: account.AS.Get(currentAcc).TdApi.GetChatName(chatPos.ChatId), Username: "ERROR " + err.Error()}
 			} else {
 				chatInfo = buildChatInfoByLocalChat(req.Context(), chat)
 			}
@@ -385,7 +392,7 @@ func (wc *webController) processTgDelete(w http.ResponseWriter, req *http.Reques
 	messageIds = make([]int64, 0)
 	var lastId int64 = 0
 	for len(messageIds) < limit {
-		history, err := libs.AS.Get(currentAcc).TdApi.GetChatHistory(chatId, lastId)
+		history, err := account.AS.Get(currentAcc).TdApi.GetChatHistory(chatId, lastId)
 		if err != nil {
 			data := []byte(fmt.Sprintf("Error get chat %d history: %s", chatId, err))
 			w.Write(data)
@@ -412,7 +419,7 @@ func (wc *webController) processTgDelete(w http.ResponseWriter, req *http.Reques
 			}
 		}
 	}
-	ok, err := libs.AS.Get(currentAcc).TdApi.DeleteMessages(chatId, messageIds)
+	ok, err := account.AS.Get(currentAcc).TdApi.DeleteMessages(chatId, messageIds)
 	if err != nil {
 		fmt.Printf("Failed to delete: `%s`\n", err)
 		return
@@ -494,7 +501,7 @@ func (wc *webController) processTgLink(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	linkInfo, LinkData, err := libs.AS.Get(req.Context().Value("current_acc").(int64)).TdApi.GetLinkInfo(link)
+	linkInfo, LinkData, err := account.AS.Get(req.Context().Value("current_acc").(int64)).TdApi.GetLinkInfo(link)
 	if err != nil {
 		errorResponse(WebError{T: "Bad request", Error: err.Error()}, 400, req, w)
 		return
@@ -515,7 +522,7 @@ func (wc *webController) processFile(res http.ResponseWriter, req *http.Request)
 	}
 
 	fileId := req.PathValue("file_id")
-	file, err := libs.AS.Get(req.Context().Value("current_acc").(int64)).TdApi.DownloadFileByRemoteId(fileId)
+	file, err := account.AS.Get(req.Context().Value("current_acc").(int64)).TdApi.DownloadFileByRemoteId(fileId)
 
 	if err != nil {
 		errorResponse(WebError{T: "Attachment error", Error: err.Error()}, 502, req, res)

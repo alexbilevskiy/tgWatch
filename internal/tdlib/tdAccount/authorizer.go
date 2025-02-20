@@ -1,8 +1,9 @@
 package tdAccount
 
 import (
-	"github.com/zelenin/go-tdlib/client"
 	"log"
+
+	"github.com/zelenin/go-tdlib/client"
 )
 
 type clientAuthorizer struct {
