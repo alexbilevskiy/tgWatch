@@ -20,7 +20,7 @@ func NewAccountCreator(cfg *config.Config, astorage *db.AccountsStorage) *Accoun
 	return &AccountCreator{cfg: cfg, as: astorage}
 }
 
-func (c AccountCreator) CreateAccount(phone string) {
+func (c *AccountCreator) CreateAccount(phone string) {
 	mongoAcc := c.as.GetSavedAccount(phone)
 	if mongoAcc == nil {
 		log.Printf("Starting new account creation for phone %s", phone)
