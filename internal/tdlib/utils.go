@@ -11,9 +11,9 @@ var TdlibOptions map[string]TdlibOption
 
 func GetChatIdBySender(sender client.MessageSender) int64 {
 	senderChatId := int64(0)
-	if sender.MessageSenderType() == "messageSenderChat" {
+	if sender.MessageSenderConstructor() == client.ConstructorMessageSenderChat {
 		senderChatId = sender.(*client.MessageSenderChat).ChatId
-	} else if sender.MessageSenderType() == "messageSenderUser" {
+	} else if sender.MessageSenderConstructor() == client.ConstructorMessageSenderUser {
 		senderChatId = int64(sender.(*client.MessageSenderUser).UserId)
 	}
 

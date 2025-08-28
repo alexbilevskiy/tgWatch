@@ -68,17 +68,17 @@ func (m *TdMongo) SaveAllChatPositions(chatId int64, positions []*client.ChatPos
 func (m *TdMongo) SaveChatPosition(chatId int64, chatPosition *client.ChatPosition) {
 	var listId int32
 	//@TODO: mongo should not be dependent of go-tdlib/client
-	clType := chatPosition.List.ChatListType()
+	clType := chatPosition.List.ChatListConstructor()
 	switch clType {
-	case "chatListArchive":
+	case client.ConstructorChatListArchive:
 		//l := chatPosition.List.(*client.ChatListArchive)
 		listId = consts.ClArchive
 		break
-	case "chatListMain":
+	case client.ConstructorChatListMain:
 		//l := chatPosition.List.(*client.ChatListMain)
 		listId = consts.ClMain
 		break
-	case "chatListFolder":
+	case client.ConstructorChatListFolder:
 		l := chatPosition.List.(*client.ChatListFolder)
 		listId = l.ChatFolderId
 		break

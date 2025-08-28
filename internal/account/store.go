@@ -56,7 +56,6 @@ func (as *AccountsStore) RunOne(phone string) {
 		tdm := db.NewTdMongo(as.mongoClient, mongoAcc.DbPrefix, mongoAcc.Phone)
 		acc := NewAccount(as.cfg, tdm, mongoAcc)
 		as.Put(mongoAcc.Id, acc)
-		as.Get(mongoAcc.Id).Run()
 	}
 }
 
@@ -83,7 +82,6 @@ func (as *AccountsStore) Run() {
 			tdm := db.NewTdMongo(as.mongoClient, mongoAcc.DbPrefix, mongoAcc.Phone)
 			acc := NewAccount(as.cfg, tdm, mongoAcc)
 			as.Put(mongoAcc.Id, acc)
-			as.Get(mongoAcc.Id).Run()
 		}
 		time.Sleep(5 * time.Second)
 	}

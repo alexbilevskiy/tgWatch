@@ -1,11 +1,10 @@
 module github.com/alexbilevskiy/tgWatch
 
-go 1.22
+go 1.24
 
 require (
-	github.com/zelenin/go-tdlib v0.7.6
+	github.com/zelenin/go-tdlib v1.0.0-beta1.0.20250430205245-8884f54190d0
 	go.mongodb.org/mongo-driver v1.9.1
-	golang.org/x/net v0.21.0
 )
 
 require (
@@ -23,5 +22,3 @@ require (
 	golang.org/x/sync v0.6.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 )
-
-replace github.com/zelenin/go-tdlib => github.com/alexbilevskiy/go-tdlib v0.4.2-0.20250217055818-45d4bb03c417

@@ -48,17 +48,17 @@ func (wc *webController) processTdlibOptions(w http.ResponseWriter, req *http.Re
 			continue
 		}
 
-		switch res.OptionValueType() {
-		case client.TypeOptionValueInteger:
+		switch res.OptionValueConstructor() {
+		case client.ConstructorOptionValueInteger:
 			actualOption := res.(*client.OptionValueInteger)
 			optionValue.Value = int64(actualOption.Value)
-		case client.TypeOptionValueString:
+		case client.ConstructorOptionValueString:
 			actualOption := res.(*client.OptionValueString)
 			optionValue.Value = actualOption.Value
-		case client.TypeOptionValueBoolean:
+		case client.ConstructorOptionValueBoolean:
 			actualOption := res.(*client.OptionValueBoolean)
 			optionValue.Value = actualOption.Value
-		case client.TypeOptionValueEmpty:
+		case client.ConstructorOptionValueEmpty:
 			optionValue.Value = nil
 		}
 		actualOptions[optionName] = optionValue
@@ -267,16 +267,16 @@ func (wc *webController) processTgChatList(w http.ResponseWriter, req *http.Requ
 				fmt.Printf("failed to get chat member status: %d, `%s`, %s\n", chat.Id, currentAcc.TdApi.GetChatName(chat.Id), err)
 				continue
 			}
-			switch cm.Status.ChatMemberStatusType() {
-			case client.TypeChatMemberStatusCreator:
+			switch cm.Status.ChatMemberStatusConstructor() {
+			case client.ConstructorChatMemberStatusCreator:
 				res.Chats = append(res.Chats, ChatInfo{ChatId: chat.Id, ChatName: currentAcc.TdApi.GetChatName(chat.Id)})
-			case client.TypeChatMemberStatusAdministrator:
-			case client.TypeChatMemberStatusMember:
-			case client.TypeChatMemberStatusLeft:
-			case client.TypeChatMemberStatusRestricted:
+			case client.ConstructorChatMemberStatusAdministrator:
+			case client.ConstructorChatMemberStatusMember:
+			case client.ConstructorChatMemberStatusLeft:
+			case client.ConstructorChatMemberStatusRestricted:
 				//@todo: print restrictions
 			default:
-				fmt.Printf("Unusual chat memer status: %d, `%s`, %s\n", chat.Id, currentAcc.TdApi.GetChatName(chat.Id), cm.Status.ChatMemberStatusType())
+				fmt.Printf("Unusual chat memer status: %d, `%s`, %s\n", chat.Id, currentAcc.TdApi.GetChatName(chat.Id), cm.Status.ChatMemberStatusConstructor())
 
 			}
 		}
@@ -299,7 +299,7 @@ func (wc *webController) processTgChatList(w http.ResponseWriter, req *http.Requ
 				}
 			}
 			if !saved {
-				if chat.Type.ChatTypeType() == client.TypeChatTypePrivate {
+				if chat.Type.ChatTypeConstructor() == client.ConstructorChatTypePrivate {
 					continue
 				}
 				info := buildChatInfoByLocalChat(currentAcc, chat)
@@ -443,14 +443,14 @@ func (wc *webController) processAddAccount(w http.ResponseWriter, req *http.Requ
 	}
 	if tdlib.AuthorizerState == nil {
 		wc.st.State = "start"
-	} else if tdlib.AuthorizerState.AuthorizationStateType() == client.TypeAuthorizationStateWaitCode {
+	} else if tdlib.AuthorizerState.AuthorizationStateConstructor() == client.ConstructorAuthorizationStateWaitCode {
 		wc.st.State = "code"
 		wc.st.Phone = wc.cr.CurrentAuthorizingAcc.Phone
-	} else if tdlib.AuthorizerState.AuthorizationStateType() == client.TypeAuthorizationStateWaitPassword {
+	} else if tdlib.AuthorizerState.AuthorizationStateConstructor() == client.ConstructorAuthorizationStateWaitPassword {
 		wc.st.State = "password"
 		wc.st.Phone = wc.cr.CurrentAuthorizingAcc.Phone
 	} else {
-		wc.st.State = tdlib.AuthorizerState.AuthorizationStateType()
+		wc.st.State = tdlib.AuthorizerState.AuthorizationStateConstructor()
 		wc.st.Phone = wc.cr.CurrentAuthorizingAcc.Phone
 	}
 
@@ -565,7 +565,7 @@ func (wc *webController) processFileById(fileId string, res http.ResponseWriter,
 		return
 	}
 
-	errorResponse(WebError{T: "Invalid file", Error: file.Extra}, 504, req, res)
+	errorResponse(WebError{T: "Invalid file", Error: file.MetaExtra}, 504, req, res)
 
 	return
 }

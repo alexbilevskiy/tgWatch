@@ -1,6 +1,7 @@
 package modules
 
 import (
+	"context"
 	"log"
 	"strings"
 
@@ -16,7 +17,7 @@ var tgChatId int64 = 777000
 var myUsername string = "alexbilevskiy"
 
 func sendCoffee(tdlibClient *client.Client, content client.MessageContent) {
-	if content.MessageContentType() != client.TypeMessageText {
+	if content.MessageContentConstructor() != client.ConstructorMessageText {
 		return
 	}
 	cnt := content.(*client.MessageText)
@@ -25,7 +26,7 @@ func sendCoffee(tdlibClient *client.Client, content client.MessageContent) {
 	}
 	log.Printf("Sending coffee!!!")
 	req := &client.ForwardMessagesRequest{ChatId: dudeChatId, FromChatId: myUserId, MessageIds: append(make([]int64, 0), repostMsgId), RemoveCaption: true, SendCopy: true}
-	messages, err := tdlibClient.ForwardMessages(req)
+	messages, err := tdlibClient.ForwardMessages(context.Background(), req)
 	if err != nil {
 		log.Printf("Failed to send coffee: %s", err.Error())
 	} else {
@@ -35,25 +36,25 @@ func sendCoffee(tdlibClient *client.Client, content client.MessageContent) {
 
 func sendTgNotification(acc int64, tdlibClient *client.Client, update *client.UpdateNewMessage) {
 	gcReq := client.GetChatRequest{ChatId: myUserId}
-	_, err := tdlibClient.GetChat(&gcReq)
+	_, err := tdlibClient.GetChat(context.Background(), &gcReq)
 	if err != nil {
 		log.Printf("Failed to get chat (%s), trying to create", err.Error())
 
 		srReq := client.SearchPublicChatRequest{Username: myUsername}
-		_, err := tdlibClient.SearchPublicChat(&srReq)
+		_, err := tdlibClient.SearchPublicChat(context.Background(), &srReq)
 		if err != nil {
 			log.Printf("Failed to search public chat: %s", err.Error())
 			return
 		}
 		chReq := client.CreatePrivateChatRequest{UserId: myUserId}
-		_, err = tdlibClient.CreatePrivateChat(&chReq)
+		_, err = tdlibClient.CreatePrivateChat(context.Background(), &chReq)
 		if err != nil {
 			log.Printf("Failed to create private chat: %s", err.Error())
 			return
 		}
 	}
 	req := client.SendMessageRequest{ChatId: myUserId, InputMessageContent: &client.InputMessageText{Text: &client.FormattedText{Text: "got new message from tg"}}}
-	_, err = tdlibClient.SendMessage(&req)
+	_, err = tdlibClient.SendMessage(context.Background(), &req)
 	if err != nil {
 		log.Printf("Failed to notify: %s", err.Error())
 		return

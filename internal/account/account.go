@@ -15,7 +15,6 @@ type Account struct {
 }
 
 type tdApiInterface interface {
-	ListenUpdates()
 	Close()
 
 	GetChat(chatId int64, force bool) (*client.Chat, error)
@@ -68,8 +67,4 @@ func NewAccount(cfg *config.Config, tdMongo *db.TdMongo, dbData *db.DbAccountDat
 	}
 
 	return acc
-}
-
-func (acc *Account) Run() {
-	go acc.TdApi.ListenUpdates()
 }

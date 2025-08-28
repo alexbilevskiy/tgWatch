@@ -47,8 +47,8 @@ func buildChatInfoByLocalChat(acc *account.Account, chat *client.Chat) ChatInfo 
 		return ChatInfo{ChatId: -1, Username: "ERROR", ChatName: "NULL CHAT"}
 	}
 	info := ChatInfo{ChatId: chat.Id, ChatName: acc.TdApi.GetChatName(chat.Id), Username: acc.TdApi.GetChatUsername(chat.Id)}
-	switch chat.Type.ChatTypeType() {
-	case client.TypeChatTypeSupergroup:
+	switch chat.Type.ChatTypeConstructor() {
+	case client.ConstructorChatTypeSupergroup:
 		t := chat.Type.(*client.ChatTypeSupergroup)
 		sg, err := acc.TdApi.GetSuperGroup(t.SupergroupId)
 		if err != nil {
@@ -61,12 +61,12 @@ func buildChatInfoByLocalChat(acc *account.Account, chat *client.Chat) ChatInfo 
 			}
 			info.HasTopics = sg.IsForum
 		}
-	case client.TypeChatTypePrivate:
+	case client.ConstructorChatTypePrivate:
 		info.Type = "User"
-	case client.TypeChatTypeBasicGroup:
+	case client.ConstructorChatTypeBasicGroup:
 		info.Type = "Group"
 	default:
-		info.Type = chat.Type.ChatTypeType()
+		info.Type = chat.Type.ChatTypeConstructor()
 	}
 	info.CountUnread = chat.UnreadCount
 
@@ -118,46 +118,46 @@ func RenderText(text *client.FormattedText) string {
 
 func wrapEntity(entity *client.TextEntity, text string) string {
 	var wrapped string
-	switch entity.Type.TextEntityTypeType() {
-	case client.TypeTextEntityTypeBold:
+	switch entity.Type.TextEntityTypeConstructor() {
+	case client.ConstructorTextEntityTypeBold:
 		wrapped = "<b>" + text + "</b>"
-	case client.TypeTextEntityTypeItalic:
+	case client.ConstructorTextEntityTypeItalic:
 		wrapped = "<i>" + text + "</i>"
-	case client.TypeTextEntityTypeUnderline:
+	case client.ConstructorTextEntityTypeUnderline:
 		wrapped = "<u>" + text + "</u>"
-	case client.TypeTextEntityTypeStrikethrough:
+	case client.ConstructorTextEntityTypeStrikethrough:
 		wrapped = "<s>" + text + "</s>"
-	case client.TypeTextEntityTypeMention:
+	case client.ConstructorTextEntityTypeMention:
 		wrapped = fmt.Sprintf(`<a href="https://t.me/%s">%s</a>`, text[1:], text)
-	case client.TypeTextEntityTypeMentionName:
+	case client.ConstructorTextEntityTypeMentionName:
 		t := entity.Type.(*client.TextEntityTypeMentionName)
 		wrapped = fmt.Sprintf(`<a href="/h/%d">%s</a>`, t.UserId, text)
-	case client.TypeTextEntityTypeCode:
+	case client.ConstructorTextEntityTypeCode:
 		wrapped = "<code>" + text + "</code>"
-	case client.TypeTextEntityTypeUrl:
+	case client.ConstructorTextEntityTypeUrl:
 		wrapped = fmt.Sprintf(`<a href="%s">%s</a>`, text, text)
-	case client.TypeTextEntityTypeTextUrl:
+	case client.ConstructorTextEntityTypeTextUrl:
 		t := entity.Type.(*client.TextEntityTypeTextUrl)
 		wrapped = fmt.Sprintf(`<a href="%s">%s</a>`, t.Url, text)
-	case client.TypeTextEntityTypePre:
+	case client.ConstructorTextEntityTypePre:
 		wrapped = "<code>" + text + "</code>"
-	case client.TypeTextEntityTypeBotCommand:
+	case client.ConstructorTextEntityTypeBotCommand:
 		wrapped = "<a>" + text + "</a>"
-	case client.TypeTextEntityTypeHashtag:
+	case client.ConstructorTextEntityTypeHashtag:
 		wrapped = "<a>" + text + "</a>"
-	case client.TypeTextEntityTypeEmailAddress:
+	case client.ConstructorTextEntityTypeEmailAddress:
 		wrapped = fmt.Sprintf(`<a href="mailto:%s">%s</a>`, text, text)
-	case client.TypeTextEntityTypePhoneNumber:
+	case client.ConstructorTextEntityTypePhoneNumber:
 		wrapped = fmt.Sprintf(`<a href="tel:%s">%s</a>`, text, text)
-	case client.TypeTextEntityTypeSpoiler:
+	case client.ConstructorTextEntityTypeSpoiler:
 		wrapped = fmt.Sprintf(`<span class="spoiler">%s</span>`, text)
-	case client.TypeTextEntityTypeCustomEmoji:
+	case client.ConstructorTextEntityTypeCustomEmoji:
 		t := entity.Type.(*client.TextEntityTypeCustomEmoji)
 		thumbLink := fmt.Sprintf("/e/%d", t.CustomEmojiId)
 		wrapped = fmt.Sprintf(`<img width=20 src="%s" alt="%s" title="%s">`, thumbLink, text, text)
-		//wrapped = fmt.Sprintf(`<span title="%s" class="badge bg-info">%s</span>`, entity.Type.TextEntityTypeType(), text)
+		//wrapped = fmt.Sprintf(`<span title="%s" class="badge bg-info">%s</span>`, entity.Type.TextEntityTypeConstructor(), text)
 	default:
-		wrapped = fmt.Sprintf(`<span title="%s" class="badge bg-danger">%s</span>`, entity.Type.TextEntityTypeType(), text)
+		wrapped = fmt.Sprintf(`<span title="%s" class="badge bg-danger">%s</span>`, entity.Type.TextEntityTypeConstructor(), text)
 	}
 
 	return wrapped

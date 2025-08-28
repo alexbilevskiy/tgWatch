@@ -1,7 +1,9 @@
 package tdlib
 
 import (
+	"context"
 	"log"
+	"time"
 
 	"github.com/zelenin/go-tdlib/client"
 )
@@ -15,15 +17,17 @@ type clientAuthorizer struct {
 }
 
 func (stateHandler *clientAuthorizer) Handle(tdcl *client.Client, state client.AuthorizationState) error {
+	ctx, done := context.WithDeadline(context.Background(), time.Now().Add(60*time.Second))
+	defer done()
 	stateHandler.State <- state
 
-	switch state.AuthorizationStateType() {
-	case client.TypeAuthorizationStateWaitTdlibParameters:
-		_, err := tdcl.SetTdlibParameters(stateHandler.TdlibParameters)
+	switch state.AuthorizationStateConstructor() {
+	case client.ConstructorAuthorizationStateWaitTdlibParameters:
+		_, err := tdcl.SetTdlibParameters(ctx, stateHandler.TdlibParameters)
 		return err
 
-	case client.TypeAuthorizationStateWaitPhoneNumber:
-		_, err := tdcl.SetAuthenticationPhoneNumber(&client.SetAuthenticationPhoneNumberRequest{
+	case client.ConstructorAuthorizationStateWaitPhoneNumber:
+		_, err := tdcl.SetAuthenticationPhoneNumber(ctx, &client.SetAuthenticationPhoneNumberRequest{
 			PhoneNumber: <-stateHandler.PhoneNumber,
 			Settings: &client.PhoneNumberAuthenticationSettings{
 				AllowFlashCall:       false,
@@ -33,38 +37,38 @@ func (stateHandler *clientAuthorizer) Handle(tdcl *client.Client, state client.A
 		})
 		return err
 
-	case client.TypeAuthorizationStateWaitEmailAddress:
+	case client.ConstructorAuthorizationStateWaitEmailAddress:
 		panic("unsupported authorization state TypeAuthorizationStateWaitEmailAddress")
-	case client.TypeAuthorizationStateWaitEmailCode:
+	case client.ConstructorAuthorizationStateWaitEmailCode:
 		panic("unsupported authorization state TypeAuthorizationStateWaitEmailCode")
-	case client.TypeAuthorizationStateWaitOtherDeviceConfirmation:
+	case client.ConstructorAuthorizationStateWaitOtherDeviceConfirmation:
 		panic("unsupported authorization state TypeAuthorizationStateWaitOtherDeviceConfirmation")
 
-	case client.TypeAuthorizationStateWaitCode:
-		_, err := tdcl.CheckAuthenticationCode(&client.CheckAuthenticationCodeRequest{
+	case client.ConstructorAuthorizationStateWaitCode:
+		_, err := tdcl.CheckAuthenticationCode(ctx, &client.CheckAuthenticationCodeRequest{
 			Code: <-stateHandler.Code,
 		})
 		return err
 
-	case client.TypeAuthorizationStateWaitRegistration:
+	case client.ConstructorAuthorizationStateWaitRegistration:
 		return client.NotSupportedAuthorizationState(state)
 
-	case client.TypeAuthorizationStateWaitPassword:
-		_, err := tdcl.CheckAuthenticationPassword(&client.CheckAuthenticationPasswordRequest{
+	case client.ConstructorAuthorizationStateWaitPassword:
+		_, err := tdcl.CheckAuthenticationPassword(ctx, &client.CheckAuthenticationPasswordRequest{
 			Password: <-stateHandler.Password,
 		})
 		return err
 
-	case client.TypeAuthorizationStateReady:
+	case client.ConstructorAuthorizationStateReady:
 		return nil
 
-	case client.TypeAuthorizationStateLoggingOut:
+	case client.ConstructorAuthorizationStateLoggingOut:
 		return client.NotSupportedAuthorizationState(state)
 
-	case client.TypeAuthorizationStateClosing:
+	case client.ConstructorAuthorizationStateClosing:
 		return nil
 
-	case client.TypeAuthorizationStateClosed:
+	case client.ConstructorAuthorizationStateClosed:
 		return nil
 	}
 
@@ -111,10 +115,10 @@ func ChanInteractor(clientAuthorizer *clientAuthorizer, phone string, nextParams
 
 			return
 		}
-		log.Printf("new state! %s", AuthorizerState.AuthorizationStateType())
+		log.Printf("new state! %s", AuthorizerState.AuthorizationStateConstructor())
 
-		switch AuthorizerState.AuthorizationStateType() {
-		case client.TypeAuthorizationStateWaitPhoneNumber:
+		switch AuthorizerState.AuthorizationStateConstructor() {
+		case client.ConstructorAuthorizationStateWaitPhoneNumber:
 			if phoneSet == true {
 				continue
 			}
@@ -122,7 +126,7 @@ func ChanInteractor(clientAuthorizer *clientAuthorizer, phone string, nextParams
 			clientAuthorizer.PhoneNumber <- phone
 			phoneSet = true
 
-		case client.TypeAuthorizationStateWaitCode:
+		case client.ConstructorAuthorizationStateWaitCode:
 			if codeSet == true {
 				continue
 			}
@@ -140,7 +144,7 @@ func ChanInteractor(clientAuthorizer *clientAuthorizer, phone string, nextParams
 
 			clientAuthorizer.Code <- param
 
-		case client.TypeAuthorizationStateWaitPassword:
+		case client.ConstructorAuthorizationStateWaitPassword:
 			if passwordSet == true {
 				continue
 			}
@@ -158,7 +162,7 @@ func ChanInteractor(clientAuthorizer *clientAuthorizer, phone string, nextParams
 
 			clientAuthorizer.Password <- param
 
-		case client.TypeAuthorizationStateReady:
+		case client.ConstructorAuthorizationStateReady:
 			log.Printf("Authorize complete!")
 
 			return

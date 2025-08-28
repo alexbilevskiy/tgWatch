@@ -1,6 +1,7 @@
 package tdlib
 
 import (
+	"context"
 	"log"
 
 	"github.com/alexbilevskiy/tgWatch/internal/config"
@@ -47,7 +48,7 @@ func (c *AccountCreator) CreateAccount(phone string) {
 		var meLocal *client.User
 
 		log.Println("push tdlib params")
-		logVerbosity := client.WithLogVerbosity(&client.SetLogVerbosityLevelRequest{
+		_, _ = client.SetLogVerbosityLevel(&client.SetLogVerbosityLevelRequest{
 			NewVerbosityLevel: 2,
 		})
 		c.AuthParams = make(chan string)
@@ -57,7 +58,7 @@ func (c *AccountCreator) CreateAccount(phone string) {
 		log.Println("create authorizing client instance")
 
 		var err error
-		tdlibClientLocal, err = client.NewClient(authorizer, logVerbosity)
+		tdlibClientLocal, err = client.NewClient(authorizer)
 		if err != nil {
 			log.Fatalf("NewClient error: %s", err)
 		}
@@ -72,7 +73,7 @@ func (c *AccountCreator) CreateAccount(phone string) {
 
 		log.Printf("TDLib version: %s", optionValue.(*client.OptionValueString).Value)
 
-		meLocal, err = tdlibClientLocal.GetMe()
+		meLocal, err = tdlibClientLocal.GetMe(context.Background())
 		id := meLocal.Id
 		if err != nil {
 			log.Fatalf("GetMe error: %s", err)
@@ -81,7 +82,7 @@ func (c *AccountCreator) CreateAccount(phone string) {
 		log.Printf("NEW Me: %s %s [%s]", meLocal.FirstName, meLocal.LastName, GetUsername(meLocal.Usernames))
 
 		log.Printf("closing authorizing instance")
-		_, err = tdlibClientLocal.Close()
+		_, err = tdlibClientLocal.Close(context.Background())
 
 		c.CurrentAuthorizingAcc.Id = id
 		c.CurrentAuthorizingAcc.Status = consts.AccStatusActive
