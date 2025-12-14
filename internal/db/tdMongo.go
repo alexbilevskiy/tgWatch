@@ -28,18 +28,16 @@ func NewTdMongo(mongoClient *mongo.Client, DbPrefix string, Phone string) *TdMon
 	m.chatListColl = mongoClient.Database(db).Collection("chatList")
 	m.settingsColl = mongoClient.Database(db).Collection("settings")
 
-	m.LoadChatFolders()
-
 	return m
 }
 
-func (m *TdMongo) SaveChatFolder(chatFolder *client.ChatFolder, folderInfo *client.ChatFolderInfo) {
+func (m *TdMongo) SaveChatFolder(ctx context.Context, chatFolder *client.ChatFolder, folderInfo *client.ChatFolderInfo) {
 
 	filStr := ChatFilter{Id: folderInfo.Id, Title: folderInfo.Name.Text.Text, IncludedChats: chatFolder.IncludedChatIds}
 	crit := bson.D{{"id", folderInfo.Id}}
 	update := bson.D{{"$set", filStr}}
 	t := true
-	mctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	mctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 	opts := &options.UpdateOptions{Upsert: &t}
 	_, err := m.chatFiltersColl.UpdateOne(mctx, crit, update, opts)
@@ -56,16 +54,16 @@ func (m *TdMongo) SaveChatFolder(chatFolder *client.ChatFolder, folderInfo *clie
 	}
 }
 
-func (m *TdMongo) SaveAllChatPositions(chatId int64, positions []*client.ChatPosition) {
+func (m *TdMongo) SaveAllChatPositions(ctx context.Context, chatId int64, positions []*client.ChatPosition) {
 	if len(positions) == 0 {
 		return
 	}
 	for _, pos := range positions {
-		m.SaveChatPosition(chatId, pos)
+		m.SaveChatPosition(ctx, chatId, pos)
 	}
 }
 
-func (m *TdMongo) SaveChatPosition(chatId int64, chatPosition *client.ChatPosition) {
+func (m *TdMongo) SaveChatPosition(ctx context.Context, chatId int64, chatPosition *client.ChatPosition) {
 	var listId int32
 	//@TODO: mongo should not be dependent of go-tdlib/client
 	clType := chatPosition.List.ChatListConstructor()
@@ -92,7 +90,7 @@ func (m *TdMongo) SaveChatPosition(chatId int64, chatPosition *client.ChatPositi
 	crit := bson.D{{"chatid", chatId}, {"listid", listId}}
 	update := bson.D{{"$set", filStr}}
 	t := true
-	mctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	mctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 	opts := &options.UpdateOptions{Upsert: &t}
 	_, err := m.chatListColl.UpdateOne(mctx, crit, update, opts)
@@ -101,8 +99,8 @@ func (m *TdMongo) SaveChatPosition(chatId int64, chatPosition *client.ChatPositi
 	}
 }
 
-func (m *TdMongo) GetSavedChats(listId int32) []ChatPosition {
-	mctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+func (m *TdMongo) GetSavedChats(ctx context.Context, listId int32) []ChatPosition {
+	mctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 	crit := bson.D{{"listid", listId}}
 	opts := options.FindOptions{Sort: bson.M{"order": -1}}
@@ -134,8 +132,8 @@ func (m *TdMongo) GetSavedChats(listId int32) []ChatPosition {
 	return chats
 }
 
-func (m *TdMongo) ClearChatFilters() {
-	mctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+func (m *TdMongo) ClearChatFilters(ctx context.Context, ) {
+	mctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 	removed, err := m.chatFiltersColl.DeleteMany(mctx, bson.M{})
 	if err != nil {
@@ -145,8 +143,8 @@ func (m *TdMongo) ClearChatFilters() {
 	log.Printf("Removed %d chat folders from db", removed.DeletedCount)
 }
 
-func (m *TdMongo) LoadChatFolders() []ChatFilter {
-	mctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+func (m *TdMongo) LoadChatFolders(ctx context.Context) []ChatFilter {
+	mctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 	cur, _ := m.chatFiltersColl.Find(mctx, bson.M{})
 	fi := make([]ChatFilter, 0)
@@ -162,8 +160,8 @@ func (m *TdMongo) LoadChatFolders() []ChatFilter {
 	return fi
 }
 
-func (m *TdMongo) DeleteChatFolder(folderId int32) (int64, error) {
-	mctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+func (m *TdMongo) DeleteChatFolder(ctx context.Context, folderId int32) (int64, error) {
+	mctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 	crit := bson.D{{"listid", folderId}}
 	d, err := m.chatListColl.DeleteMany(mctx, crit)

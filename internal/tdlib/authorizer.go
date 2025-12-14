@@ -17,7 +17,7 @@ type clientAuthorizer struct {
 }
 
 func (stateHandler *clientAuthorizer) Handle(tdcl *client.Client, state client.AuthorizationState) error {
-	ctx, done := context.WithDeadline(context.Background(), time.Now().Add(60*time.Second))
+	ctx, done := context.WithDeadline(context.Background(), time.Now().Add(60*time.Second)) //ignore new context here
 	defer done()
 	stateHandler.State <- state
 

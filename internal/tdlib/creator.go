@@ -21,8 +21,8 @@ func NewAccountCreator(cfg *config.Config, astorage *db.AccountsStorage) *Accoun
 	return &AccountCreator{cfg: cfg, as: astorage}
 }
 
-func (c *AccountCreator) CreateAccount(phone string) {
-	mongoAcc := c.as.GetSavedAccount(phone)
+func (c *AccountCreator) CreateAccount(ctx context.Context, phone string) {
+	mongoAcc := c.as.GetSavedAccount(ctx, phone)
 	if mongoAcc == nil {
 		log.Printf("Starting new account creation for phone %s", phone)
 		c.CurrentAuthorizingAcc = &db.DbAccountData{
@@ -31,7 +31,7 @@ func (c *AccountCreator) CreateAccount(phone string) {
 			DbPrefix: "tg",
 			Status:   consts.AccStatusNew,
 		}
-		c.as.SaveAccount(c.CurrentAuthorizingAcc)
+		c.as.SaveAccount(ctx, c.CurrentAuthorizingAcc)
 	} else {
 		c.CurrentAuthorizingAcc = mongoAcc
 		if c.CurrentAuthorizingAcc.Status == consts.AccStatusActive {
@@ -73,7 +73,7 @@ func (c *AccountCreator) CreateAccount(phone string) {
 
 		log.Printf("TDLib version: %s", optionValue.(*client.OptionValueString).Value)
 
-		meLocal, err = tdlibClientLocal.GetMe(context.Background())
+		meLocal, err = tdlibClientLocal.GetMe(ctx)
 		id := meLocal.Id
 		if err != nil {
 			log.Fatalf("GetMe error: %s", err)
@@ -82,12 +82,12 @@ func (c *AccountCreator) CreateAccount(phone string) {
 		log.Printf("NEW Me: %s %s [%s]", meLocal.FirstName, meLocal.LastName, GetUsername(meLocal.Usernames))
 
 		log.Printf("closing authorizing instance")
-		_, err = tdlibClientLocal.Close(context.Background())
+		_, err = tdlibClientLocal.Close(ctx)
 
 		c.CurrentAuthorizingAcc.Id = id
 		c.CurrentAuthorizingAcc.Status = consts.AccStatusActive
 
-		c.as.SaveAccount(c.CurrentAuthorizingAcc)
+		c.as.SaveAccount(ctx, c.CurrentAuthorizingAcc)
 
 		if err != nil {
 			log.Printf("failed to close authorizing instance: %s", err.Error())

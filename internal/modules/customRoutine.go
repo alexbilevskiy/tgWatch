@@ -16,7 +16,7 @@ var myUserId int64 = 118137353
 var tgChatId int64 = 777000
 var myUsername string = "alexbilevskiy"
 
-func sendCoffee(tdlibClient *client.Client, content client.MessageContent) {
+func sendCoffee(ctx context.Context, tdlibClient *client.Client, content client.MessageContent) {
 	if content.MessageContentConstructor() != client.ConstructorMessageText {
 		return
 	}
@@ -26,7 +26,7 @@ func sendCoffee(tdlibClient *client.Client, content client.MessageContent) {
 	}
 	log.Printf("Sending coffee!!!")
 	req := &client.ForwardMessagesRequest{ChatId: dudeChatId, FromChatId: myUserId, MessageIds: append(make([]int64, 0), repostMsgId), RemoveCaption: true, SendCopy: true}
-	messages, err := tdlibClient.ForwardMessages(context.Background(), req)
+	messages, err := tdlibClient.ForwardMessages(ctx, req)
 	if err != nil {
 		log.Printf("Failed to send coffee: %s", err.Error())
 	} else {
@@ -34,27 +34,27 @@ func sendCoffee(tdlibClient *client.Client, content client.MessageContent) {
 	}
 }
 
-func sendTgNotification(acc int64, tdlibClient *client.Client, update *client.UpdateNewMessage) {
+func sendTgNotification(ctx context.Context, acc int64, tdlibClient *client.Client, update *client.UpdateNewMessage) {
 	gcReq := client.GetChatRequest{ChatId: myUserId}
-	_, err := tdlibClient.GetChat(context.Background(), &gcReq)
+	_, err := tdlibClient.GetChat(ctx, &gcReq)
 	if err != nil {
 		log.Printf("Failed to get chat (%s), trying to create", err.Error())
 
 		srReq := client.SearchPublicChatRequest{Username: myUsername}
-		_, err := tdlibClient.SearchPublicChat(context.Background(), &srReq)
+		_, err := tdlibClient.SearchPublicChat(ctx, &srReq)
 		if err != nil {
 			log.Printf("Failed to search public chat: %s", err.Error())
 			return
 		}
 		chReq := client.CreatePrivateChatRequest{UserId: myUserId}
-		_, err = tdlibClient.CreatePrivateChat(context.Background(), &chReq)
+		_, err = tdlibClient.CreatePrivateChat(ctx, &chReq)
 		if err != nil {
 			log.Printf("Failed to create private chat: %s", err.Error())
 			return
 		}
 	}
 	req := client.SendMessageRequest{ChatId: myUserId, InputMessageContent: &client.InputMessageText{Text: &client.FormattedText{Text: "got new message from tg"}}}
-	_, err = tdlibClient.SendMessage(context.Background(), &req)
+	_, err = tdlibClient.SendMessage(ctx, &req)
 	if err != nil {
 		log.Printf("Failed to notify: %s", err.Error())
 		return
@@ -63,17 +63,17 @@ func sendTgNotification(acc int64, tdlibClient *client.Client, update *client.Up
 
 }
 
-func CustomNewMessageRoutine(acc int64, tdlibClient *client.Client, update *client.UpdateNewMessage) {
+func CustomNewMessageRoutine(ctx context.Context, acc int64, tdlibClient *client.Client, update *client.UpdateNewMessage) {
 	if acc != myUserId {
 		if update.Message.ChatId == tgChatId {
-			sendTgNotification(acc, tdlibClient, update)
+			sendTgNotification(ctx, acc, tdlibClient, update)
 		}
 
 		return
 	}
 
 	if update.Message.ChatId == dudeChatId {
-		sendCoffee(tdlibClient, update.Message.Content)
+		sendCoffee(ctx, tdlibClient, update.Message.Content)
 
 		return
 	}
@@ -81,13 +81,13 @@ func CustomNewMessageRoutine(acc int64, tdlibClient *client.Client, update *clie
 	return
 }
 
-func CustomMessageContentRoutine(acc int64, tdlibClient *client.Client, update *client.UpdateMessageContent) {
+func CustomMessageContentRoutine(ctx context.Context, acc int64, tdlibClient *client.Client, update *client.UpdateMessageContent) {
 	if acc != myUserId {
 		return
 	}
 
 	if update.ChatId == dudeChatId {
-		sendCoffee(tdlibClient, update.NewContent)
+		sendCoffee(ctx, tdlibClient, update.NewContent)
 
 		return
 	}

@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"fmt"
 	"html"
 	"strings"
@@ -12,7 +13,7 @@ import (
 	"github.com/zelenin/go-tdlib/client"
 )
 
-func parseMessage(acc *account.Account, message *client.Message, verbose bool) MessageInfo {
+func parseMessage(ctx context.Context, acc *account.Account, message *client.Message, verbose bool) MessageInfo {
 	senderChatId := tdlib.GetChatIdBySender(message.SenderId)
 	ct := GetContentWithText(message.Content, message.ChatId)
 	messageInfo := MessageInfo{
@@ -23,9 +24,9 @@ func parseMessage(acc *account.Account, message *client.Message, verbose bool) M
 		DateStr:       helpers.FormatDate(message.Date),
 		TimeStr:       helpers.FormatTime(message.Date),
 		ChatId:        message.ChatId,
-		ChatName:      acc.TdApi.GetChatName(message.ChatId),
+		ChatName:      acc.TdApi.GetChatName(ctx, message.ChatId),
 		SenderId:      senderChatId,
-		SenderName:    acc.TdApi.GetSenderName(message.SenderId),
+		SenderName:    acc.TdApi.GetSenderName(ctx, message.SenderId),
 		MediaAlbumId:  int64(message.MediaAlbumId),
 		SimpleText:    ct.Text,
 		FormattedText: ct.FormattedText,
@@ -41,16 +42,16 @@ func parseMessage(acc *account.Account, message *client.Message, verbose bool) M
 	return messageInfo
 }
 
-func buildChatInfoByLocalChat(acc *account.Account, chat *client.Chat) ChatInfo {
+func buildChatInfoByLocalChat(ctx context.Context, acc *account.Account, chat *client.Chat) ChatInfo {
 	if chat == nil {
 
 		return ChatInfo{ChatId: -1, Username: "ERROR", ChatName: "NULL CHAT"}
 	}
-	info := ChatInfo{ChatId: chat.Id, ChatName: acc.TdApi.GetChatName(chat.Id), Username: acc.TdApi.GetChatUsername(chat.Id)}
+	info := ChatInfo{ChatId: chat.Id, ChatName: acc.TdApi.GetChatName(ctx, chat.Id), Username: acc.TdApi.GetChatUsername(ctx, chat.Id)}
 	switch chat.Type.ChatTypeConstructor() {
 	case client.ConstructorChatTypeSupergroup:
 		t := chat.Type.(*client.ChatTypeSupergroup)
-		sg, err := acc.TdApi.GetSuperGroup(t.SupergroupId)
+		sg, err := acc.TdApi.GetSuperGroup(ctx, t.SupergroupId)
 		if err != nil {
 			info.Type = "Error " + err.Error()
 		} else {

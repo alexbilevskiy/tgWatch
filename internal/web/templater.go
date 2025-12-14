@@ -95,22 +95,22 @@ func funcMap(req *http.Request) template.FuncMap {
 			if currentAcc == nil {
 				return ChatInfo{ChatId: chatId, ChatName: "_NOT_SELECTED_ACCOUNT_"}
 			}
-			localChat, err := currentAcc.TdApi.GetChat(chatId, false)
+			localChat, err := currentAcc.TdApi.GetChat(req.Context(), chatId, false)
 			if err == nil {
 
 				return ChatInfo{ChatId: chatId, ChatName: "_NOT_FOUND_"}
 			}
 
-			return buildChatInfoByLocalChat(currentAcc, localChat)
+			return buildChatInfoByLocalChat(req.Context(), currentAcc, localChat)
 		},
 		"chatInfo": func(chatIdstr string) ChatInfo {
 			chatId, _ := strconv.ParseInt(chatIdstr, 10, 64)
 			if currentAcc == nil {
 				return ChatInfo{ChatId: chatId, ChatName: "_NOT_FOUND_"}
 			}
-			c, err := currentAcc.TdApi.GetChat(chatId, false)
+			c, err := currentAcc.TdApi.GetChat(req.Context(), chatId, false)
 			if err != nil {
-				user, err := currentAcc.TdApi.GetUser(chatId)
+				user, err := currentAcc.TdApi.GetUser(req.Context(), chatId)
 				if err != nil {
 					return ChatInfo{ChatId: chatId, ChatName: fmt.Sprintf("ERROR: %s", err.Error())}
 				}
@@ -118,13 +118,13 @@ func funcMap(req *http.Request) template.FuncMap {
 				return ChatInfo{ChatId: chatId, ChatName: tdlib.GetUserFullname(user)}
 			}
 
-			return buildChatInfoByLocalChat(currentAcc, c)
+			return buildChatInfoByLocalChat(req.Context(), currentAcc, c)
 		},
 		"GetLink": func(chatId int64, messageId int64) string {
 			if currentAcc == nil {
 				return ""
 			}
-			return currentAcc.TdApi.GetLink(chatId, messageId)
+			return currentAcc.TdApi.GetLink(req.Context(), chatId, messageId)
 		},
 		"DateTime": func(date int32) string {
 			return helpers.FormatDateTime(date)

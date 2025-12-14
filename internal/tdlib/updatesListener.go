@@ -1,6 +1,7 @@
 package tdlib
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"time"
@@ -10,7 +11,7 @@ import (
 	"github.com/zelenin/go-tdlib/client"
 )
 
-func (t *TdApi) ListenUpdates(update client.Type) {
+func (t *TdApi) UpdatesCallback(ctx context.Context, update client.Type) {
 	switch update.GetType() {
 	case client.TypeUpdate:
 		typ := update.GetConstructor()
@@ -110,7 +111,7 @@ func (t *TdApi) ListenUpdates(update client.Type) {
 
 		case client.ConstructorUpdateChatHasProtectedContent:
 			upd := update.(*client.UpdateChatHasProtectedContent)
-			log.Printf("Chat id:%d `%s` now has protected content: %s", upd.ChatId, t.GetChatName(upd.ChatId), helpers.JsonMarshalStr(upd.HasProtectedContent))
+			log.Printf("Chat id:%d `%s` now has protected content: %s", upd.ChatId, t.GetChatName(ctx, upd.ChatId), helpers.JsonMarshalStr(upd.HasProtectedContent))
 
 		case client.ConstructorUpdateNewChat:
 			//dont need to cache chat here, because chat info is empty, @see case client.ClassChat below
@@ -129,7 +130,7 @@ func (t *TdApi) ListenUpdates(update client.Type) {
 				//fmt.Printf("Skipping action in non-user chat %d: %s", upd.ChatId, upd.Action.ChatActionType()))
 				break
 			}
-			localChat, err := t.GetChat(upd.ChatId, false)
+			localChat, err := t.GetChat(ctx, upd.ChatId, false)
 			if err == nil {
 				if localChat.LastMessage != nil && localChat.LastMessage.Date < int32(time.Now().Unix())-int32((time.Hour*6).Seconds()) {
 					//fmt.Printf("User action in chat `%s`: %s", localChat.Title, upd.Action.ChatActionType()))
@@ -153,7 +154,7 @@ func (t *TdApi) ListenUpdates(update client.Type) {
 			if len(upd.Positions) == 0 {
 				break
 			}
-			t.db.SaveAllChatPositions(upd.ChatId, upd.Positions)
+			t.db.SaveAllChatPositions(ctx, upd.ChatId, upd.Positions)
 
 		case client.ConstructorUpdateOption:
 			upd := update.(*client.UpdateOption)
@@ -163,19 +164,19 @@ func (t *TdApi) ListenUpdates(update client.Type) {
 
 		case client.ConstructorUpdateChatPosition:
 			upd := update.(*client.UpdateChatPosition)
-			t.db.SaveChatPosition(upd.ChatId, upd.Position)
+			t.db.SaveChatPosition(ctx, upd.ChatId, upd.Position)
 
 		case client.ConstructorUpdateChatFolders:
 			upd := update.(*client.UpdateChatFolders)
-			t.SaveChatFilters(upd)
+			t.SaveChatFilters(ctx, upd)
 
 		case client.ConstructorUpdateChatAddedToList:
 			upd := update.(*client.UpdateChatAddedToList)
-			t.SaveChatAddedToList(upd)
+			t.SaveChatAddedToList(ctx, upd)
 
 		case client.ConstructorUpdateChatRemovedFromList:
 			upd := update.(*client.UpdateChatRemovedFromList)
-			t.RemoveChatRemovedFromList(upd)
+			t.RemoveChatRemovedFromList(ctx, upd)
 
 		case client.ConstructorUpdateDeleteMessages:
 			upd := update.(*client.UpdateDeleteMessages)
@@ -192,10 +193,10 @@ func (t *TdApi) ListenUpdates(update client.Type) {
 			upd := update.(*client.UpdateNewMessage)
 			if upd.Message.Content.MessageContentConstructor() == client.ConstructorMessageChatAddMembers ||
 				upd.Message.Content.MessageContentConstructor() == client.ConstructorMessageChatJoinByLink {
-				t.MarkJoinAsRead(upd.Message.ChatId, upd.Message.Id)
+				t.MarkJoinAsRead(ctx, upd.Message.ChatId, upd.Message.Id)
 			}
 
-			modules.CustomNewMessageRoutine(t.dbData.Id, t.tdlibClient, upd)
+			modules.CustomNewMessageRoutine(ctx, t.dbData.Id, t.tdlibClient, upd)
 
 		case client.ConstructorUpdateMessageEdited:
 			upd := update.(*client.UpdateMessageEdited)
@@ -211,7 +212,7 @@ func (t *TdApi) ListenUpdates(update client.Type) {
 				break
 			}
 
-			modules.CustomMessageContentRoutine(t.dbData.Id, t.tdlibClient, upd)
+			modules.CustomMessageContentRoutine(ctx, t.dbData.Id, t.tdlibClient, upd)
 
 		case client.ConstructorUpdateFile:
 			upd := update.(*client.UpdateFile)
@@ -223,7 +224,7 @@ func (t *TdApi) ListenUpdates(update client.Type) {
 
 		case client.ConstructorUpdateChatMessageAutoDeleteTime:
 			upd := update.(*client.UpdateChatMessageAutoDeleteTime)
-			chatName := t.GetChatName(upd.ChatId)
+			chatName := t.GetChatName(ctx, upd.ChatId)
 			log.Printf("Message auto-delete time updated for chat `%s` %d: %ds", chatName, upd.ChatId, upd.MessageAutoDeleteTime)
 
 		case client.ConstructorUpdateChatAvailableReactions:

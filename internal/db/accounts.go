@@ -21,14 +21,14 @@ func NewAccountsStorage(cfg *config.Config, dbClient *mongo.Client) *AccountsSto
 	return as
 }
 
-func (as *AccountsStorage) LoadAccounts(phone string) []*DbAccountData {
+func (as *AccountsStorage) LoadAccounts(ctx context.Context, phone string) []*DbAccountData {
 	var crit bson.M
 	if phone == "" {
 		crit = bson.M{}
 	} else {
 		crit = bson.M{"phone": phone}
 	}
-	mctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	mctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 	accountsCursor, err := as.accountColl.Find(mctx, crit)
 	if err != nil {
@@ -59,13 +59,13 @@ func (as *AccountsStorage) LoadAccounts(phone string) []*DbAccountData {
 	return accs
 }
 
-func (as *AccountsStorage) SaveAccount(account *DbAccountData) {
+func (as *AccountsStorage) SaveAccount(ctx context.Context, account *DbAccountData) {
 	crit := bson.D{{"phone", account.Phone}}
 	update := bson.D{{"$set", account}}
 	t := true
 	opts := &options.UpdateOptions{Upsert: &t}
 
-	mctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	mctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 	_, err := as.accountColl.UpdateOne(mctx, crit, update, opts)
 	if err != nil {
@@ -74,10 +74,10 @@ func (as *AccountsStorage) SaveAccount(account *DbAccountData) {
 	log.Printf("Saved new account id:%d", account.Id)
 }
 
-func (as *AccountsStorage) GetSavedAccount(phone string) *DbAccountData {
+func (as *AccountsStorage) GetSavedAccount(ctx context.Context, phone string) *DbAccountData {
 	var acc *DbAccountData
 
-	mctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	mctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 	crit := bson.D{{"phone", phone}}
 	accObj := as.accountColl.FindOne(mctx, crit)

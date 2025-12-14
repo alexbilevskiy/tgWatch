@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
+	"os/signal"
+	"time"
 
 	"github.com/alexbilevskiy/tgWatch/internal/account"
 	"github.com/alexbilevskiy/tgWatch/internal/config"
@@ -14,14 +17,26 @@ import (
 func main() {
 	cfg, err := config.InitConfiguration()
 	if err != nil {
-		log.Fatal(err)
-	}
-	err = tdlib.LoadOptionsList()
-	if err != nil {
-		log.Fatal(err)
+		log.Printf("config read error: %v", err)
+		os.Exit(1)
 	}
 
-	mongoClient := db.NewClient(cfg)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
+	defer stop()
+	go func() {
+		<-ctx.Done()
+		<-time.After(30 * time.Second)
+		log.Printf("service has not been stopped within the specified timeout; killed by force")
+		os.Exit(1)
+	}()
+
+	err = tdlib.LoadOptionsList()
+	if err != nil {
+		log.Printf("tdlib load options error: %v", err)
+		os.Exit(1)
+	}
+
+	mongoClient := db.NewClient(ctx, cfg)
 
 	args := os.Args
 	var phone string
@@ -31,21 +46,25 @@ func main() {
 		log.Printf("Using single account %s", args[1])
 		phone = args[1]
 	} else {
-		log.Fatalf("Invalid argument")
+		log.Printf("invalid arguments")
+		os.Exit(1)
 	}
 	astorage := db.NewAccountsStorage(cfg, mongoClient)
 	astore := account.NewAccountsStore(cfg, mongoClient, astorage)
 	creator := tdlib.NewAccountCreator(cfg, astorage)
 
 	if phone == "" {
-		go astore.Run()
+		go astore.Run(ctx)
 	} else {
-		astore.RunOne(phone)
+		astore.RunOne(ctx, phone)
 	}
 
 	log.Printf("starting web server...")
 
-	web.InitWeb(cfg, astore, creator)
-
-	select {}
+	err = web.Run(cfg, astore, creator)
+	if err != nil {
+		log.Printf("web server run error: %v", err)
+		os.Exit(1)
+	}
+	os.Exit(0)
 }
