@@ -54,9 +54,13 @@ func main() {
 	creator := tdlib.NewAccountCreator(cfg, astorage)
 
 	if phone == "" {
-		go astore.Run(ctx)
+		err = astore.Run(ctx)
 	} else {
-		astore.RunOne(ctx, phone)
+		err = astore.RunOne(ctx, phone)
+	}
+	if err != nil {
+		log.Printf("run tdlib error: %v", err)
+		os.Exit(1)
 	}
 
 	log.Printf("starting web server...")
