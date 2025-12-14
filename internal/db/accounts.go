@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
@@ -21,7 +22,7 @@ func NewAccountsStorage(cfg *config.Config, dbClient *mongo.Client) *AccountsSto
 	return as
 }
 
-func (as *AccountsStorage) LoadAccounts(ctx context.Context, phone string) []*DbAccountData {
+func (as *AccountsStorage) LoadAccounts(ctx context.Context, phone string) ([]*DbAccountData, error) {
 	var crit bson.M
 	if phone == "" {
 		crit = bson.M{}
@@ -32,14 +33,12 @@ func (as *AccountsStorage) LoadAccounts(ctx context.Context, phone string) []*Db
 	defer cancel()
 	accountsCursor, err := as.accountColl.Find(mctx, crit)
 	if err != nil {
-		log.Fatalf("Accounts load error: %s", err.Error())
-		return nil
+		return nil, fmt.Errorf("load accounts: %w", err)
 	}
 	var accountsBson []bson.M
 	err = accountsCursor.All(mctx, &accountsBson)
 	if err != nil {
-		log.Fatalf("Accounts cursor error: %s", err.Error())
-		return nil
+		return nil, fmt.Errorf("load accounts cursor: %w", err)
 	}
 	counter := 0
 	accs := make([]*DbAccountData, 0)
@@ -56,7 +55,7 @@ func (as *AccountsStorage) LoadAccounts(ctx context.Context, phone string) []*Db
 	}
 	//log.Printf("Loaded %d accounts", counter)
 
-	return accs
+	return accs, nil
 }
 
 func (as *AccountsStorage) SaveAccount(ctx context.Context, account *DbAccountData) {

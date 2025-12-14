@@ -9,7 +9,7 @@ import (
 	"github.com/alexbilevskiy/tgWatch/internal/tdlib"
 )
 
-func InitWeb(cfg *config.Config, astore *account.AccountsStore, creator *tdlib.AccountCreator) {
+func Run(cfg *config.Config, astore *account.AccountsStore, creator *tdlib.AccountCreator) error {
 
 	controller := newWebController(cfg, astore, creator)
 	asm := NewAccountSelectorMiddleware(astore)
@@ -47,5 +47,5 @@ func InitWeb(cfg *config.Config, astore *account.AccountsStore, creator *tdlib.A
 		Addr:    cfg.WebListen,
 		Handler: logging(mux),
 	}
-	go server.ListenAndServe()
+	return server.ListenAndServe()
 }
