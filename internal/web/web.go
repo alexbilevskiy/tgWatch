@@ -1,6 +1,7 @@
 package web
 
 import (
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -9,9 +10,9 @@ import (
 	"github.com/alexbilevskiy/tgWatch/internal/tdlib"
 )
 
-func Run(cfg *config.Config, astore *account.AccountsStore, creator *tdlib.AccountCreator) error {
+func Run(log *slog.Logger, cfg *config.Config, astore *account.AccountsStore, creator *tdlib.AccountCreator) error {
 
-	controller := newWebController(cfg, astore, creator)
+	controller := newWebController(log, cfg, astore, creator)
 	asm := NewAccountSelectorMiddleware(astore)
 
 	mux := http.NewServeMux()

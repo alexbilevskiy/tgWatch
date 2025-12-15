@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"path/filepath"
 	"sync"
 	"time"
@@ -18,6 +18,7 @@ import (
 )
 
 type TdApi struct {
+	log          *slog.Logger
 	m            sync.RWMutex
 	cfg          *config.Config
 	dbData       *db.DbAccountData
@@ -40,18 +41,16 @@ type TdStorageInterface interface {
 	GetSavedChats(ctx context.Context, listId int32) []db.ChatPosition
 }
 
-func NewTdApi(cfg *config.Config, dbData *db.DbAccountData, tdMongo TdStorageInterface) *TdApi {
-	t := &TdApi{
-		cfg: cfg,
+func NewTdApi(logger *slog.Logger, cfg *config.Config, dbData *db.DbAccountData, tdMongo TdStorageInterface) *TdApi {
+	return &TdApi{
+		log:          logger,
+		cfg:          cfg,
+		db:           tdMongo,
+		dbData:       dbData,
+		localChats:   make(map[int64]*client.Chat),
+		m:            sync.RWMutex{},
+		sentMessages: sync.Map{},
 	}
-	t.db = tdMongo
-	t.dbData = dbData
-
-	t.localChats = make(map[int64]*client.Chat)
-	t.m = sync.RWMutex{}
-	t.sentMessages = sync.Map{}
-
-	return t
 }
 
 func (t *TdApi) RunTdlib(ctx context.Context) (*client.User, error) {
@@ -79,14 +78,14 @@ func (t *TdApi) RunTdlib(ctx context.Context) (*client.User, error) {
 		return nil, fmt.Errorf("create tdlib client: get version: %w", err)
 	}
 
-	log.Printf("TDLib version: %s", optionValue.(*client.OptionValueString).Value)
+	t.log.Info("TDLib", "version", optionValue.(*client.OptionValueString).Value)
 
 	me, err := tdlibClient.GetMe(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("create tdlib client: get me: %w", err)
 	}
 
-	log.Printf("Me: %s %s [%s]", me.FirstName, me.LastName, GetUsername(me.Usernames))
+	t.log.Info("Me", "phone", t.dbData.Phone, "fname", me.FirstName, "lname", me.LastName, "username", GetUsername(me.Usernames))
 
 	//@NOTE: https://github.com/tdlib/td/issues/1005#issuecomment-613839507
 	go func() {
@@ -95,9 +94,9 @@ func (t *TdApi) RunTdlib(ctx context.Context) (*client.User, error) {
 			req := &client.SetOptionRequest{Name: "online", Value: &client.OptionValueBoolean{Value: true}}
 			ok, err := tdlibClient.SetOption(ctx, req)
 			if err != nil {
-				log.Printf("failed to set online option: %s", err)
+				t.log.Warn("set online status", "error", err)
 			} else {
-				log.Printf("Set online status: %s", helpers.JsonMarshalStr(ok))
+				t.log.Info("set online status", "resp", helpers.JsonMarshalStr(ok))
 			}
 			//time.Sleep(10 * time.Second)
 		}
@@ -167,9 +166,7 @@ func (t *TdApi) DownloadFile(ctx context.Context, id int32) (*client.File, error
 	req := client.DownloadFileRequest{FileId: id, Priority: 1, Synchronous: true}
 	file, err := t.tdlibClient.DownloadFile(ctx, &req)
 	if err != nil {
-		//log.Printf("Cannot download file: %s %d", err, id)
-
-		return nil, errors.New("downloading error: " + err.Error())
+		return nil, fmt.Errorf("download file by id: %w", err)
 	}
 
 	return file, nil
@@ -179,15 +176,9 @@ func (t *TdApi) DownloadFileByRemoteId(ctx context.Context, id string) (*client.
 	remoteFileReq := client.GetRemoteFileRequest{RemoteFileId: id}
 	remoteFile, err := t.tdlibClient.GetRemoteFile(ctx, &remoteFileReq)
 	if err != nil {
-		//log.Printf("cannot get remote file info: %s %s", err, id)
 
-		return nil, errors.New("remoteFile request error: " + err.Error())
+		return nil, fmt.Errorf("download file by remote id: %w", err)
 	}
-	//if remoteFile.Local.IsDownloadingCompleted {
-	//	log.Printf("Not dowloading file again: %s", remoteFile.Local.Path)
-	//
-	//	return remoteFile, nil
-	//}
 
 	return t.DownloadFile(ctx, remoteFile.Id)
 }
@@ -200,7 +191,7 @@ func (t *TdApi) GetCustomEmoji(ctx context.Context, customEmojisIds []int64) (*c
 	customEmojisReq := client.GetCustomEmojiStickersRequest{CustomEmojiIds: customEmojisIdsJson}
 	customEmojis, err := t.tdlibClient.GetCustomEmojiStickers(ctx, &customEmojisReq)
 	if err != nil {
-		return nil, errors.New("custom emoji error: " + err.Error())
+		return nil, fmt.Errorf("get custom emoji by ids: %w", err)
 	}
 
 	return customEmojis, nil
@@ -216,7 +207,7 @@ func (t *TdApi) markAsRead(ctx context.Context, chatId int64, messageId int64) e
 func (t *TdApi) GetLink(ctx context.Context, chatId int64, messageId int64) string {
 	chat, err := t.GetChat(ctx, chatId, false)
 	if err != nil {
-		log.Printf("GetLink: chat %d not found: %s", chatId, err.Error())
+		t.log.Warn("GetLink: chat not found", "phone", t.dbData.Phone, "chat", chatId, "err", err)
 		return ""
 	}
 	if chat.Type.ChatTypeConstructor() != client.ConstructorChatTypeSupergroup {
@@ -228,7 +219,7 @@ func (t *TdApi) GetLink(ctx context.Context, chatId int64, messageId int64) stri
 	link, err := t.tdlibClient.GetMessageLink(ctx, linkReq)
 	if err != nil {
 		if err.Error() != "400 Message not found" {
-			log.Printf("Failed to get msg link by chat id %d, msg id %d: %s", chatId, messageId, err)
+			t.log.Warn("get msg link by chat id", "chat", chatId, "msg", messageId, "error", err)
 		}
 
 		return ""
@@ -241,7 +232,7 @@ func (t *TdApi) AddChatsToFolder(ctx context.Context, chats []int64, folder int3
 	for _, chatId := range chats {
 		_, err := t.GetChat(ctx, chatId, true)
 		if err != nil {
-			log.Printf("failed to get chat before adding to folder: %d %s", chatId, err.Error())
+			t.log.Warn("get chat before adding to folder", "phone", t.dbData.Phone, "chat", chatId, "error", err)
 			continue
 		}
 
@@ -249,9 +240,9 @@ func (t *TdApi) AddChatsToFolder(ctx context.Context, chats []int64, folder int3
 		req := client.AddChatToListRequest{ChatId: chatId, ChatList: chatList}
 		_, err = t.tdlibClient.AddChatToList(ctx, &req)
 		if err != nil {
-			log.Printf("failed to add chat %d to list %d: %s", chatId, folder, err.Error())
+			t.log.Warn("add chat to list", "chat", chatId, "listid", folder, "error", err)
 		} else {
-			log.Printf("added chat %d to list %d", chatId, folder)
+			t.log.Info("added chat to list", "chat", chatId, "listid", folder)
 		}
 	}
 
@@ -271,9 +262,9 @@ func (t *TdApi) SendMessage(ctx context.Context, text string, chatId int64, repl
 	message, err := t.tdlibClient.SendMessage(ctx, req)
 	//@TODO: use t.sentMessages etc
 	if err != nil {
-		log.Printf("Failed to send message to chat %d: %s", chatId, err.Error())
+		t.log.Warn("send message", "chat", chatId, "error", err)
 	} else {
-		log.Printf("Sent message to chat %d! new (virtual) message id: %d", chatId, message.Id)
+		t.log.Info("sent message", "chat", chatId, "virtual_id", message.Id)
 	}
 }
 
@@ -320,7 +311,7 @@ func (t *TdApi) GetLinkInfo(ctx context.Context, link string) (client.InternalLi
 }
 
 func (t *TdApi) GetMessage(ctx context.Context, chatId int64, messageId int64) (*client.Message, error) {
-	log.Printf("get message %d/%d", chatId, messageId)
+	t.log.Info("get message", "chat_id", chatId, "message_id", messageId)
 	var err error
 
 	openChatReq := &client.OpenChatRequest{ChatId: chatId}
@@ -369,7 +360,7 @@ func (t *TdApi) LoadChatHistory(ctx context.Context, chatId int64, fromMessageId
 func (t *TdApi) MarkJoinAsRead(ctx context.Context, chatId int64, messageId int64) {
 	chat, err := t.GetChat(ctx, chatId, true)
 	if err != nil {
-		fmt.Printf("Cannot update unread count because chat %d not found: %s\n", chatId, err.Error())
+		t.log.Warn("cannot update unread count because chat not found", "phone", t.dbData.Phone, "chat", chatId, "error", err)
 
 		return
 	}
@@ -421,7 +412,7 @@ func (t *TdApi) GetSenderObj(ctx context.Context, sender client.MessageSender) (
 		chatId := sender.(*client.MessageSenderChat).ChatId
 		chat, err := t.GetChat(ctx, chatId, false)
 		if err != nil {
-			log.Printf("Failed to request sender chat info by id %d: %s", chatId, err)
+			t.log.Warn("request sender chat info by id", "phone", t.dbData.Phone, "chat", chatId, "error", err)
 
 			return nil, errors.New("unknown chat")
 		}
@@ -431,7 +422,7 @@ func (t *TdApi) GetSenderObj(ctx context.Context, sender client.MessageSender) (
 		userId := sender.(*client.MessageSenderUser).UserId
 		user, err := t.GetUser(ctx, userId)
 		if err != nil {
-			log.Printf("Failed to request user info by id %d: %s", userId, err)
+			t.log.Warn("request sender user info by id", "phone", t.dbData.Phone, "user", userId, "error", err)
 
 			return nil, errors.New("unknown user")
 		}
@@ -445,7 +436,7 @@ func (t *TdApi) GetSenderObj(ctx context.Context, sender client.MessageSender) (
 func (t *TdApi) GetChatName(ctx context.Context, chatId int64) string {
 	fullChat, err := t.GetChat(ctx, chatId, false)
 	if err != nil {
-		log.Printf("Failed to get chat name by id %d: %s", chatId, err)
+		t.log.Warn("get chat for name", "phone", t.dbData.Phone, "chat", chatId, "error", err)
 
 		return "no_title"
 	}
@@ -460,7 +451,7 @@ func (t *TdApi) GetChatName(ctx context.Context, chatId int64) string {
 func (t *TdApi) GetChatUsername(ctx context.Context, chatId int64) string {
 	chat, err := t.GetChat(ctx, chatId, false)
 	if err != nil {
-		log.Printf("Failed to get chat name by id %d: %s", chatId, err)
+		t.log.Warn("get chat for username", "phone", t.dbData.Phone, "chat", chatId, "error", err)
 
 		return ""
 	}
@@ -469,7 +460,7 @@ func (t *TdApi) GetChatUsername(ctx context.Context, chatId int64) string {
 		typ := chat.Type.(*client.ChatTypeSupergroup)
 		sg, err := t.GetSuperGroup(ctx, typ.SupergroupId)
 		if err != nil {
-			log.Printf("GetChatUsername error: %s", err.Error())
+			t.log.Warn("GetSuperGroup for username", "phone", t.dbData.Phone, "chat", typ.SupergroupId, "error", err)
 			return ""
 		}
 		return GetUsername(sg.Usernames)
@@ -477,7 +468,7 @@ func (t *TdApi) GetChatUsername(ctx context.Context, chatId int64) string {
 		typ := chat.Type.(*client.ChatTypePrivate)
 		user, err := t.GetUser(ctx, typ.UserId)
 		if err != nil {
-			log.Printf("GetChatUsername error: %s", err.Error())
+			t.log.Warn("GetUser for username", "phone", t.dbData.Phone, "user", typ.UserId, "error", err)
 			return ""
 		}
 		return GetUsername(user.Usernames)
@@ -490,45 +481,45 @@ func (t *TdApi) LoadChatsList(ctx context.Context, listId int32) {
 	var chatList client.ChatList
 	d, err := t.db.DeleteChatFolder(ctx, listId)
 	if err != nil {
-		log.Printf("failed to delete chats by list %d: %s\n", listId, err.Error())
+		t.log.Warn("delete chats by list", "list_id", listId, "error", err)
 	} else {
-		log.Printf("deleted %d chats by listid %d because refresh was called\n", d, listId)
+		t.log.Warn("deleted chats by listid", "count", d, "list_id", listId)
 	}
 
 	switch listId {
 	case consts.ClMain:
 		chatList = &client.ChatListMain{}
-		log.Printf("requesting LoadChats for main list: %s", chatList.ChatListConstructor())
+		t.log.Info("requesting LoadChats for main list", "type", chatList.ChatListConstructor())
 	case consts.ClArchive:
 		chatList = &client.ChatListArchive{}
-		log.Printf("requesting LoadChats for archive: %s", chatList.ChatListConstructor())
+		t.log.Info("requesting LoadChats for archive", "type", chatList.ChatListConstructor())
 	default:
 		chatList = &client.ChatListFolder{ChatFolderId: listId}
-		log.Printf("requesting LoadChats for folder: %d", chatList.(*client.ChatListFolder).ChatFolderId)
+		t.log.Info("requesting LoadChats for folder", "id", chatList.(*client.ChatListFolder).ChatFolderId)
 	}
 
 	loadChatsReq := &client.LoadChatsRequest{ChatList: chatList, Limit: 500}
 	_, err = t.tdlibClient.LoadChats(ctx, loadChatsReq)
 
 	if err == nil {
-		log.Printf("load chats ok, chat list updated will be received asynchronous")
+		t.log.Info("load chats ok, chat list updated will be received asynchronous")
 		//everything ok
 		return
 	}
 	if err.Error() != "404 Not Found" {
+		t.log.Error("LoadChats", "phone", t.dbData.Phone, "error", err)
 		//dunno what to do yet
-		log.Fatalf("[ERROR] LoadChats: %s", err)
+		panic("LoadChats")
 	}
 	//@see https://github.com/tdlib/td/blob/fb39e5d74667db915a75a5e58065c59af8e7d8d6/td/generate/scheme/td_api.tl#L4171
 
-	log.Printf("all chats already loaded, trying to get them")
+	t.log.Info("all chats already loaded, trying to get them")
 	getChatsReq := &client.GetChatsRequest{ChatList: chatList, Limit: 500}
 	chats, err := t.tdlibClient.GetChats(ctx, getChatsReq)
 	if err != nil {
-		log.Fatalf("failed to get loaded chats: %s", err.Error())
+		t.log.Error("GetChats", "phone", t.dbData.Phone, "error", err)
 	}
 	for _, chat := range chats.ChatIds {
-		//log.Printf("saving chat %d", chat)
 		t.db.SaveChatPosition(ctx, chat, &client.ChatPosition{
 			List:     chatList,
 			Order:    0,
@@ -539,7 +530,7 @@ func (t *TdApi) LoadChatsList(ctx context.Context, listId int32) {
 }
 
 func (t *TdApi) SaveChatFilters(ctx context.Context, chatFoldersUpdate *client.UpdateChatFolders) {
-	log.Printf("Chat filters update! %s", chatFoldersUpdate.GetConstructor())
+	t.log.Info("chat filters update", "type", chatFoldersUpdate.GetConstructor())
 	//@TODO: why was commented?
 	//t.tdMongo.ClearChatFilters()
 	var wg sync.WaitGroup
@@ -556,19 +547,19 @@ func (t *TdApi) SaveChatFilters(ctx context.Context, chatFoldersUpdate *client.U
 			//log.Printf("Existing chat folder: id: %d, n: %s", folderInfo.Id, folderInfo.Title)
 			continue
 		}
-		log.Printf("New chat folder: id: %d, n: %s", folderInfo.Id, folderInfo.Name.Text.Text)
+		t.log.Info("new chat folder", "id", folderInfo.Id, "name", folderInfo.Name.Text.Text)
 
 		wg.Add(1)
 		go func(folderInfo *client.ChatFolderInfo, wg *sync.WaitGroup) {
 			defer wg.Done()
 			chatFolder, err := t.getChatFolder(ctx, folderInfo.Id)
 			if err != nil {
-				log.Printf("Failed to load chat folder: id: %d, n: %s, reason: %s", folderInfo.Id, folderInfo.Name.Text.Text, err.Error())
+				t.log.Warn("load chat folder", "id", folderInfo.Id, "name", folderInfo.Name.Text.Text, "error", err)
 
 				return
 			}
 			t.db.SaveChatFolder(ctx, chatFolder, folderInfo)
-			log.Printf("Chat folder LOADED: id: %d, n: %s", folderInfo.Id, folderInfo.Name.Text.Text)
+			t.log.Info("chat folder LOADED", "id", folderInfo.Id, "name", folderInfo.Name.Text.Text)
 		}(folderInfo, &wg)
 		//time.Sleep(time.Second * 2)
 	}
@@ -585,7 +576,7 @@ func (t *TdApi) SaveChatFilters(ctx context.Context, chatFoldersUpdate *client.U
 		if !deleted {
 			continue
 		}
-		log.Printf("Deleted chat folder: id: %d, n: %s", existningFolder.Id, existningFolder.Title)
+		t.log.Info("deleted chat folder", "id", existningFolder.Id, "name", existningFolder.Title)
 	}
 
 	t.chatFolders = t.db.LoadChatFolders(ctx)
@@ -620,13 +611,13 @@ func (t *TdApi) SaveChatAddedToList(ctx context.Context, upd *client.UpdateChatA
 		}
 		t.db.SaveChatPosition(ctx, upd.ChatId, &position)
 	default:
-		log.Printf("unknown chatlist type: %s", upd.ChatList.ChatListConstructor())
+		t.log.Warn("unknown chatlist type", "type", upd.ChatList.ChatListConstructor())
 	}
 }
 
 func (t *TdApi) RemoveChatRemovedFromList(ctx context.Context, upd *client.UpdateChatRemovedFromList) {
 	j, _ := json.Marshal(upd)
-	log.Printf("NOT IMPLEMENTED: removing chat removed from list %s : %s", string(j))
+	t.log.Warn("NOT IMPLEMENTED: removing chat removed from list", "phone", t.dbData.Phone, "upd", string(j))
 	return
 	switch upd.ChatList.ChatListConstructor() {
 	case client.ConstructorChatListMain:
@@ -654,7 +645,7 @@ func (t *TdApi) RemoveChatRemovedFromList(ctx context.Context, upd *client.Updat
 		}
 		t.db.SaveChatPosition(ctx, upd.ChatId, &position)
 	default:
-		log.Printf("unknown chatlist type: %s", upd.ChatList.ChatListConstructor())
+		t.log.Warn("unknown chatlist type", "type", upd.ChatList.ChatListConstructor())
 	}
 }
 

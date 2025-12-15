@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -25,14 +26,15 @@ type newAccountState struct {
 }
 
 type webController struct {
+	log *slog.Logger
 	cfg *config.Config
 	st  newAccountState
 	as  *account.AccountsStore
 	cr  *tdlib.AccountCreator
 }
 
-func newWebController(cfg *config.Config, astore *account.AccountsStore, creator *tdlib.AccountCreator) *webController {
-	return &webController{cfg: cfg, as: astore, cr: creator}
+func newWebController(log *slog.Logger, cfg *config.Config, astore *account.AccountsStore, creator *tdlib.AccountCreator) *webController {
+	return &webController{log: log, cfg: cfg, as: astore, cr: creator}
 }
 
 func (wc *webController) processRoot(w http.ResponseWriter, r *http.Request) {

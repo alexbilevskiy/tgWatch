@@ -159,7 +159,7 @@ func (t *TdApi) UpdatesCallback(ctx context.Context, update client.Type) {
 		case client.ConstructorUpdateOption:
 			upd := update.(*client.UpdateOption)
 			if upd.Name != "unix_time" {
-				log.Printf("Update option %s: %s", upd.Name, helpers.JsonMarshalStr(upd.Value))
+				//log.Printf("Update option %s: %s", upd.Name, helpers.JsonMarshalStr(upd.Value))
 			}
 
 		case client.ConstructorUpdateChatPosition:

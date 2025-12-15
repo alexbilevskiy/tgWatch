@@ -86,6 +86,13 @@ func GetContentWithText(content client.MessageContent, chatId int64) MessageText
 	case client.ConstructorMessageChatJoinByLink:
 
 		return MessageTextContent{Text: "joined by invite link"}
+	case client.ConstructorMessageChatUpgradeTo:
+
+		return MessageTextContent{Text: "chat upgraded to supergroup"}
+	case client.ConstructorMessageForumTopicCreated:
+		msg := content.(*client.MessageForumTopicCreated)
+
+		return MessageTextContent{Text: fmt.Sprintf("topic created: `%s`", msg.Name)}
 	case client.ConstructorMessageChatDeleteMember:
 		msg := content.(*client.MessageChatDeleteMember)
 		//@TODO: pass currentAcc as argument
@@ -220,6 +227,8 @@ func GetContentAttachments(content client.MessageContent) []MessageAttachment {
 	case client.ConstructorMessageText:
 	case client.ConstructorMessageChatChangeTitle:
 	case client.ConstructorMessageChatChangePhoto:
+	case client.ConstructorMessageChatUpgradeTo:
+	case client.ConstructorMessageChatUpgradeFrom:
 	case client.ConstructorMessageCall:
 	case client.ConstructorMessagePoll:
 	case client.ConstructorMessageLocation:
@@ -236,6 +245,7 @@ func GetContentAttachments(content client.MessageContent) []MessageAttachment {
 	case client.ConstructorMessageVideoChatStarted:
 	case client.ConstructorMessageScreenshotTaken:
 	case client.ConstructorMessageForumTopicEdited:
+	case client.ConstructorMessageForumTopicCreated:
 
 	case client.ConstructorMessageChatSetMessageAutoDeleteTime:
 	case client.ConstructorMessageChatSetTheme:

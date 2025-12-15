@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/alexbilevskiy/tgWatch/internal/config"
@@ -17,9 +16,9 @@ type AccountsStorage struct {
 }
 
 func NewAccountsStorage(cfg *config.Config, dbClient *mongo.Client) *AccountsStorage {
-	as := &AccountsStorage{}
-	as.accountColl = dbClient.Database(cfg.Mongo["db"]).Collection("accounts")
-	return as
+	return &AccountsStorage{
+		accountColl: dbClient.Database(cfg.Mongo["db"]).Collection("accounts"),
+	}
 }
 
 func (as *AccountsStorage) LoadAccounts(ctx context.Context, phone string) ([]*DbAccountData, error) {
@@ -58,7 +57,7 @@ func (as *AccountsStorage) LoadAccounts(ctx context.Context, phone string) ([]*D
 	return accs, nil
 }
 
-func (as *AccountsStorage) SaveAccount(ctx context.Context, account *DbAccountData) {
+func (as *AccountsStorage) SaveAccount(ctx context.Context, account *DbAccountData) error {
 	crit := bson.D{{"phone", account.Phone}}
 	update := bson.D{{"$set", account}}
 	t := true
@@ -68,12 +67,12 @@ func (as *AccountsStorage) SaveAccount(ctx context.Context, account *DbAccountDa
 	defer cancel()
 	_, err := as.accountColl.UpdateOne(mctx, crit, update, opts)
 	if err != nil {
-		log.Fatalf("Failed to save account %d", account.Id)
+		return fmt.Errorf("save account: %w", err)
 	}
-	log.Printf("Saved new account id:%d", account.Id)
+	return nil
 }
 
-func (as *AccountsStorage) GetSavedAccount(ctx context.Context, phone string) *DbAccountData {
+func (as *AccountsStorage) GetSavedAccount(ctx context.Context, phone string) (*DbAccountData, error) {
 	var acc *DbAccountData
 
 	mctx, cancel := context.WithTimeout(ctx, 10*time.Second)
@@ -81,14 +80,14 @@ func (as *AccountsStorage) GetSavedAccount(ctx context.Context, phone string) *D
 	crit := bson.D{{"phone", phone}}
 	accObj := as.accountColl.FindOne(mctx, crit)
 	if accObj.Err() == mongo.ErrNoDocuments {
-		return nil
+		return nil, nil
 	} else if accObj.Err() != nil {
-		log.Fatalf("Failed to find account: %s", accObj.Err().Error())
+		return nil, fmt.Errorf("get account: %w", accObj.Err())
 	}
 	err := accObj.Decode(&acc)
 	if err != nil {
-		log.Fatalf("Failed to decode db account: %s", accObj.Err().Error())
+		return nil, fmt.Errorf("decode db account: %w", err)
 	}
 
-	return acc
+	return acc, nil
 }

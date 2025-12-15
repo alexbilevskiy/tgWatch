@@ -3,6 +3,7 @@ package account
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/alexbilevskiy/tgWatch/internal/config"
 	"github.com/alexbilevskiy/tgWatch/internal/db"
@@ -59,8 +60,8 @@ type tdApiInterface interface {
 	GetStorage() tdlib.TdStorageInterface
 }
 
-func NewAccount(cfg *config.Config, tdMongo *db.TdMongo, dbData *db.DbAccountData) *Account {
-	tdApi := tdlib.NewTdApi(cfg, dbData, tdMongo)
+func NewAccount(logger *slog.Logger, cfg *config.Config, tdMongo *db.TdMongo, dbData *db.DbAccountData) *Account {
+	tdApi := tdlib.NewTdApi(logger, cfg, dbData, tdMongo)
 
 	acc := &Account{
 		DbData: dbData,

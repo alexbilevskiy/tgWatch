@@ -2,44 +2,56 @@ package tdlib
 
 import (
 	"context"
-	"log"
+	"log/slog"
+
+	"github.com/zelenin/go-tdlib/client"
 
 	"github.com/alexbilevskiy/tgWatch/internal/config"
 	"github.com/alexbilevskiy/tgWatch/internal/consts"
 	"github.com/alexbilevskiy/tgWatch/internal/db"
-	"github.com/zelenin/go-tdlib/client"
 )
 
 type AccountCreator struct {
+	log                   *slog.Logger
 	cfg                   *config.Config
 	as                    *db.AccountsStorage
 	CurrentAuthorizingAcc *db.DbAccountData
 	AuthParams            chan string
 }
 
-func NewAccountCreator(cfg *config.Config, astorage *db.AccountsStorage) *AccountCreator {
-	return &AccountCreator{cfg: cfg, as: astorage}
+func NewAccountCreator(log *slog.Logger, cfg *config.Config, astorage *db.AccountsStorage) *AccountCreator {
+	return &AccountCreator{log: log, cfg: cfg, as: astorage}
 }
 
 func (c *AccountCreator) CreateAccount(ctx context.Context, phone string) {
-	mongoAcc := c.as.GetSavedAccount(ctx, phone)
+	mongoAcc, err := c.as.GetSavedAccount(ctx, phone)
+	if err != nil {
+		c.log.Error("unable to check if account exists", "phone", phone, "error", err)
+		return
+	}
 	if mongoAcc == nil {
-		log.Printf("Starting new account creation for phone %s", phone)
+		c.log.Info("starting new account creation", "phone", phone)
 		c.CurrentAuthorizingAcc = &db.DbAccountData{
 			Phone:    phone,
 			DataDir:  ".tdlib" + phone,
 			DbPrefix: "tg",
 			Status:   consts.AccStatusNew,
 		}
-		c.as.SaveAccount(ctx, c.CurrentAuthorizingAcc)
-	} else {
-		c.CurrentAuthorizingAcc = mongoAcc
-		if c.CurrentAuthorizingAcc.Status == consts.AccStatusActive {
-			log.Printf("Not creating new account again for phone %s", phone)
+		err := c.as.SaveAccount(ctx, c.CurrentAuthorizingAcc)
+		if err != nil {
+			c.log.Error("save new account", "phone", phone, "error", err)
+			c.CurrentAuthorizingAcc.Status = consts.AccStatusError
 
 			return
 		}
-		log.Printf("Continuing account creation for phone %s from state %s", phone, c.CurrentAuthorizingAcc.Status)
+	} else {
+		c.CurrentAuthorizingAcc = mongoAcc
+		if c.CurrentAuthorizingAcc.Status == consts.AccStatusActive {
+			c.log.Warn("not creating existing account", "phone", phone)
+
+			return
+		}
+		c.log.Info("continuing account creation", "phone", phone, "state", c.CurrentAuthorizingAcc.Status)
 	}
 
 	go func() {
@@ -47,7 +59,7 @@ func (c *AccountCreator) CreateAccount(ctx context.Context, phone string) {
 		var tdlibClientLocal *client.Client
 		var meLocal *client.User
 
-		log.Println("push tdlib params")
+		c.log.Info("push tdlib params", "phone", phone)
 		_, _ = client.SetLogVerbosityLevel(&client.SetLogVerbosityLevelRequest{
 			NewVerbosityLevel: 2,
 		})
@@ -55,42 +67,54 @@ func (c *AccountCreator) CreateAccount(ctx context.Context, phone string) {
 
 		go ChanInteractor(authorizer, phone, c.AuthParams)
 
-		log.Println("create authorizing client instance")
+		c.log.Info("create authorizing client instance", "phone", phone)
 
 		var err error
 		tdlibClientLocal, err = client.NewClient(authorizer)
 		if err != nil {
-			log.Fatalf("NewClient error: %s", err)
+			c.log.Error("NewClient", "phone", phone, "error", err)
+			c.CurrentAuthorizingAcc.Status = consts.AccStatusError
+			return
 		}
-		log.Println("get version")
+		c.log.Info("get version", "phone", phone)
 
 		optionValue, err := tdlibClientLocal.GetOption(&client.GetOptionRequest{
 			Name: "version",
 		})
 		if err != nil {
-			log.Fatalf("GetOption error: %s", err)
+			c.log.Error("GetOption", "phone", phone, "error", err)
+			c.CurrentAuthorizingAcc.Status = consts.AccStatusError
+			return
 		}
 
-		log.Printf("TDLib version: %s", optionValue.(*client.OptionValueString).Value)
+		c.log.Info("TDLib", "phone", phone, "version", optionValue.(*client.OptionValueString).Value)
 
 		meLocal, err = tdlibClientLocal.GetMe(ctx)
 		id := meLocal.Id
 		if err != nil {
-			log.Fatalf("GetMe error: %s", err)
+			c.log.Error("GetMe", "phone", phone, "error", err)
+			c.CurrentAuthorizingAcc.Status = consts.AccStatusError
+			return
 		}
 
-		log.Printf("NEW Me: %s %s [%s]", meLocal.FirstName, meLocal.LastName, GetUsername(meLocal.Usernames))
+		c.log.Info("NEW Me", "phone", phone, "fname", meLocal.FirstName, "lname", meLocal.LastName, "username", GetUsername(meLocal.Usernames))
 
-		log.Printf("closing authorizing instance")
+		c.log.Info("closing authorizing instance", "phone", phone)
 		_, err = tdlibClientLocal.Close(ctx)
+		if err != nil {
+			c.log.Error("close authorizing instance", "phone", phone, "error", err)
+			c.CurrentAuthorizingAcc.Status = consts.AccStatusError
+			return
+		}
 
 		c.CurrentAuthorizingAcc.Id = id
 		c.CurrentAuthorizingAcc.Status = consts.AccStatusActive
 
-		c.as.SaveAccount(ctx, c.CurrentAuthorizingAcc)
-
+		err = c.as.SaveAccount(ctx, c.CurrentAuthorizingAcc)
 		if err != nil {
-			log.Printf("failed to close authorizing instance: %s", err.Error())
+			c.log.Error("save new account", "phone", phone, "error", err)
+			c.CurrentAuthorizingAcc.Status = consts.AccStatusError
+			return
 		}
 
 		c.CurrentAuthorizingAcc = nil

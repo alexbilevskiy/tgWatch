@@ -12,4 +12,5 @@ const (
 const (
 	AccStatusNew    = "new"
 	AccStatusActive = "active"
+	AccStatusError  = "error"
 )
