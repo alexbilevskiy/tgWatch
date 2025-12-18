@@ -2,7 +2,6 @@ package tdlib
 
 import (
 	"context"
-	"log"
 	"log/slog"
 	"time"
 
@@ -108,18 +107,18 @@ func (c *ClientAuthorizer) ChanInteractor(phone string, nextParams chan string) 
 	for {
 		c.AuthorizerState, ok = <-c.State
 		if !ok {
-			log.Printf("Authorization process closed!")
+			c.log.Info("authorization process closed!")
 
 			return
 		}
-		log.Printf("new state! %s", c.AuthorizerState.AuthorizationStateConstructor())
+		c.log.Info("new authorization state", "state", c.AuthorizerState.AuthorizationStateConstructor())
 
 		switch c.AuthorizerState.AuthorizationStateConstructor() {
 		case client.ConstructorAuthorizationStateWaitPhoneNumber:
 			if c.phoneSet == true {
 				continue
 			}
-			log.Printf("Setting phone...")
+			c.log.Info("setting phone...")
 			c.PhoneNumber <- phone
 			c.phoneSet = true
 
@@ -127,16 +126,16 @@ func (c *ClientAuthorizer) ChanInteractor(phone string, nextParams chan string) 
 			if c.codeSet == true {
 				continue
 			}
-			log.Printf("Waiting code...")
+			c.log.Info("waiting code...")
 
 			select {
 			case param, ok = <-nextParams:
 				if !ok {
-					log.Printf("Invalid param!")
+					c.log.Warn("auth channel closed!")
 					continue
 				}
 			}
-			log.Printf("Setting code...")
+			c.log.Info("setting code...")
 			c.codeSet = true
 
 			c.Code <- param
@@ -145,22 +144,22 @@ func (c *ClientAuthorizer) ChanInteractor(phone string, nextParams chan string) 
 			if c.passwordSet == true {
 				continue
 			}
-			log.Printf("Waiting password...")
+			c.log.Info("waiting password...")
 
 			select {
 			case param, ok = <-nextParams:
 				if !ok {
-					log.Printf("Invalid param!")
+					c.log.Warn("auth channel closed!")
 					continue
 				}
 			}
-			log.Printf("Setting password...")
+			c.log.Info("setting password...")
 			c.passwordSet = true
 
 			c.Password <- param
 
 		case client.ConstructorAuthorizationStateReady:
-			log.Printf("Authorize complete!")
+			c.log.Info("authorize complete!")
 
 			return
 		}
