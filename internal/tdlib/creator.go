@@ -31,7 +31,8 @@ func (c *AccountCreator) CurrentState() client.AuthorizationState {
 	return c.Authorizer.AuthorizerState
 }
 
-func (c *AccountCreator) RunAccountCreationFlow(ctx context.Context, phone string) {
+func (c *AccountCreator) RunAccountCreationFlow(phone string) {
+	ctx := context.Background() // this is intended
 	mongoAcc, err := c.as.GetSavedAccount(ctx, phone)
 	if err != nil {
 		c.log.Error("unable to check if account exists", "phone", phone, "error", err)
@@ -98,16 +99,17 @@ func (c *AccountCreator) RunAccountCreationFlow(ctx context.Context, phone strin
 		c.log.Info("TDLib", "phone", phone, "version", optionValue.(*client.OptionValueString).Value)
 
 		meLocal, err = tdlibClientLocal.GetMe(ctx)
-		id := meLocal.Id
 		if err != nil {
 			c.log.Error("GetMe", "phone", phone, "error", err)
 			c.CurrentAuthorizingAcc.Status = consts.AccStatusError
 			return
 		}
+		id := meLocal.Id
 
 		c.log.Info("NEW Me", "phone", phone, "fname", meLocal.FirstName, "lname", meLocal.LastName, "username", GetUsername(meLocal.Usernames))
 
 		c.log.Info("closing authorizing instance", "phone", phone)
+		// TODO: need to restart app after successful account creation to load this acc
 		_, err = tdlibClientLocal.Close(ctx)
 		if err != nil {
 			c.log.Error("close authorizing instance", "phone", phone, "error", err)

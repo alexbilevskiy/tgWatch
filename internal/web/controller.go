@@ -458,7 +458,7 @@ func (wc *webController) processAddAccount(w http.ResponseWriter, req *http.Requ
 	if req.Method == "POST" {
 		if wc.cr.CurrentAuthorizingAcc == nil {
 			if req.FormValue("phone") != "" {
-				wc.cr.RunAccountCreationFlow(req.Context(), req.FormValue("phone"))
+				wc.cr.RunAccountCreationFlow(req.FormValue("phone"))
 				if wc.cr.CurrentAuthorizingAcc.Status == consts.AccStatusActive {
 					wc.st.State = "already_authorized"
 					wc.cr.CurrentAuthorizingAcc = nil
