@@ -3,32 +3,51 @@ package tdlib
 import (
 	"context"
 	"log"
+	"log/slog"
 	"time"
 
 	"github.com/zelenin/go-tdlib/client"
 )
 
-type clientAuthorizer struct {
+type ClientAuthorizer struct {
 	TdlibParameters *client.SetTdlibParametersRequest
 	PhoneNumber     chan string
 	Code            chan string
 	State           chan client.AuthorizationState
 	Password        chan string
+	log             *slog.Logger
+
+	phoneSet    bool
+	codeSet     bool
+	passwordSet bool
+
+	AuthorizerState client.AuthorizationState
 }
 
-func (stateHandler *clientAuthorizer) Handle(tdcl *client.Client, state client.AuthorizationState) error {
+func NewClientAuthorizer(log *slog.Logger, tdlibParameters *client.SetTdlibParametersRequest) *ClientAuthorizer {
+	return &ClientAuthorizer{
+		log:             log,
+		TdlibParameters: tdlibParameters,
+		PhoneNumber:     make(chan string, 1),
+		Code:            make(chan string, 1),
+		State:           make(chan client.AuthorizationState, 10),
+		Password:        make(chan string, 1),
+	}
+}
+
+func (c *ClientAuthorizer) Handle(tdcl *client.Client, state client.AuthorizationState) error {
 	ctx, done := context.WithDeadline(context.Background(), time.Now().Add(60*time.Second)) //ignore new context here
 	defer done()
-	stateHandler.State <- state
+	c.State <- state
 
 	switch state.AuthorizationStateConstructor() {
 	case client.ConstructorAuthorizationStateWaitTdlibParameters:
-		_, err := tdcl.SetTdlibParameters(ctx, stateHandler.TdlibParameters)
+		_, err := tdcl.SetTdlibParameters(ctx, c.TdlibParameters)
 		return err
 
 	case client.ConstructorAuthorizationStateWaitPhoneNumber:
 		_, err := tdcl.SetAuthenticationPhoneNumber(ctx, &client.SetAuthenticationPhoneNumberRequest{
-			PhoneNumber: <-stateHandler.PhoneNumber,
+			PhoneNumber: <-c.PhoneNumber,
 			Settings: &client.PhoneNumberAuthenticationSettings{
 				AllowFlashCall:       false,
 				IsCurrentPhoneNumber: false,
@@ -46,7 +65,7 @@ func (stateHandler *clientAuthorizer) Handle(tdcl *client.Client, state client.A
 
 	case client.ConstructorAuthorizationStateWaitCode:
 		_, err := tdcl.CheckAuthenticationCode(ctx, &client.CheckAuthenticationCodeRequest{
-			Code: <-stateHandler.Code,
+			Code: <-c.Code,
 		})
 		return err
 
@@ -55,7 +74,7 @@ func (stateHandler *clientAuthorizer) Handle(tdcl *client.Client, state client.A
 
 	case client.ConstructorAuthorizationStateWaitPassword:
 		_, err := tdcl.CheckAuthenticationPassword(ctx, &client.CheckAuthenticationPasswordRequest{
-			Password: <-stateHandler.Password,
+			Password: <-c.Password,
 		})
 		return err
 
@@ -75,59 +94,37 @@ func (stateHandler *clientAuthorizer) Handle(tdcl *client.Client, state client.A
 	return client.NotSupportedAuthorizationState(state)
 }
 
-func (stateHandler *clientAuthorizer) Close() {
-	close(stateHandler.PhoneNumber)
-	close(stateHandler.Code)
-	close(stateHandler.State)
-	close(stateHandler.Password)
-}
-
-func ClientAuthorizer(tdlibParameters *client.SetTdlibParametersRequest) *clientAuthorizer {
-	return &clientAuthorizer{
-		TdlibParameters: tdlibParameters,
-		PhoneNumber:     make(chan string, 1),
-		Code:            make(chan string, 1),
-		State:           make(chan client.AuthorizationState, 10),
-		Password:        make(chan string, 1),
-	}
-}
-
-var AuthorizerState client.AuthorizationState
-var phoneSet bool = false
-var codeSet bool = false
-var passwordSet bool = false
-
-func ChanInteractor(clientAuthorizer *clientAuthorizer, phone string, nextParams chan string) {
+func (c *ClientAuthorizer) ChanInteractor(phone string, nextParams chan string) {
 	var ok bool
 	var param string
 
 	defer func() {
-		AuthorizerState = nil
-		phoneSet = false
-		codeSet = false
-		passwordSet = false
+		c.AuthorizerState = nil
+		c.phoneSet = false
+		c.codeSet = false
+		c.passwordSet = false
 	}()
 
 	for {
-		AuthorizerState, ok = <-clientAuthorizer.State
+		c.AuthorizerState, ok = <-c.State
 		if !ok {
 			log.Printf("Authorization process closed!")
 
 			return
 		}
-		log.Printf("new state! %s", AuthorizerState.AuthorizationStateConstructor())
+		log.Printf("new state! %s", c.AuthorizerState.AuthorizationStateConstructor())
 
-		switch AuthorizerState.AuthorizationStateConstructor() {
+		switch c.AuthorizerState.AuthorizationStateConstructor() {
 		case client.ConstructorAuthorizationStateWaitPhoneNumber:
-			if phoneSet == true {
+			if c.phoneSet == true {
 				continue
 			}
 			log.Printf("Setting phone...")
-			clientAuthorizer.PhoneNumber <- phone
-			phoneSet = true
+			c.PhoneNumber <- phone
+			c.phoneSet = true
 
 		case client.ConstructorAuthorizationStateWaitCode:
-			if codeSet == true {
+			if c.codeSet == true {
 				continue
 			}
 			log.Printf("Waiting code...")
@@ -140,12 +137,12 @@ func ChanInteractor(clientAuthorizer *clientAuthorizer, phone string, nextParams
 				}
 			}
 			log.Printf("Setting code...")
-			codeSet = true
+			c.codeSet = true
 
-			clientAuthorizer.Code <- param
+			c.Code <- param
 
 		case client.ConstructorAuthorizationStateWaitPassword:
-			if passwordSet == true {
+			if c.passwordSet == true {
 				continue
 			}
 			log.Printf("Waiting password...")
@@ -158,9 +155,9 @@ func ChanInteractor(clientAuthorizer *clientAuthorizer, phone string, nextParams
 				}
 			}
 			log.Printf("Setting password...")
-			passwordSet = true
+			c.passwordSet = true
 
-			clientAuthorizer.Password <- param
+			c.Password <- param
 
 		case client.ConstructorAuthorizationStateReady:
 			log.Printf("Authorize complete!")
@@ -169,4 +166,11 @@ func ChanInteractor(clientAuthorizer *clientAuthorizer, phone string, nextParams
 		}
 
 	}
+}
+
+func (c *ClientAuthorizer) Close() {
+	close(c.PhoneNumber)
+	close(c.Code)
+	close(c.State)
+	close(c.Password)
 }

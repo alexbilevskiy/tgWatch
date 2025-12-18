@@ -17,13 +17,21 @@ type AccountCreator struct {
 	as                    *db.AccountsStorage
 	CurrentAuthorizingAcc *db.DbAccountData
 	AuthParams            chan string
+	Authorizer            *ClientAuthorizer
 }
 
 func NewAccountCreator(log *slog.Logger, cfg *config.Config, astorage *db.AccountsStorage) *AccountCreator {
 	return &AccountCreator{log: log, cfg: cfg, as: astorage}
 }
 
-func (c *AccountCreator) CreateAccount(ctx context.Context, phone string) {
+func (c *AccountCreator) CurrentState() client.AuthorizationState {
+	if c.Authorizer == nil {
+		return nil
+	}
+	return c.Authorizer.AuthorizerState
+}
+
+func (c *AccountCreator) RunAccountCreationFlow(ctx context.Context, phone string) {
 	mongoAcc, err := c.as.GetSavedAccount(ctx, phone)
 	if err != nil {
 		c.log.Error("unable to check if account exists", "phone", phone, "error", err)
@@ -53,9 +61,9 @@ func (c *AccountCreator) CreateAccount(ctx context.Context, phone string) {
 		}
 		c.log.Info("continuing account creation", "phone", phone, "state", c.CurrentAuthorizingAcc.Status)
 	}
+	c.Authorizer = NewClientAuthorizer(c.log, createTdlibParameters(c.cfg, c.CurrentAuthorizingAcc.DataDir))
 
 	go func() {
-		authorizer := ClientAuthorizer(createTdlibParameters(c.cfg, c.CurrentAuthorizingAcc.DataDir))
 		var tdlibClientLocal *client.Client
 		var meLocal *client.User
 
@@ -65,12 +73,12 @@ func (c *AccountCreator) CreateAccount(ctx context.Context, phone string) {
 		})
 		c.AuthParams = make(chan string)
 
-		go ChanInteractor(authorizer, phone, c.AuthParams)
+		go c.Authorizer.ChanInteractor(phone, c.AuthParams)
 
 		c.log.Info("create authorizing client instance", "phone", phone)
 
 		var err error
-		tdlibClientLocal, err = client.NewClient(authorizer)
+		tdlibClientLocal, err = client.NewClient(c.Authorizer)
 		if err != nil {
 			c.log.Error("NewClient", "phone", phone, "error", err)
 			c.CurrentAuthorizingAcc.Status = consts.AccStatusError

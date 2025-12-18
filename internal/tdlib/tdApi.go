@@ -57,9 +57,9 @@ func (t *TdApi) RunTdlib(ctx context.Context) (*client.User, error) {
 	t.chatFolders = t.db.LoadChatFolders(ctx)
 
 	tdlibParameters := createTdlibParameters(t.cfg, t.dbData.DataDir)
-	authorizer := ClientAuthorizer(tdlibParameters)
+	authorizer := NewClientAuthorizer(t.log, tdlibParameters)
 	authParams := make(chan string)
-	go ChanInteractor(authorizer, t.dbData.Phone, authParams)
+	go authorizer.ChanInteractor(t.dbData.Phone, authParams)
 
 	_, _ = client.SetLogVerbosityLevel(&client.SetLogVerbosityLevelRequest{
 		NewVerbosityLevel: 1,

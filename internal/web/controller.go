@@ -443,23 +443,23 @@ func (wc *webController) processAddAccount(w http.ResponseWriter, req *http.Requ
 	if wc.cr.CurrentAuthorizingAcc == nil && req.Method == "GET" {
 		wc.st = newAccountState{}
 	}
-	if tdlib.AuthorizerState == nil {
+	if wc.cr.CurrentState() == nil {
 		wc.st.State = "start"
-	} else if tdlib.AuthorizerState.AuthorizationStateConstructor() == client.ConstructorAuthorizationStateWaitCode {
+	} else if wc.cr.CurrentState().AuthorizationStateConstructor() == client.ConstructorAuthorizationStateWaitCode {
 		wc.st.State = "code"
 		wc.st.Phone = wc.cr.CurrentAuthorizingAcc.Phone
-	} else if tdlib.AuthorizerState.AuthorizationStateConstructor() == client.ConstructorAuthorizationStateWaitPassword {
+	} else if wc.cr.CurrentState().AuthorizationStateConstructor() == client.ConstructorAuthorizationStateWaitPassword {
 		wc.st.State = "password"
 		wc.st.Phone = wc.cr.CurrentAuthorizingAcc.Phone
 	} else {
-		wc.st.State = tdlib.AuthorizerState.AuthorizationStateConstructor()
+		wc.st.State = wc.cr.CurrentState().AuthorizationStateConstructor()
 		wc.st.Phone = wc.cr.CurrentAuthorizingAcc.Phone
 	}
 
 	if req.Method == "POST" {
 		if wc.cr.CurrentAuthorizingAcc == nil {
 			if req.FormValue("phone") != "" {
-				wc.cr.CreateAccount(req.Context(), req.FormValue("phone"))
+				wc.cr.RunAccountCreationFlow(req.Context(), req.FormValue("phone"))
 				if wc.cr.CurrentAuthorizingAcc.Status == consts.AccStatusActive {
 					wc.st.State = "already_authorized"
 					wc.cr.CurrentAuthorizingAcc = nil
