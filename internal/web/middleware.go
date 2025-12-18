@@ -3,7 +3,8 @@ package web
 import (
 	"context"
 	"errors"
-	"log"
+	"fmt"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
@@ -53,11 +54,11 @@ func (as *AccountSelectorMiddleware) middleware(requireAccount bool, next http.H
 	})
 }
 
-func logging(next http.Handler) http.Handler {
+func logging(log *slog.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		start := time.Now()
 		next.ServeHTTP(w, req)
-		log.Printf("%s %s %s", req.Method, req.RequestURI, time.Since(start))
+		log.Debug("served", "method", req.Method, "uri", req.RequestURI, "duration", time.Since(start))
 	})
 }
 
@@ -65,11 +66,9 @@ func (as *AccountSelectorMiddleware) detectAccount(req *http.Request, res http.R
 	var currentAcc int64
 	accCookie, err := req.Cookie("acc")
 	if err != nil {
-		log.Printf("Cookie errror: %s", err.Error())
-
 		renderTemplates(req, res, nil, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/account_select.gohtml`)
 
-		return -1, errors.New("missing cookie `acc`")
+		return -1, fmt.Errorf("invalid cookie: %w", err)
 	}
 	currentAcc, err = strconv.ParseInt(accCookie.Value, 10, 64)
 	if err != nil {

@@ -39,7 +39,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	mongoClient := db.NewClient(ctx, cfg)
+	mongoClient, errMongo := db.NewClient(ctx, cfg)
+	if errMongo != nil {
+		logger.Error("mongodb client init", "error", errMongo)
+		os.Exit(1)
+	}
 
 	args := os.Args
 	var phone string

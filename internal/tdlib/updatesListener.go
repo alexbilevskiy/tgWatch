@@ -2,11 +2,8 @@ package tdlib
 
 import (
 	"context"
-	"encoding/json"
-	"log"
 	"time"
 
-	"github.com/alexbilevskiy/tgWatch/internal/helpers"
 	"github.com/alexbilevskiy/tgWatch/internal/modules"
 	"github.com/zelenin/go-tdlib/client"
 )
@@ -91,6 +88,8 @@ func (t *TdApi) UpdatesCallback(ctx context.Context, update client.Type) {
 		case client.ConstructorUpdateUser:
 		case client.ConstructorUpdateUserFullInfo:
 		case client.ConstructorUpdateChatPhoto:
+		case client.ConstructorUpdateVideoPublished:
+		case client.ConstructorUpdateChatEmojiStatus:
 
 		case client.ConstructorUpdateMessageSendSucceeded:
 			upd := update.(*client.UpdateMessageSendSucceeded)
@@ -98,7 +97,7 @@ func (t *TdApi) UpdatesCallback(ctx context.Context, update client.Type) {
 		case client.ConstructorUpdateMessageSendFailed:
 			upd := update.(*client.UpdateMessageSendFailed)
 			//@TODO: also put in t.sentMessages
-			log.Printf("failed to send message %d: %s", upd.OldMessageId, upd.Error.Message)
+			t.log.Error("failed to send message", "virtual_id", upd.OldMessageId, "error", upd.Error)
 
 		case client.ConstructorUpdateMessageInteractionInfo:
 			//upd := update.(*client.UpdateMessageInteractionInfo)
@@ -111,7 +110,7 @@ func (t *TdApi) UpdatesCallback(ctx context.Context, update client.Type) {
 
 		case client.ConstructorUpdateChatHasProtectedContent:
 			upd := update.(*client.UpdateChatHasProtectedContent)
-			log.Printf("Chat id:%d `%s` now has protected content: %s", upd.ChatId, t.GetChatName(ctx, upd.ChatId), helpers.JsonMarshalStr(upd.HasProtectedContent))
+			t.log.Info("Chat now has protected content", "chat_id", upd.ChatId, "name", t.GetChatName(ctx, upd.ChatId), "value", upd.HasProtectedContent)
 
 		case client.ConstructorUpdateNewChat:
 			//dont need to cache chat here, because chat info is empty, @see case client.ClassChat below
@@ -225,7 +224,7 @@ func (t *TdApi) UpdatesCallback(ctx context.Context, update client.Type) {
 		case client.ConstructorUpdateChatMessageAutoDeleteTime:
 			upd := update.(*client.UpdateChatMessageAutoDeleteTime)
 			chatName := t.GetChatName(ctx, upd.ChatId)
-			log.Printf("Message auto-delete time updated for chat `%s` %d: %ds", chatName, upd.ChatId, upd.MessageAutoDeleteTime)
+			t.log.Info("message auto-delete time updated", "chat_id", upd.ChatId, "name", chatName, "value", upd.MessageAutoDeleteTime)
 
 		case client.ConstructorUpdateChatAvailableReactions:
 			//upd := update.(*client.UpdateChatAvailableReactions)
@@ -233,8 +232,7 @@ func (t *TdApi) UpdatesCallback(ctx context.Context, update client.Type) {
 			//fmt.Printf("Available reactions updated for chat `%s` %d: %s", chatName, upd.ChatId, JsonMarshalStr(upd.AvailableReactions)))
 
 		default:
-			j, _ := json.Marshal(update)
-			log.Printf("Unknown update %s : %s", typ, string(j))
+			t.log.Info("unknown update", "type", typ, "value", update)
 		}
 
 	case client.TypeOk:
@@ -260,6 +258,6 @@ func (t *TdApi) UpdatesCallback(ctx context.Context, update client.Type) {
 	case client.TypeAuthorizationState:
 
 	default:
-		log.Printf("WAAAT? update who??? %s, %v", update.GetType(), update)
+		t.log.Info("WAAAT? update who???", "type", update.GetType(), "value", update)
 	}
 }

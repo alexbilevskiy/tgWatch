@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -21,7 +20,7 @@ func renderTemplates(req *http.Request, w http.ResponseWriter, templateData inte
 		w.Header().Set("Content-Type", "application/json")
 		_, err := w.Write(helpers.JsonMarshalPretty(templateData))
 		if err != nil {
-			log.Printf("failed writing debug body: %s", err.Error())
+			fmt.Printf("failed writing debug body: %s", err.Error())
 		}
 		return
 	} else {

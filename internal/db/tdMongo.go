@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/alexbilevskiy/tgWatch/internal/consts"
@@ -132,32 +131,29 @@ func (m *TdMongo) GetSavedChats(ctx context.Context, listId int32) []ChatPositio
 	return chats
 }
 
-func (m *TdMongo) ClearChatFilters(ctx context.Context, ) {
+func (m *TdMongo) ClearChatFilters(ctx context.Context) (int64, error) {
 	mctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 	removed, err := m.chatFiltersColl.DeleteMany(mctx, bson.M{})
 	if err != nil {
-		log.Printf("Failed to remove chat folders from db: %s", err.Error())
-		return
+		return 0, fmt.Errorf("clear chat filters: %w", err)
 	}
-	log.Printf("Removed %d chat folders from db", removed.DeletedCount)
+
+	return removed.DeletedCount, nil
 }
 
-func (m *TdMongo) LoadChatFolders(ctx context.Context) []ChatFilter {
+func (m *TdMongo) LoadChatFolders(ctx context.Context) ([]ChatFilter, error) {
 	mctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 	cur, _ := m.chatFiltersColl.Find(mctx, bson.M{})
 	fi := make([]ChatFilter, 0)
 	err := cur.All(mctx, &fi)
 	if err != nil {
-		errmsg := fmt.Sprintf("ERROR load chat filters: %s", err)
-		fmt.Printf(errmsg)
 
-		return fi
+		return nil, fmt.Errorf("load chat filters: %w", err)
 	}
-	log.Printf("Loaded %d chat folders from db", len(fi))
 
-	return fi
+	return fi, nil
 }
 
 func (m *TdMongo) DeleteChatFolder(ctx context.Context, folderId int32) (int64, error) {

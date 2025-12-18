@@ -31,8 +31,8 @@ type TdApi struct {
 
 type TdStorageInterface interface {
 	DeleteChatFolder(ctx context.Context, folderId int32) (int64, error)
-	ClearChatFilters(ctx context.Context)
-	LoadChatFolders(ctx context.Context) []db.ChatFilter
+	ClearChatFilters(ctx context.Context) (int64, error)
+	LoadChatFolders(ctx context.Context) ([]db.ChatFilter, error)
 
 	SaveChatFolder(ctx context.Context, chatFolder *client.ChatFolder, folderInfo *client.ChatFolderInfo)
 	SaveAllChatPositions(ctx context.Context, chatId int64, positions []*client.ChatPosition)
@@ -54,7 +54,11 @@ func NewTdApi(logger *slog.Logger, cfg *config.Config, dbData *db.DbAccountData,
 }
 
 func (t *TdApi) RunTdlib(ctx context.Context) (*client.User, error) {
-	t.chatFolders = t.db.LoadChatFolders(ctx)
+	var foldersErr error
+	t.chatFolders, foldersErr = t.db.LoadChatFolders(ctx)
+	if foldersErr != nil {
+		return nil, fmt.Errorf("run tdlib: %w", foldersErr)
+	}
 
 	tdlibParameters := createTdlibParameters(t.cfg, t.dbData.DataDir)
 	authorizer := NewClientAuthorizer(t.log, tdlibParameters)
@@ -579,7 +583,11 @@ func (t *TdApi) SaveChatFilters(ctx context.Context, chatFoldersUpdate *client.U
 		t.log.Info("deleted chat folder", "id", existningFolder.Id, "name", existningFolder.Title)
 	}
 
-	t.chatFolders = t.db.LoadChatFolders(ctx)
+	var foldersErr error
+	t.chatFolders, foldersErr = t.db.LoadChatFolders(ctx)
+	if foldersErr != nil {
+		t.log.Warn("reload chat folders after SaveChatFilters", "error", foldersErr)
+	}
 }
 
 func (t *TdApi) SaveChatAddedToList(ctx context.Context, upd *client.UpdateChatAddedToList) {

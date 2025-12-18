@@ -3,7 +3,6 @@ package web
 import (
 	"encoding/base64"
 	"fmt"
-	"log"
 
 	"github.com/alexbilevskiy/tgWatch/internal/helpers"
 	"github.com/zelenin/go-tdlib/client"
@@ -101,7 +100,7 @@ func GetContentWithText(content client.MessageContent, chatId int64) MessageText
 		//msg := content.(*client.MessageUnsupported)
 		return MessageTextContent{Text: ">unsupported message<"}
 	default:
-		log.Printf("unknown text type: %s", content.MessageContentConstructor())
+		fmt.Printf("unknown text type: %s\n", content.MessageContentConstructor())
 
 		return MessageTextContent{Text: helpers.JsonMarshalStr(content)}
 	}
@@ -173,7 +172,7 @@ func GetContentAttachments(content client.MessageContent) []MessageAttachment {
 
 			return cnt
 		}
-		log.Printf("Invalid sticker in messsage (probably it's webp photo): %s", helpers.JsonMarshalStr(msg))
+		fmt.Printf("Invalid sticker in messsage (probably it's webp photo): %s\n", helpers.JsonMarshalStr(msg))
 
 		return nil
 	case client.ConstructorMessageVoiceNote:
@@ -253,7 +252,7 @@ func GetContentAttachments(content client.MessageContent) []MessageAttachment {
 	case client.ConstructorMessageUnsupported:
 
 	default:
-		log.Printf("Unknown content type: %s", cType)
+		fmt.Printf("Unknown content type: %s\n", cType)
 
 		return nil
 	}

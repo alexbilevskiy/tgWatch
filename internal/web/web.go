@@ -46,7 +46,7 @@ func Run(log *slog.Logger, cfg *config.Config, astore *account.AccountsStore, cr
 
 	server := &http.Server{
 		Addr:    cfg.WebListen,
-		Handler: logging(mux),
+		Handler: logging(log, mux),
 	}
 	return server.ListenAndServe()
 }

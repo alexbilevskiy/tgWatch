@@ -3,7 +3,6 @@ package web
 import (
 	"encoding/base64"
 	"fmt"
-	"log"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -46,7 +45,7 @@ func (wc *webController) processTdlibOptions(w http.ResponseWriter, req *http.Re
 	for optionName, optionValue := range tdlib.TdlibOptions {
 		res, err := req.Context().Value("current_acc").(*account.Account).TdApi.GetTdlibOption(optionName)
 		if err != nil {
-			log.Printf("Failed to get option %s: %s", optionName, err)
+			wc.log.Warn("failed to get option", "name", optionName, "error", err)
 			continue
 		}
 
@@ -184,14 +183,14 @@ func (wc *webController) processTgChatHistoryOnline(chatId int64, req *http.Requ
 	if req.FormValue("from_message_id") != "" {
 		fromMessageId, err = strconv.ParseInt(req.FormValue("from_message_id"), 10, 64)
 		if err != nil {
-			log.Printf("failed to parse from_message_id: %s", err.Error())
+			wc.log.Warn("failed to parse from_message_id", "val", req.FormValue("from_message_id"), "error", err)
 			return
 		}
 	}
 	if req.FormValue("offset") != "" {
 		offset64, err := strconv.ParseInt(req.FormValue("offset"), 10, 32)
 		if err != nil {
-			log.Printf("failed to parse from_message_id fromMessageId: %s", err.Error())
+			wc.log.Warn("failed to parse offset", "val", req.FormValue("offset"), "error", err)
 			return
 		}
 		offset = int32(offset64)
@@ -199,7 +198,7 @@ func (wc *webController) processTgChatHistoryOnline(chatId int64, req *http.Requ
 	currentAcc := req.Context().Value("current_acc").(*account.Account)
 	messages, err := currentAcc.TdApi.LoadChatHistory(req.Context(), chatId, fromMessageId, offset)
 	if err != nil {
-		log.Printf("error load history: %s", err.Error())
+		wc.log.Warn("error loading history", "chat_id", chatId, "error", err)
 		errorResponse(WebError{T: "No messages", Error: err.Error()}, http.StatusBadRequest, req, w)
 
 		return
@@ -341,7 +340,7 @@ func (wc *webController) processTgChatList(w http.ResponseWriter, req *http.Requ
 		res.PartnerChat = buildChatInfoByLocalChat(req.Context(), currentAcc, partnerChat)
 		chats, err := currentAcc.TdApi.GetGroupsInCommon(req.Context(), groupsInCommonUserId)
 		if err != nil {
-			log.Printf("failed to get groups in common: %d, `%s`, %s", groupsInCommonUserId, currentAcc.TdApi.GetChatName(req.Context(), groupsInCommonUserId), err)
+			wc.log.Warn("failed to get groups in common", "user_id", groupsInCommonUserId, "chat_name", currentAcc.TdApi.GetChatName(req.Context(), groupsInCommonUserId), "error", err)
 		}
 		for _, chatId := range chats.ChatIds {
 			chat, err := currentAcc.TdApi.GetChat(req.Context(), chatId, true)

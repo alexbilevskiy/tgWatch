@@ -2,7 +2,7 @@ package db
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"time"
 
 	"github.com/alexbilevskiy/tgWatch/internal/config"
@@ -19,7 +19,7 @@ type DbAccountData struct {
 	Status   string
 }
 
-func NewClient(ctx context.Context, cfg *config.Config) *mongo.Client {
+func NewClient(ctx context.Context, cfg *config.Config) (*mongo.Client, error) {
 	rb := bson.NewRegistryBuilder()
 
 	registry := rb.Build()
@@ -30,9 +30,8 @@ func NewClient(ctx context.Context, cfg *config.Config) *mongo.Client {
 	defer cancel()
 	client, err := mongo.Connect(mctx, clientOptions)
 	if err != nil {
-		log.Fatalf("Mongo error: %s", err)
-		return nil
+		return nil, fmt.Errorf("mongo connect: %w", err)
 	}
 
-	return client
+	return client, nil
 }
