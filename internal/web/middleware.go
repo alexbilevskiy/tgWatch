@@ -34,11 +34,13 @@ func (as *AccountSelectorMiddleware) middleware(requireAccount bool, next http.H
 			verbose = true
 		}
 		newCtx := context.WithValue(ctx, "verbose", verbose)
+		newCtx = context.WithValue(newCtx, "accounts_store", as.as)
 		req = req.WithContext(newCtx)
 		var currentAcc *account.Account
 		var currentAccId int64
 		if currentAccId, err = as.detectAccount(req, w); err != nil && requireAccount {
-			errorResponse(WebError{T: "Invalid account", Error: err.Error()}, http.StatusInternalServerError, req, w)
+			renderTemplates(req, w, nil, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/account_select.gohtml`)
+			//errorResponse(WebError{T: "Invalid account", Error: err.Error()}, http.StatusInternalServerError, req, w)
 			return
 		}
 		currentAcc = as.as.Get(currentAccId)
@@ -47,7 +49,6 @@ func (as *AccountSelectorMiddleware) middleware(requireAccount bool, next http.H
 			return
 		}
 		newCtx = context.WithValue(newCtx, "current_acc", currentAcc)
-		newCtx = context.WithValue(newCtx, "accounts_store", as.as)
 		req = req.WithContext(newCtx)
 
 		next.ServeHTTP(w, req)
@@ -66,7 +67,6 @@ func (as *AccountSelectorMiddleware) detectAccount(req *http.Request, res http.R
 	var currentAcc int64
 	accCookie, err := req.Cookie("acc")
 	if err != nil {
-		renderTemplates(req, res, nil, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/account_select.gohtml`)
 
 		return -1, fmt.Errorf("invalid cookie: %w", err)
 	}
