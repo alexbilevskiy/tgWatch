@@ -12,7 +12,7 @@ import (
 )
 
 type Account struct {
-	dbData   *db.DbAccountData
+	DbData   *db.DbAccountData
 	Username string
 	TdApi    tdApiInterface
 	Me       *client.User
@@ -65,7 +65,7 @@ func NewAccount(logger *slog.Logger, cfg *config.Config, tdMongo *db.TdMongo, db
 	tdApi := tdlib.NewTdApi(logger, cfg, dbData, tdMongo)
 
 	acc := &Account{
-		dbData: dbData,
+		DbData: dbData,
 		TdApi:  tdApi,
 	}
 
@@ -75,7 +75,7 @@ func NewAccount(logger *slog.Logger, cfg *config.Config, tdMongo *db.TdMongo, db
 func (a *Account) Run(ctx context.Context) error {
 	me, err := a.TdApi.RunTdlib(ctx)
 	if err != nil {
-		return fmt.Errorf("run tdlib (%s): %w", a.dbData.Phone, err)
+		return fmt.Errorf("run tdlib (%s): %w", a.DbData.Phone, err)
 	}
 	username := tdlib.GetUsername(me.Usernames)
 	a.Me = me
