@@ -19,6 +19,7 @@ func (t *TdApi) UpdatesCallback(ctx context.Context, update client.Type) {
 		case client.ConstructorUpdateChatActionBar:
 		case client.ConstructorUpdateSuggestedActions:
 		case client.ConstructorUpdateChatTheme:
+		case client.ConstructorUpdateEmojiChatThemes:
 		case client.ConstructorUpdateFavoriteStickers:
 		case client.ConstructorUpdateInstalledStickerSets:
 		case client.ConstructorUpdateRecentStickers:
@@ -89,6 +90,10 @@ func (t *TdApi) UpdatesCallback(ctx context.Context, update client.Type) {
 		case client.ConstructorUpdateChatPhoto:
 		case client.ConstructorUpdateVideoPublished:
 		case client.ConstructorUpdateChatEmojiStatus:
+		case client.ConstructorUpdateTrustedMiniAppBots:
+		case client.ConstructorUpdateGroupCallMessageLevels:
+		case client.ConstructorUpdateOwnedTonCount:
+
 
 		case client.ConstructorUpdateMessageSendSucceeded:
 			upd := update.(*client.UpdateMessageSendSucceeded)
@@ -255,6 +260,7 @@ func (t *TdApi) UpdatesCallback(ctx context.Context, update client.Type) {
 	case client.TypeMessageLinkInfo:
 	case client.TypeStickers:
 	case client.TypeAuthorizationState:
+	case client.TypeFoundPublicPosts:
 
 	default:
 		t.log.Info("WAAAT? update who???", "type", update.GetType(), "value", update)
