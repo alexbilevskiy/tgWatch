@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"os"
+	"path"
 	"path/filepath"
 	"sync"
 	"time"
@@ -26,6 +28,7 @@ type TdApi struct {
 	chatFolders  []db.ChatFilter
 	tdlibClient  *client.Client
 	db           TdStorageInterface
+	cacheDir     string
 	sentMessages sync.Map
 }
 
@@ -114,6 +117,8 @@ func (t *TdApi) RunTdlib(ctx context.Context) (*client.User, error) {
 	//	log.Printf("Set ignore_background_updates option: %s", JsonMarshalStr(ok))
 	//}
 	t.tdlibClient = tdlibClient
+	t.cacheDir = path.Join(t.cfg.TDataDir, t.dbData.DataDir, "cache")
+	_ = os.MkdirAll(t.cacheDir, 0755)
 
 	return me, nil
 }
@@ -754,8 +759,50 @@ func (t *TdApi) EditMessageSchedulingState(ctx context.Context, chatId int64, me
 }
 
 func (t *TdApi) SearchPublicPosts(ctx context.Context, query, offset string, limit int32) (*client.FoundPublicPosts, error) {
-	req := &client.SearchPublicPostsRequest{Query: query, Offset: offset, Limit: limit, StarCount: 0}
-	return t.tdlibClient.SearchPublicPosts(ctx, req)
+	var res *client.FoundPublicPosts
+	d := time.Now().Format("2006-01-02")
+	fileName := fmt.Sprintf("%s_%s_%s.json", d, query, offset)
+	cacheFile := path.Join(t.cacheDir, fileName)
+	_, err := os.Stat(cacheFile)
+	exists := true
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return nil, fmt.Errorf("public search cache check: %w", err)
+		}
+		exists = false
+	}
+	if exists {
+		bytes, err := os.ReadFile(cacheFile)
+		if err != nil {
+			return nil, fmt.Errorf("public search cache read: %w", err)
+		}
+		err = json.Unmarshal(bytes, &res)
+		if err != nil {
+			return nil, fmt.Errorf("public search cache unmarshal: %w", err)
+		}
+		t.log.Info("public search cache loaded", "file", fileName)
+	} else {
+		t.log.Info("public search not cached", "file", fileName)
+		req := &client.SearchPublicPostsRequest{Query: query, Offset: offset, Limit: limit, StarCount: 0}
+		res, err = t.tdlibClient.SearchPublicPosts(ctx, req)
+		if err != nil {
+			return nil, fmt.Errorf("search public posts: %w", err)
+		}
+		b, err := json.MarshalIndent(res, "", "    ")
+		if err != nil {
+			return nil, fmt.Errorf("search public posts cache marshal: %w", err)
+		}
+		err = os.WriteFile(cacheFile, b, 0644)
+		if err != nil {
+			return nil, fmt.Errorf("search public posts cache write: %w", err)
+		}
+		t.log.Info("public search cache written", "file", fileName)
+	}
+	if res.AreLimitsExceeded {
+		return nil, fmt.Errorf("search public posts limit exceeded")
+	}
+
+	return res, nil
 }
 
 func (t *TdApi) GetStorage() TdStorageInterface {

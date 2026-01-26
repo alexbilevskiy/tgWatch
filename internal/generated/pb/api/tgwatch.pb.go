@@ -10,6 +10,7 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	_ "google.golang.org/protobuf/types/known/emptypb"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -118,18 +119,212 @@ func (x *GetMeResponse) GetName() string {
 	return ""
 }
 
+type SearchPublicPostsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Query         string                 `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
+	Offset        string                 `protobuf:"bytes,2,opt,name=offset,proto3" json:"offset,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SearchPublicPostsRequest) Reset() {
+	*x = SearchPublicPostsRequest{}
+	mi := &file_api_tgwatch_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SearchPublicPostsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SearchPublicPostsRequest) ProtoMessage() {}
+
+func (x *SearchPublicPostsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_tgwatch_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SearchPublicPostsRequest.ProtoReflect.Descriptor instead.
+func (*SearchPublicPostsRequest) Descriptor() ([]byte, []int) {
+	return file_api_tgwatch_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *SearchPublicPostsRequest) GetQuery() string {
+	if x != nil {
+		return x.Query
+	}
+	return ""
+}
+
+func (x *SearchPublicPostsRequest) GetOffset() string {
+	if x != nil {
+		return x.Offset
+	}
+	return ""
+}
+
+type SearchPublicPostsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	FoundMessages []*Message             `protobuf:"bytes,1,rep,name=found_messages,json=foundMessages,proto3" json:"found_messages,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SearchPublicPostsResponse) Reset() {
+	*x = SearchPublicPostsResponse{}
+	mi := &file_api_tgwatch_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SearchPublicPostsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SearchPublicPostsResponse) ProtoMessage() {}
+
+func (x *SearchPublicPostsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_tgwatch_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SearchPublicPostsResponse.ProtoReflect.Descriptor instead.
+func (*SearchPublicPostsResponse) Descriptor() ([]byte, []int) {
+	return file_api_tgwatch_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *SearchPublicPostsResponse) GetFoundMessages() []*Message {
+	if x != nil {
+		return x.FoundMessages
+	}
+	return nil
+}
+
+type Message struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	ChatId        int64                  `protobuf:"varint,2,opt,name=chat_id,json=chatId,proto3" json:"chat_id,omitempty"`
+	Link          string                 `protobuf:"bytes,3,opt,name=link,proto3" json:"link,omitempty"`
+	SenderName    string                 `protobuf:"bytes,4,opt,name=sender_name,json=senderName,proto3" json:"sender_name,omitempty"`
+	Date          *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=date,proto3" json:"date,omitempty"`
+	Text          string                 `protobuf:"bytes,6,opt,name=text,proto3" json:"text,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Message) Reset() {
+	*x = Message{}
+	mi := &file_api_tgwatch_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Message) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Message) ProtoMessage() {}
+
+func (x *Message) ProtoReflect() protoreflect.Message {
+	mi := &file_api_tgwatch_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Message.ProtoReflect.Descriptor instead.
+func (*Message) Descriptor() ([]byte, []int) {
+	return file_api_tgwatch_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *Message) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *Message) GetChatId() int64 {
+	if x != nil {
+		return x.ChatId
+	}
+	return 0
+}
+
+func (x *Message) GetLink() string {
+	if x != nil {
+		return x.Link
+	}
+	return ""
+}
+
+func (x *Message) GetSenderName() string {
+	if x != nil {
+		return x.SenderName
+	}
+	return ""
+}
+
+func (x *Message) GetDate() *timestamppb.Timestamp {
+	if x != nil {
+		return x.Date
+	}
+	return nil
+}
+
+func (x *Message) GetText() string {
+	if x != nil {
+		return x.Text
+	}
+	return ""
+}
+
 var File_api_tgwatch_proto protoreflect.FileDescriptor
 
 const file_api_tgwatch_proto_rawDesc = "" +
 	"\n" +
-	"\x11api/tgwatch.proto\x12\atgwatch\x1a\x1bgoogle/protobuf/empty.proto\"\x0e\n" +
+	"\x11api/tgwatch.proto\x12\atgwatch\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x0e\n" +
 	"\fGetMeRequest\"O\n" +
 	"\rGetMeResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12\x12\n" +
-	"\x04name\x18\x03 \x01(\tR\x04name2J\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\"H\n" +
+	"\x18SearchPublicPostsRequest\x12\x14\n" +
+	"\x05query\x18\x01 \x01(\tR\x05query\x12\x16\n" +
+	"\x06offset\x18\x02 \x01(\tR\x06offset\"T\n" +
+	"\x19SearchPublicPostsResponse\x127\n" +
+	"\x0efound_messages\x18\x01 \x03(\v2\x10.tgwatch.MessageR\rfoundMessages\"\xab\x01\n" +
+	"\aMessage\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x17\n" +
+	"\achat_id\x18\x02 \x01(\x03R\x06chatId\x12\x12\n" +
+	"\x04link\x18\x03 \x01(\tR\x04link\x12\x1f\n" +
+	"\vsender_name\x18\x04 \x01(\tR\n" +
+	"senderName\x12.\n" +
+	"\x04date\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\x04date\x12\x12\n" +
+	"\x04text\x18\x06 \x01(\tR\x04text2\xa8\x01\n" +
 	"\x0eTgwatchService\x128\n" +
-	"\x05GetMe\x12\x15.tgwatch.GetMeRequest\x1a\x16.tgwatch.GetMeResponse\"\x00B<Z:github.com/alexbilevskiy/tgwatch/internal/generated/pb/apib\x06proto3"
+	"\x05GetMe\x12\x15.tgwatch.GetMeRequest\x1a\x16.tgwatch.GetMeResponse\"\x00\x12\\\n" +
+	"\x11SearchPublicPosts\x12!.tgwatch.SearchPublicPostsRequest\x1a\".tgwatch.SearchPublicPostsResponse\"\x00B<Z:github.com/alexbilevskiy/tgwatch/internal/generated/pb/apib\x06proto3"
 
 var (
 	file_api_tgwatch_proto_rawDescOnce sync.Once
@@ -143,19 +338,27 @@ func file_api_tgwatch_proto_rawDescGZIP() []byte {
 	return file_api_tgwatch_proto_rawDescData
 }
 
-var file_api_tgwatch_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_api_tgwatch_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_api_tgwatch_proto_goTypes = []any{
-	(*GetMeRequest)(nil),  // 0: tgwatch.GetMeRequest
-	(*GetMeResponse)(nil), // 1: tgwatch.GetMeResponse
+	(*GetMeRequest)(nil),              // 0: tgwatch.GetMeRequest
+	(*GetMeResponse)(nil),             // 1: tgwatch.GetMeResponse
+	(*SearchPublicPostsRequest)(nil),  // 2: tgwatch.SearchPublicPostsRequest
+	(*SearchPublicPostsResponse)(nil), // 3: tgwatch.SearchPublicPostsResponse
+	(*Message)(nil),                   // 4: tgwatch.Message
+	(*timestamppb.Timestamp)(nil),     // 5: google.protobuf.Timestamp
 }
 var file_api_tgwatch_proto_depIdxs = []int32{
-	0, // 0: tgwatch.TgwatchService.GetMe:input_type -> tgwatch.GetMeRequest
-	1, // 1: tgwatch.TgwatchService.GetMe:output_type -> tgwatch.GetMeResponse
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	4, // 0: tgwatch.SearchPublicPostsResponse.found_messages:type_name -> tgwatch.Message
+	5, // 1: tgwatch.Message.date:type_name -> google.protobuf.Timestamp
+	0, // 2: tgwatch.TgwatchService.GetMe:input_type -> tgwatch.GetMeRequest
+	2, // 3: tgwatch.TgwatchService.SearchPublicPosts:input_type -> tgwatch.SearchPublicPostsRequest
+	1, // 4: tgwatch.TgwatchService.GetMe:output_type -> tgwatch.GetMeResponse
+	3, // 5: tgwatch.TgwatchService.SearchPublicPosts:output_type -> tgwatch.SearchPublicPostsResponse
+	4, // [4:6] is the sub-list for method output_type
+	2, // [2:4] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_api_tgwatch_proto_init() }
@@ -169,7 +372,7 @@ func file_api_tgwatch_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_tgwatch_proto_rawDesc), len(file_api_tgwatch_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
