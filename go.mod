@@ -29,4 +29,4 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260120221211-b8f7ae30c516 // indirect
 )
 
-replace github.com/zelenin/go-tdlib => github.com/alexbilevskiy/go-tdlib v0.4.2-0.20260126095213-eb8041b38c36
+replace github.com/zelenin/go-tdlib => github.com/alexbilevskiy/go-tdlib v0.4.2-0.20260126110543-2954e7af4231
