@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/alexbilevskiy/tgWatch/internal/account"
-	"github.com/alexbilevskiy/tgWatch/internal/helpers"
-	"github.com/alexbilevskiy/tgWatch/internal/tdlib"
+	"github.com/alexbilevskiy/tgwatch/internal/account"
+	"github.com/alexbilevskiy/tgwatch/internal/helpers"
+	"github.com/alexbilevskiy/tgwatch/internal/tdlib"
 	"github.com/zelenin/go-tdlib/client"
 )
 

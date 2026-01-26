@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"github.com/alexbilevskiy/tgWatch/internal/helpers"
+	"github.com/alexbilevskiy/tgwatch/internal/helpers"
 	"github.com/zelenin/go-tdlib/client"
 )
 

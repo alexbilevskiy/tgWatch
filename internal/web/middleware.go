@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/alexbilevskiy/tgWatch/internal/account"
+	"github.com/alexbilevskiy/tgwatch/internal/account"
 )
 
 type AccountSelectorMiddleware struct {

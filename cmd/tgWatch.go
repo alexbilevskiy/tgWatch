@@ -7,11 +7,11 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/alexbilevskiy/tgWatch/internal/account"
-	"github.com/alexbilevskiy/tgWatch/internal/config"
-	"github.com/alexbilevskiy/tgWatch/internal/db"
-	"github.com/alexbilevskiy/tgWatch/internal/tdlib"
-	"github.com/alexbilevskiy/tgWatch/internal/web"
+	"github.com/alexbilevskiy/tgwatch/internal/account"
+	"github.com/alexbilevskiy/tgwatch/internal/config"
+	"github.com/alexbilevskiy/tgwatch/internal/db"
+	"github.com/alexbilevskiy/tgwatch/internal/tdlib"
+	"github.com/alexbilevskiy/tgwatch/internal/web"
 )
 
 func main() {

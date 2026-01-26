@@ -3,7 +3,7 @@ package tdlib
 import (
 	"fmt"
 
-	"github.com/alexbilevskiy/tgWatch/internal/config"
+	"github.com/alexbilevskiy/tgwatch/internal/config"
 	"github.com/zelenin/go-tdlib/client"
 )
 

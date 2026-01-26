@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/alexbilevskiy/tgWatch/internal/account"
-	"github.com/alexbilevskiy/tgWatch/internal/config"
-	"github.com/alexbilevskiy/tgWatch/internal/tdlib"
+	"github.com/alexbilevskiy/tgwatch/internal/account"
+	"github.com/alexbilevskiy/tgwatch/internal/config"
+	"github.com/alexbilevskiy/tgwatch/internal/tdlib"
 )
 
 func Run(log *slog.Logger, cfg *config.Config, astore *account.AccountsStore, creator *tdlib.AccountCreator) error {

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/alexbilevskiy/tgWatch/internal/config"
-	"github.com/alexbilevskiy/tgWatch/internal/db"
-	"github.com/alexbilevskiy/tgWatch/internal/tdlib"
+	"github.com/alexbilevskiy/tgwatch/internal/config"
+	"github.com/alexbilevskiy/tgwatch/internal/db"
+	"github.com/alexbilevskiy/tgwatch/internal/tdlib"
 	"github.com/zelenin/go-tdlib/client"
 )
 

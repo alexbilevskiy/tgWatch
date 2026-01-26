@@ -1,4 +1,4 @@
-module github.com/alexbilevskiy/tgWatch
+module github.com/alexbilevskiy/tgwatch
 
 go 1.24
 

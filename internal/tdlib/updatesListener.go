@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/alexbilevskiy/tgWatch/internal/modules"
+	"github.com/alexbilevskiy/tgwatch/internal/modules"
 	"github.com/zelenin/go-tdlib/client"
 )
 

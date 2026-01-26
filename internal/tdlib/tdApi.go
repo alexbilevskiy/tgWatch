@@ -10,10 +10,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/alexbilevskiy/tgWatch/internal/config"
-	"github.com/alexbilevskiy/tgWatch/internal/consts"
-	"github.com/alexbilevskiy/tgWatch/internal/db"
-	"github.com/alexbilevskiy/tgWatch/internal/helpers"
+	"github.com/alexbilevskiy/tgwatch/internal/config"
+	"github.com/alexbilevskiy/tgwatch/internal/consts"
+	"github.com/alexbilevskiy/tgwatch/internal/db"
+	"github.com/alexbilevskiy/tgwatch/internal/helpers"
 	"github.com/zelenin/go-tdlib/client"
 )
 

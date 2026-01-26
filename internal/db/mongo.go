@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/alexbilevskiy/tgWatch/internal/config"
+	"github.com/alexbilevskiy/tgwatch/internal/config"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"

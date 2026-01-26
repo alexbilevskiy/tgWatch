@@ -8,11 +8,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/alexbilevskiy/tgWatch/internal/account"
-	"github.com/alexbilevskiy/tgWatch/internal/config"
-	"github.com/alexbilevskiy/tgWatch/internal/consts"
-	"github.com/alexbilevskiy/tgWatch/internal/helpers"
-	"github.com/alexbilevskiy/tgWatch/internal/tdlib"
+	"github.com/alexbilevskiy/tgwatch/internal/account"
+	"github.com/alexbilevskiy/tgwatch/internal/config"
+	"github.com/alexbilevskiy/tgwatch/internal/consts"
+	"github.com/alexbilevskiy/tgwatch/internal/helpers"
+	"github.com/alexbilevskiy/tgwatch/internal/tdlib"
 	"github.com/zelenin/go-tdlib/client"
 )
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/alexbilevskiy/tgWatch/internal/consts"
+	"github.com/alexbilevskiy/tgwatch/internal/consts"
 	"github.com/zelenin/go-tdlib/client"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"

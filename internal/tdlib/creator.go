@@ -6,9 +6,9 @@ import (
 
 	"github.com/zelenin/go-tdlib/client"
 
-	"github.com/alexbilevskiy/tgWatch/internal/config"
-	"github.com/alexbilevskiy/tgWatch/internal/consts"
-	"github.com/alexbilevskiy/tgWatch/internal/db"
+	"github.com/alexbilevskiy/tgwatch/internal/config"
+	"github.com/alexbilevskiy/tgwatch/internal/consts"
+	"github.com/alexbilevskiy/tgwatch/internal/db"
 )
 
 type AccountCreator struct {
