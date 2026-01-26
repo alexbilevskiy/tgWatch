@@ -4,10 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/alexbilevskiy/tgwatch/internal/account"
 )
@@ -52,14 +50,6 @@ func (as *AccountSelectorMiddleware) middleware(requireAccount bool, next http.H
 		req = req.WithContext(newCtx)
 
 		next.ServeHTTP(w, req)
-	})
-}
-
-func logging(log *slog.Logger, next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		start := time.Now()
-		next.ServeHTTP(w, req)
-		log.Debug("served", "method", req.Method, "uri", req.RequestURI, "duration", time.Since(start))
 	})
 }
 

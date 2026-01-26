@@ -1,0 +1,10 @@
+version: v2
+modules:
+  - path: schemas/proto
+    name: github.com/alexbilevskiy/tgwatch
+deps:
+  - buf.build/googleapis/googleapis
+  - buf.build/grpc-ecosystem/grpc-gateway
+lint:
+  use:
+    - DEFAULT

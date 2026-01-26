@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package tgwatch;
+
+import "google/protobuf/empty.proto";
+
+option go_package = "github.com/alexbilevskiy/tgwatch/internal/generated/pb/api";
+
+service TgwatchService {
+  rpc GetMe(GetMeRequest) returns (GetMeResponse) {
+  }
+}
+
+message GetMeRequest {
+
+}
+
+message GetMeResponse {
+  int64 id = 1;
+  string username = 2;
+  string name = 3;
+}

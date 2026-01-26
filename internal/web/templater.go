@@ -68,7 +68,7 @@ func funcMap(req *http.Request) template.FuncMap {
 			if currentAcc == nil {
 				return false
 			}
-			if chatId == currentAcc.DbData.Id {
+			if chatId == currentAcc.Me.Id {
 
 				return true
 			}
@@ -79,7 +79,7 @@ func funcMap(req *http.Request) template.FuncMap {
 			if currentAcc == nil {
 				return false
 			}
-			if acc == currentAcc.DbData.Id {
+			if acc == currentAcc.Me.Id {
 
 				return true
 			}
