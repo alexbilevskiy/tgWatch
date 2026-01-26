@@ -1,17 +1,18 @@
-package web
+package utils
 
 import (
 	"encoding/base64"
 	"fmt"
 
 	"github.com/alexbilevskiy/tgwatch/internal/helpers"
+	"github.com/alexbilevskiy/tgwatch/internal/web/models"
 	"github.com/zelenin/go-tdlib/client"
 )
 
-func GetContentWithText(content client.MessageContent, chatId int64) MessageTextContent {
+func GetContentWithText(content client.MessageContent, chatId int64) models.MessageTextContent {
 	if content == nil {
 
-		return MessageTextContent{Text: "UNSUPPORTED_CONTENT"}
+		return models.MessageTextContent{Text: "UNSUPPORTED_CONTENT"}
 	}
 
 	cType := content.MessageContentConstructor()
@@ -19,41 +20,41 @@ func GetContentWithText(content client.MessageContent, chatId int64) MessageText
 	case client.ConstructorMessageText:
 		msg := content.(*client.MessageText)
 
-		return MessageTextContent{FormattedText: msg.Text}
+		return models.MessageTextContent{FormattedText: msg.Text}
 	case client.ConstructorMessagePhoto:
 		msg := content.(*client.MessagePhoto)
 
-		return MessageTextContent{FormattedText: msg.Caption}
+		return models.MessageTextContent{FormattedText: msg.Caption}
 	case client.ConstructorMessageVideo:
 		msg := content.(*client.MessageVideo)
 
-		return MessageTextContent{FormattedText: msg.Caption}
+		return models.MessageTextContent{FormattedText: msg.Caption}
 	case client.ConstructorMessageAnimation:
 		msg := content.(*client.MessageAnimation)
 
-		return MessageTextContent{FormattedText: msg.Caption}
+		return models.MessageTextContent{FormattedText: msg.Caption}
 	case client.ConstructorMessagePoll:
 		msg := content.(*client.MessagePoll)
 
-		return MessageTextContent{Text: fmt.Sprintf("Poll, %s", msg.Poll.Question)}
+		return models.MessageTextContent{Text: fmt.Sprintf("Poll, %s", msg.Poll.Question)}
 	case client.ConstructorMessageSticker:
 		msg := content.(*client.MessageSticker)
 
-		return MessageTextContent{Text: fmt.Sprintf("%s sticker", msg.Sticker.Emoji)}
+		return models.MessageTextContent{Text: fmt.Sprintf("%s sticker", msg.Sticker.Emoji)}
 	case client.ConstructorMessageVoiceNote:
 		msg := content.(*client.MessageVoiceNote)
 
-		return MessageTextContent{FormattedText: msg.Caption}
+		return models.MessageTextContent{FormattedText: msg.Caption}
 	case client.ConstructorMessageVideoNote:
-		return MessageTextContent{Text: ""}
+		return models.MessageTextContent{Text: ""}
 	case client.ConstructorMessageDocument:
 		msg := content.(*client.MessageDocument)
 
-		return MessageTextContent{FormattedText: msg.Caption}
+		return models.MessageTextContent{FormattedText: msg.Caption}
 	case client.ConstructorMessageChatAddMembers:
 		msg := content.(*client.MessageChatAddMembers)
 
-		return MessageTextContent{Text: fmt.Sprintf("Added users %s", helpers.JsonMarshalStr(msg.MemberUserIds))}
+		return models.MessageTextContent{Text: fmt.Sprintf("Added users %s", helpers.JsonMarshalStr(msg.MemberUserIds))}
 	case client.ConstructorMessagePinMessage:
 		msg := content.(*client.MessagePinMessage)
 		var url client.TextEntityType
@@ -62,61 +63,61 @@ func GetContentWithText(content client.MessageContent, chatId int64) MessageText
 		entity := &client.TextEntity{Type: url, Offset: 0, Length: 6}
 		t := &client.FormattedText{Text: "Pinned message", Entities: append(make([]*client.TextEntity, 0), entity)}
 
-		return MessageTextContent{FormattedText: t}
+		return models.MessageTextContent{FormattedText: t}
 	case client.ConstructorMessageCall:
 		msg := content.(*client.MessageCall)
 
-		return MessageTextContent{Text: fmt.Sprintf("Call (%ds)", msg.Duration)}
+		return models.MessageTextContent{Text: fmt.Sprintf("Call (%ds)", msg.Duration)}
 	case client.ConstructorMessageAnimatedEmoji:
 		msg := content.(*client.MessageAnimatedEmoji)
 		if msg.AnimatedEmoji.Sticker != nil {
 
-			return MessageTextContent{Text: fmt.Sprintf("%s (animated)", msg.AnimatedEmoji.Sticker.Emoji)}
+			return models.MessageTextContent{Text: fmt.Sprintf("%s (animated)", msg.AnimatedEmoji.Sticker.Emoji)}
 		}
-		return MessageTextContent{Text: "(invalid animated sticker)"}
+		return models.MessageTextContent{Text: "(invalid animated sticker)"}
 
 	case client.ConstructorMessageChatChangeTitle:
 		msg := content.(*client.MessageChatChangeTitle)
 
-		return MessageTextContent{Text: fmt.Sprintf("Chat name was changed to '%s'", msg.Title)}
+		return models.MessageTextContent{Text: fmt.Sprintf("Chat name was changed to '%s'", msg.Title)}
 	case client.ConstructorMessageScreenshotTaken:
 
-		return MessageTextContent{Text: "has taken screenshot!"}
+		return models.MessageTextContent{Text: "has taken screenshot!"}
 	case client.ConstructorMessageChatJoinByLink:
 
-		return MessageTextContent{Text: "joined by invite link"}
+		return models.MessageTextContent{Text: "joined by invite link"}
 	case client.ConstructorMessageChatUpgradeTo:
 
-		return MessageTextContent{Text: "chat upgraded to supergroup"}
+		return models.MessageTextContent{Text: "chat upgraded to supergroup"}
 	case client.ConstructorMessageForumTopicCreated:
 		msg := content.(*client.MessageForumTopicCreated)
 
-		return MessageTextContent{Text: fmt.Sprintf("topic created: `%s`", msg.Name)}
+		return models.MessageTextContent{Text: fmt.Sprintf("topic created: `%s`", msg.Name)}
 	case client.ConstructorMessageChatDeleteMember:
 		msg := content.(*client.MessageChatDeleteMember)
 		//@TODO: pass currentAcc as argument
-		return MessageTextContent{Text: fmt.Sprintf("deleted `%d` from chat", msg.UserId)}
+		return models.MessageTextContent{Text: fmt.Sprintf("deleted `%d` from chat", msg.UserId)}
 	case client.ConstructorMessageUnsupported:
 		//msg := content.(*client.MessageUnsupported)
-		return MessageTextContent{Text: ">unsupported message<"}
+		return models.MessageTextContent{Text: ">unsupported message<"}
 	default:
 		fmt.Printf("unknown text type: %s\n", content.MessageContentConstructor())
 
-		return MessageTextContent{Text: helpers.JsonMarshalStr(content)}
+		return models.MessageTextContent{Text: helpers.JsonMarshalStr(content)}
 	}
 }
 
-func GetContentAttachments(content client.MessageContent) []MessageAttachment {
+func GetContentAttachments(content client.MessageContent) []models.MessageAttachment {
 	if content == nil {
 
 		return nil
 	}
 	cType := content.MessageContentConstructor()
-	var cnt []MessageAttachment
+	var cnt []models.MessageAttachment
 	switch cType {
 	case client.ConstructorMessagePhoto:
 		msg := content.(*client.MessagePhoto)
-		s := MessageAttachment{
+		s := models.MessageAttachment{
 			T:  msg.Photo.GetConstructor(),
 			Id: msg.Photo.Sizes[len(msg.Photo.Sizes)-1].Photo.Remote.Id,
 		}
@@ -131,7 +132,7 @@ func GetContentAttachments(content client.MessageContent) []MessageAttachment {
 		return cnt
 	case client.ConstructorMessageVideo:
 		msg := content.(*client.MessageVideo)
-		s := MessageAttachment{
+		s := models.MessageAttachment{
 			T:    msg.Video.GetConstructor(),
 			Id:   msg.Video.Video.Remote.Id,
 			Link: append(make([]string, 0), fmt.Sprintf("/f/%s", msg.Video.Video.Remote.Id)),
@@ -144,7 +145,7 @@ func GetContentAttachments(content client.MessageContent) []MessageAttachment {
 		return cnt
 	case client.ConstructorMessageAnimation:
 		msg := content.(*client.MessageAnimation)
-		s := MessageAttachment{
+		s := models.MessageAttachment{
 			T:    msg.Animation.GetConstructor(),
 			Id:   msg.Animation.Animation.Remote.Id,
 			Link: append(make([]string, 0), fmt.Sprintf("/f/%s", msg.Animation.Animation.Remote.Id)),
@@ -159,7 +160,7 @@ func GetContentAttachments(content client.MessageContent) []MessageAttachment {
 	case client.ConstructorMessageSticker:
 		msg := content.(*client.MessageSticker)
 		if msg.Sticker.FullType != nil {
-			s := MessageAttachment{
+			s := models.MessageAttachment{
 				T:    msg.Sticker.FullType.StickerFullTypeConstructor(),
 				Id:   msg.Sticker.Sticker.Remote.Id,
 				Link: append(make([]string, 0), fmt.Sprintf("/f/%s", msg.Sticker.Sticker.Remote.Id)),
@@ -177,7 +178,7 @@ func GetContentAttachments(content client.MessageContent) []MessageAttachment {
 		return nil
 	case client.ConstructorMessageVoiceNote:
 		msg := content.(*client.MessageVoiceNote)
-		s := MessageAttachment{
+		s := models.MessageAttachment{
 			T:    msg.VoiceNote.GetConstructor(),
 			Id:   msg.VoiceNote.Voice.Remote.Id,
 			Name: fmt.Sprintf("Voice (%ds.)", msg.VoiceNote.Duration),
@@ -188,7 +189,7 @@ func GetContentAttachments(content client.MessageContent) []MessageAttachment {
 		return cnt
 	case client.ConstructorMessageVideoNote:
 		msg := content.(*client.MessageVideoNote)
-		s := MessageAttachment{
+		s := models.MessageAttachment{
 			T:    msg.VideoNote.GetConstructor(),
 			Id:   msg.VideoNote.Video.Remote.Id,
 			Name: fmt.Sprintf("Video note (%ds.)", msg.VideoNote.Duration),
@@ -202,7 +203,7 @@ func GetContentAttachments(content client.MessageContent) []MessageAttachment {
 		return cnt
 	case client.ConstructorMessageDocument:
 		msg := content.(*client.MessageDocument)
-		s := MessageAttachment{
+		s := models.MessageAttachment{
 			T:    msg.Document.GetConstructor(),
 			Id:   msg.Document.Document.Remote.Id,
 			Name: msg.Document.FileName,
@@ -213,7 +214,7 @@ func GetContentAttachments(content client.MessageContent) []MessageAttachment {
 		return cnt
 	case client.ConstructorMessageAnimatedEmoji:
 	//	msg := content.(*client.MessageAnimatedEmoji)
-	//	s := MessageAttachment{
+	//	s := models.MessageAttachment{
 	//		T:    msg.AnimatedEmoji.Type,
 	//		Id:   msg.AnimatedEmoji.Sticker.Sticker.Remote.Id,
 	//		Name: msg.AnimatedEmoji.Sticker.Emoji,

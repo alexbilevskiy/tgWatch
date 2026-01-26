@@ -1,4 +1,4 @@
-package web
+package models
 
 import (
 	"github.com/alexbilevskiy/tgwatch/internal/tdlib"

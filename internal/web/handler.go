@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/alexbilevskiy/tgwatch/internal/web/models"
 )
 
 func tryFile(req *http.Request, w http.ResponseWriter) bool {
@@ -29,7 +31,7 @@ func tryFile(req *http.Request, w http.ResponseWriter) bool {
 	return false
 }
 
-func errorResponse(error WebError, code int, req *http.Request, w http.ResponseWriter) {
+func errorResponse(error models.WebError, code int, req *http.Request, w http.ResponseWriter) {
 	w.WriteHeader(code)
 	renderTemplates(req, w, error, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/error.gohtml`)
 }

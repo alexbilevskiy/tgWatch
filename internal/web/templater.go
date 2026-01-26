@@ -10,6 +10,7 @@ import (
 	"github.com/alexbilevskiy/tgwatch/internal/account"
 	"github.com/alexbilevskiy/tgwatch/internal/helpers"
 	"github.com/alexbilevskiy/tgwatch/internal/tdlib"
+	"github.com/alexbilevskiy/tgwatch/internal/web/models"
 	"github.com/zelenin/go-tdlib/client"
 )
 
@@ -89,32 +90,32 @@ func funcMap(req *http.Request) template.FuncMap {
 		"renderText": func(text *client.FormattedText) template.HTML {
 			return template.HTML(RenderText(text))
 		},
-		"chatInfoLocal": func(chatIdstr string) ChatInfo {
+		"chatInfoLocal": func(chatIdstr string) models.ChatInfo {
 			chatId, _ := strconv.ParseInt(chatIdstr, 10, 64)
 			if currentAcc == nil {
-				return ChatInfo{ChatId: chatId, ChatName: "_NOT_SELECTED_ACCOUNT_"}
+				return models.ChatInfo{ChatId: chatId, ChatName: "_NOT_SELECTED_ACCOUNT_"}
 			}
 			localChat, err := currentAcc.TdApi.GetChat(req.Context(), chatId, false)
 			if err == nil {
 
-				return ChatInfo{ChatId: chatId, ChatName: "_NOT_FOUND_"}
+				return models.ChatInfo{ChatId: chatId, ChatName: "_NOT_FOUND_"}
 			}
 
 			return buildChatInfoByLocalChat(req.Context(), currentAcc, localChat)
 		},
-		"chatInfo": func(chatIdstr string) ChatInfo {
+		"chatInfo": func(chatIdstr string) models.ChatInfo {
 			chatId, _ := strconv.ParseInt(chatIdstr, 10, 64)
 			if currentAcc == nil {
-				return ChatInfo{ChatId: chatId, ChatName: "_NOT_FOUND_"}
+				return models.ChatInfo{ChatId: chatId, ChatName: "_NOT_FOUND_"}
 			}
 			c, err := currentAcc.TdApi.GetChat(req.Context(), chatId, false)
 			if err != nil {
 				user, err := currentAcc.TdApi.GetUser(req.Context(), chatId)
 				if err != nil {
-					return ChatInfo{ChatId: chatId, ChatName: fmt.Sprintf("ERROR: %s", err.Error())}
+					return models.ChatInfo{ChatId: chatId, ChatName: fmt.Sprintf("ERROR: %s", err.Error())}
 				}
 
-				return ChatInfo{ChatId: chatId, ChatName: tdlib.GetUserFullname(user)}
+				return models.ChatInfo{ChatId: chatId, ChatName: tdlib.GetUserFullname(user)}
 			}
 
 			return buildChatInfoByLocalChat(req.Context(), currentAcc, c)
@@ -134,7 +135,7 @@ func funcMap(req *http.Request) template.FuncMap {
 		"Time": func(date int32) string {
 			return helpers.FormatTime(date)
 		},
-		"SetNestedMsg": func(info MessageInfo, text *client.FormattedText, simple string, attachments []MessageAttachment) MessageInfo {
+		"SetNestedMsg": func(info models.MessageInfo, text *client.FormattedText, simple string, attachments []models.MessageAttachment) models.MessageInfo {
 			info.FormattedText = text
 			info.SimpleText = simple
 			info.Attachments = attachments

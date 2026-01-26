@@ -10,13 +10,15 @@ import (
 	"github.com/alexbilevskiy/tgwatch/internal/account"
 	"github.com/alexbilevskiy/tgwatch/internal/helpers"
 	"github.com/alexbilevskiy/tgwatch/internal/tdlib"
+	"github.com/alexbilevskiy/tgwatch/internal/web/models"
+	"github.com/alexbilevskiy/tgwatch/internal/web/utils"
 	"github.com/zelenin/go-tdlib/client"
 )
 
-func parseMessage(ctx context.Context, acc *account.Account, message *client.Message, verbose bool) MessageInfo {
+func parseMessage(ctx context.Context, acc *account.Account, message *client.Message, verbose bool) models.MessageInfo {
 	senderChatId := tdlib.GetChatIdBySender(message.SenderId)
-	ct := GetContentWithText(message.Content, message.ChatId)
-	messageInfo := MessageInfo{
+	ct := utils.GetContentWithText(message.Content, message.ChatId)
+	messageInfo := models.MessageInfo{
 		T:             "NewMessage",
 		MessageId:     message.Id,
 		Date:          message.Date,
@@ -30,7 +32,7 @@ func parseMessage(ctx context.Context, acc *account.Account, message *client.Mes
 		MediaAlbumId:  int64(message.MediaAlbumId),
 		SimpleText:    ct.Text,
 		FormattedText: ct.FormattedText,
-		Attachments:   GetContentAttachments(message.Content),
+		Attachments:   utils.GetContentAttachments(message.Content),
 		Edited:        message.EditDate != 0,
 		ContentRaw:    nil,
 	}
@@ -42,12 +44,12 @@ func parseMessage(ctx context.Context, acc *account.Account, message *client.Mes
 	return messageInfo
 }
 
-func buildChatInfoByLocalChat(ctx context.Context, acc *account.Account, chat *client.Chat) ChatInfo {
+func buildChatInfoByLocalChat(ctx context.Context, acc *account.Account, chat *client.Chat) models.ChatInfo {
 	if chat == nil {
 
-		return ChatInfo{ChatId: -1, Username: "ERROR", ChatName: "NULL CHAT"}
+		return models.ChatInfo{ChatId: -1, Username: "ERROR", ChatName: "NULL CHAT"}
 	}
-	info := ChatInfo{ChatId: chat.Id, ChatName: acc.TdApi.GetChatName(ctx, chat.Id), Username: acc.TdApi.GetChatUsername(ctx, chat.Id)}
+	info := models.ChatInfo{ChatId: chat.Id, ChatName: acc.TdApi.GetChatName(ctx, chat.Id), Username: acc.TdApi.GetChatUsername(ctx, chat.Id)}
 	switch chat.Type.ChatTypeConstructor() {
 	case client.ConstructorChatTypeSupergroup:
 		t := chat.Type.(*client.ChatTypeSupergroup)

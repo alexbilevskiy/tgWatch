@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/alexbilevskiy/tgwatch/internal/account"
+	"github.com/alexbilevskiy/tgwatch/internal/web/models"
 )
 
 type AccountSelectorMiddleware struct {
@@ -22,7 +23,7 @@ func (as *AccountSelectorMiddleware) middleware(requireAccount bool, next http.H
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		err := req.ParseForm()
 		if err != nil {
-			errorResponse(WebError{T: "Unknown error", Error: err.Error()}, http.StatusInternalServerError, req, w)
+			errorResponse(models.WebError{T: "Unknown error", Error: err.Error()}, http.StatusInternalServerError, req, w)
 			return
 		}
 		ctx := req.Context()
@@ -43,7 +44,7 @@ func (as *AccountSelectorMiddleware) middleware(requireAccount bool, next http.H
 		}
 		currentAcc = as.as.Get(currentAccId)
 		if currentAcc == nil && requireAccount {
-			errorResponse(WebError{T: "Missing account", Error: "no acc in store"}, http.StatusInternalServerError, req, w)
+			errorResponse(models.WebError{T: "Missing account", Error: "no acc in store"}, http.StatusInternalServerError, req, w)
 			return
 		}
 		newCtx = context.WithValue(newCtx, "current_acc", currentAcc)
