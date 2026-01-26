@@ -1,4 +1,4 @@
-FROM buildpack-deps:bookworm-scm as tdlib
+FROM buildpack-deps:bookworm-scm AS tdlib
 
 WORKDIR /
 
@@ -7,7 +7,7 @@ ENV TZ=Europe/Moscow
 RUN apt-get update
 RUN apt-get install -y git cmake build-essential gperf libssl-dev zlib1g-dev
 
-RUN git clone https://github.com/tdlib/td.git && cd td && git checkout 971684a3dcc7bdf99eec024e1c4f57ae729d6d53
+RUN git clone https://github.com/tdlib/td.git && cd td && git checkout cb863c1600082404428f1a84e407b866b9d412a8
 RUN cd td && mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=../tdlib .. && cmake --build . -j 12 && make install
 
 FROM golang:1.24-bookworm

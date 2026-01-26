@@ -44,6 +44,7 @@ type tdApiInterface interface {
 	GetScheduledMessages(ctx context.Context, chatId int64) (*client.Messages, error)
 	ScheduleForwardedMessage(ctx context.Context, targetChatId int64, fromChatId int64, messageIds []int64, sendAtDate int32, sendCopy bool) (*client.Messages, error)
 	GetCustomEmoji(ctx context.Context, customEmojisIds []int64) (*client.Stickers, error)
+	SearchPublicPosts(ctx context.Context, query, offset string, limit int32) (*client.FoundPublicPosts, error)
 
 	GetSenderName(ctx context.Context, sender client.MessageSender) string
 	GetSenderObj(ctx context.Context, sender client.MessageSender) (interface{}, error)

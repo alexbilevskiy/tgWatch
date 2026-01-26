@@ -19,7 +19,6 @@ func (t *TdApi) UpdatesCallback(ctx context.Context, update client.Type) {
 		case client.ConstructorUpdateChatActionBar:
 		case client.ConstructorUpdateSuggestedActions:
 		case client.ConstructorUpdateChatTheme:
-		case client.ConstructorUpdateChatThemes:
 		case client.ConstructorUpdateFavoriteStickers:
 		case client.ConstructorUpdateInstalledStickerSets:
 		case client.ConstructorUpdateRecentStickers:

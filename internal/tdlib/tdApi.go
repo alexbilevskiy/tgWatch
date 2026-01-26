@@ -753,6 +753,11 @@ func (t *TdApi) EditMessageSchedulingState(ctx context.Context, chatId int64, me
 	return t.tdlibClient.EditMessageSchedulingState(ctx, req)
 }
 
+func (t *TdApi) SearchPublicPosts(ctx context.Context, query, offset string, limit int32) (*client.FoundPublicPosts, error) {
+	req := &client.SearchPublicPostsRequest{Query: query, Offset: offset, Limit: limit, StarCount: 0}
+	return t.tdlibClient.SearchPublicPosts(ctx, req)
+}
+
 func (t *TdApi) GetStorage() TdStorageInterface {
 	//@TODO: mutex?
 	return t.db
