@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/alexbilevskiy/tgwatch/internal/account"
@@ -14,12 +15,13 @@ import (
 )
 
 type TgRpcApi struct {
+	log *slog.Logger
 	astore *account.AccountsStore
 	pbapi.UnimplementedTgwatchServiceServer
 }
 
-func NewHandler(astore *account.AccountsStore) *TgRpcApi {
-	tgApi := &TgRpcApi{astore: astore}
+func NewHandler(log *slog.Logger, astore *account.AccountsStore) *TgRpcApi {
+	tgApi := &TgRpcApi{log:log, astore: astore}
 
 	return tgApi
 }
@@ -53,6 +55,12 @@ func (t *TgRpcApi) SearchPublicPosts(ctx context.Context, req *pbapi.SearchPubli
 		FoundMessages: make([]*pbapi.Message, 0, len(foundPosts.Messages)),
 	}
 	for _, p := range foundPosts.Messages {
+		msg, errMsg := acc.TdApi.GetMessage(ctx, p.ChatId, p.Id)
+		if errMsg != nil {
+			t.log.Warn("unable to get message", "err", errMsg, "chat_id", p.ChatId, "id", p.Id)
+		} else {
+			p = msg
+		}
 		link := acc.TdApi.GetLink(ctx, p.ChatId, p.Id)
 		formattedText := utils.GetContentWithText(p.Content, p.ChatId)
 		//renderedText := utils.RenderText(formattedText.FormattedText)

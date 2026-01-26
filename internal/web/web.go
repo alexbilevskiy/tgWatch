@@ -25,7 +25,7 @@ func Run(log *slog.Logger, cfg *config.Config, astore *account.AccountsStore, cr
 	asm := NewAccountSelectorMiddleware(astore)
 
 	mux := http.NewServeMux()
-	grpcHandler := rpc.NewHandler(astore)
+	grpcHandler := rpc.NewHandler(log, astore)
 	grpcServer := grpc.NewServer()
 	pbapi.RegisterTgwatchServiceServer(grpcServer, grpcHandler)
 	reflection.Register(grpcServer)
