@@ -54,14 +54,15 @@ func (t *TgRpcApi) SearchPublicPosts(ctx context.Context, req *pbapi.SearchPubli
 	}
 	for _, p := range foundPosts.Messages {
 		link := acc.TdApi.GetLink(ctx, p.ChatId, p.Id)
-		textContent := utils.GetContentWithText(p.Content, p.ChatId)
+		formattedText := utils.GetContentWithText(p.Content, p.ChatId)
+		//renderedText := utils.RenderText(formattedText.FormattedText)
 		res.FoundMessages = append(res.FoundMessages, &pbapi.Message{
 			Id:         p.Id,
 			ChatId:     p.ChatId,
 			Link:       link,
 			SenderName: acc.TdApi.GetSenderName(ctx, p.SenderId),
 			Date:       timestamppb.New(time.Unix(int64(p.Date), 0)),
-			Text:       textContent.Text,
+			Text:       formattedText.Text,
 		})
 	}
 

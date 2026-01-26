@@ -220,15 +220,17 @@ func (t *TdApi) GetLink(ctx context.Context, chatId int64, messageId int64) stri
 		return ""
 	}
 	if chat.Type.ChatTypeConstructor() != client.ConstructorChatTypeSupergroup {
-		//fmt.Printf("GetLink: not available for chat `%s` (%d) with type %s", chat.Title, chatId, chat.Type.ChatTypeType()))
+		t.log.Warn("GetLink: not available for chat of this type", "type", chat.Type.ChatTypeConstructor(), "id", chatId)
 		return ""
 	}
 
 	linkReq := &client.GetMessageLinkRequest{ChatId: chatId, MessageId: messageId}
 	link, err := t.tdlibClient.GetMessageLink(ctx, linkReq)
 	if err != nil {
-		if err.Error() != "400 Message not found" {
-			t.log.Warn("get msg link by chat id", "chat", chatId, "msg", messageId, "error", err)
+		if err.Error() == "400 Message not found" {
+			t.log.Warn("get msg link by chat id: not found", "chat", chatId, "msg", messageId, "error", err)
+		} else {
+			t.log.Warn("get msg link by chat id: unknown", "err", err, "chat", chatId, "msg", messageId, "error", err)
 		}
 
 		return ""
