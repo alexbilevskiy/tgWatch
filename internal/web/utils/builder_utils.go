@@ -20,23 +20,23 @@ func GetContentWithText(content client.MessageContent, chatId int64) models.Mess
 	case client.ConstructorMessageText:
 		msg := content.(*client.MessageText)
 
-		return models.MessageTextContent{FormattedText: msg.Text}
+		return models.MessageTextContent{FormattedText: msg.Text, Text: msg.Text.Text}
 	case client.ConstructorMessagePhoto:
 		msg := content.(*client.MessagePhoto)
 
-		return models.MessageTextContent{FormattedText: msg.Caption}
+		return models.MessageTextContent{FormattedText: msg.Caption, Text: msg.Caption.Text}
 	case client.ConstructorMessageVideo:
 		msg := content.(*client.MessageVideo)
 
-		return models.MessageTextContent{FormattedText: msg.Caption}
+		return models.MessageTextContent{FormattedText: msg.Caption, Text: msg.Caption.Text}
 	case client.ConstructorMessageAnimation:
 		msg := content.(*client.MessageAnimation)
 
-		return models.MessageTextContent{FormattedText: msg.Caption}
+		return models.MessageTextContent{FormattedText: msg.Caption, Text: msg.Caption.Text}
 	case client.ConstructorMessagePoll:
 		msg := content.(*client.MessagePoll)
 
-		return models.MessageTextContent{Text: fmt.Sprintf("Poll, %s", msg.Poll.Question)}
+		return models.MessageTextContent{FormattedText: msg.Poll.Question, Text: fmt.Sprintf("Poll, %s", msg.Poll.Question.Text)}
 	case client.ConstructorMessageSticker:
 		msg := content.(*client.MessageSticker)
 
@@ -44,13 +44,13 @@ func GetContentWithText(content client.MessageContent, chatId int64) models.Mess
 	case client.ConstructorMessageVoiceNote:
 		msg := content.(*client.MessageVoiceNote)
 
-		return models.MessageTextContent{FormattedText: msg.Caption}
+		return models.MessageTextContent{FormattedText: msg.Caption, Text: msg.Caption.Text}
 	case client.ConstructorMessageVideoNote:
 		return models.MessageTextContent{Text: ""}
 	case client.ConstructorMessageDocument:
 		msg := content.(*client.MessageDocument)
 
-		return models.MessageTextContent{FormattedText: msg.Caption}
+		return models.MessageTextContent{FormattedText: msg.Caption, Text: msg.Caption.Text}
 	case client.ConstructorMessageChatAddMembers:
 		msg := content.(*client.MessageChatAddMembers)
 

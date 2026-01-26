@@ -11,6 +11,7 @@ import (
 	"github.com/alexbilevskiy/tgwatch/internal/helpers"
 	"github.com/alexbilevskiy/tgwatch/internal/tdlib"
 	"github.com/alexbilevskiy/tgwatch/internal/web/models"
+	"github.com/alexbilevskiy/tgwatch/internal/web/utils"
 	"github.com/zelenin/go-tdlib/client"
 )
 
@@ -88,7 +89,7 @@ func funcMap(req *http.Request) template.FuncMap {
 			return false
 		},
 		"renderText": func(text *client.FormattedText) template.HTML {
-			return template.HTML(RenderText(text))
+			return template.HTML(utils.RenderText(text))
 		},
 		"chatInfoLocal": func(chatIdstr string) models.ChatInfo {
 			chatId, _ := strconv.ParseInt(chatIdstr, 10, 64)
