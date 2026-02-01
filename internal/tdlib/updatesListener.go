@@ -2,7 +2,6 @@ package tdlib
 
 import (
 	"context"
-	"time"
 
 	"github.com/alexbilevskiy/tgwatch/internal/modules"
 	"github.com/zelenin/go-tdlib/client"
@@ -94,6 +93,13 @@ func (t *TdApi) UpdatesCallback(ctx context.Context, update client.Type) {
 		case client.ConstructorUpdateGroupCallMessageLevels:
 		case client.ConstructorUpdateOwnedTonCount:
 
+		case client.ConstructorUpdateMessageInteractionInfo:
+		case client.ConstructorUpdateChatTitle:
+		case client.ConstructorUpdateNewChat:
+		case client.ConstructorUpdateConnectionState:
+		case client.ConstructorUpdateChatAction:
+		case client.ConstructorUpdateFile:
+		case client.ConstructorUpdateChatAvailableReactions:
 
 		case client.ConstructorUpdateMessageSendSucceeded:
 			upd := update.(*client.UpdateMessageSendSucceeded)
@@ -103,54 +109,9 @@ func (t *TdApi) UpdatesCallback(ctx context.Context, update client.Type) {
 			//@TODO: also put in t.sentMessages
 			t.log.Error("failed to send message", "virtual_id", upd.OldMessageId, "error", upd.Error)
 
-		case client.ConstructorUpdateMessageInteractionInfo:
-			//upd := update.(*client.UpdateMessageInteractionInfo)
-			//log.Printf("[%d] received interaction update for message in chat `%s`: %s", acc, GetChatName(acc, upd.ChatId), BuildMessageLink(upd.ChatId, upd.MessageId))
-
-		case client.ConstructorUpdateChatTitle:
-			//upd := update.(*client.UpdateChatTitle)
-			//@TODO: where to get old name?
-			//fmt.Printf("Renamed chat id:%d to `%s`", upd.ChatId, upd.Title))
-
 		case client.ConstructorUpdateChatHasProtectedContent:
 			upd := update.(*client.UpdateChatHasProtectedContent)
 			t.log.Info("Chat now has protected content", "chat_id", upd.ChatId, "name", t.GetChatName(ctx, upd.ChatId), "value", upd.HasProtectedContent)
-
-		case client.ConstructorUpdateNewChat:
-			//dont need to cache chat here, because chat info is empty, @see case client.ClassChat below
-			//upd := update.(*client.UpdateNewChat)
-			//CacheChat(acc, upd.Chat)
-			////fmt.Printf("New chat added: %d / %s", upd.Chat.Id, upd.Chat.Title))
-			//saveAllChatPositions(acc, upd.Chat.Id, upd.Chat.Positions)
-
-		case client.ConstructorUpdateConnectionState:
-			//upd := update.(*client.UpdateConnectionState)
-			//fmt.Printf("Connection state changed: %s", upd.State.ConnectionStateType()))
-
-		case client.ConstructorUpdateChatAction:
-			upd := update.(*client.UpdateChatAction)
-			if upd.ChatId < 0 {
-				//fmt.Printf("Skipping action in non-user chat %d: %s", upd.ChatId, upd.Action.ChatActionType()))
-				break
-			}
-			localChat, err := t.GetChat(ctx, upd.ChatId, false)
-			if err == nil {
-				if localChat.LastMessage != nil && localChat.LastMessage.Date < int32(time.Now().Unix())-int32((time.Hour*6).Seconds()) {
-					//fmt.Printf("User action in chat `%s`: %s", localChat.Title, upd.Action.ChatActionType()))
-				} else {
-					//fmt.Printf("Skipping action because its from fresh chat %d `%s`: %s\n", upd.ChatId, localChat.Title, upd.Action.ChatActionType()))
-				}
-			} else {
-				//@NOTE: sender could not be "channel" here, because we only log private chats
-				//user, err := t.GetUser(GetChatIdBySender(upd.SenderId))
-				//userName := "err_name"
-				//if err != nil {
-				//	fmt.Printf("failed to get user %d: %s\n", user.Id, err)
-				//} else {
-				//	userName = getUserFullname(user)
-				//}
-				//fmt.Printf("User action `%s`: %s", userName, upd.Action.ChatActionType()))
-			}
 
 		case client.ConstructorUpdateChatLastMessage:
 			upd := update.(*client.UpdateChatLastMessage)
@@ -196,10 +157,10 @@ func (t *TdApi) UpdatesCallback(ctx context.Context, update client.Type) {
 			upd := update.(*client.UpdateNewMessage)
 			if upd.Message.Content.MessageContentConstructor() == client.ConstructorMessageChatAddMembers ||
 				upd.Message.Content.MessageContentConstructor() == client.ConstructorMessageChatJoinByLink {
-				t.MarkJoinAsRead(ctx, upd.Message.ChatId, upd.Message.Id)
+				go t.MarkJoinAsRead(ctx, upd.Message.ChatId, upd.Message.Id)
 			}
 
-			modules.CustomNewMessageRoutine(ctx, t.dbData.Id, t.tdlibClient, upd)
+			go modules.CustomNewMessageRoutine(ctx, t.dbData.Id, t.tdlibClient, upd)
 
 		case client.ConstructorUpdateMessageEdited:
 			upd := update.(*client.UpdateMessageEdited)
@@ -215,25 +176,13 @@ func (t *TdApi) UpdatesCallback(ctx context.Context, update client.Type) {
 				break
 			}
 
-			modules.CustomMessageContentRoutine(ctx, t.dbData.Id, t.tdlibClient, upd)
-
-		case client.ConstructorUpdateFile:
-			upd := update.(*client.UpdateFile)
-			if upd.File.Local.IsDownloadingActive {
-				//fmt.Printf("File downloading: %d/%d bytes", upd.File.Local.DownloadedSize, upd.File.ExpectedSize))
-			} else {
-				//fmt.Printf("File downloaded: %d bytes, path: %s", upd.File.Local.DownloadedSize, upd.File.Local.Path))
-			}
+			go modules.CustomMessageContentRoutine(ctx, t.dbData.Id, t.tdlibClient, upd)
 
 		case client.ConstructorUpdateChatMessageAutoDeleteTime:
 			upd := update.(*client.UpdateChatMessageAutoDeleteTime)
 			chatName := t.GetChatName(ctx, upd.ChatId)
 			t.log.Info("message auto-delete time updated", "chat_id", upd.ChatId, "name", chatName, "value", upd.MessageAutoDeleteTime)
 
-		case client.ConstructorUpdateChatAvailableReactions:
-			//upd := update.(*client.UpdateChatAvailableReactions)
-			//chatName := t.GetChatName(upd.ChatId)
-			//fmt.Printf("Available reactions updated for chat `%s` %d: %s", chatName, upd.ChatId, JsonMarshalStr(upd.AvailableReactions)))
 
 		default:
 			t.log.Info("unknown update", "type", typ, "value", update)
