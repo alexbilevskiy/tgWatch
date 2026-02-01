@@ -23,6 +23,98 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type FilteredMessage_Source int32
+
+const (
+	FilteredMessage_FROM_SEARCH FilteredMessage_Source = 0
+	FilteredMessage_LINK_CRAWL  FilteredMessage_Source = 1
+)
+
+// Enum value maps for FilteredMessage_Source.
+var (
+	FilteredMessage_Source_name = map[int32]string{
+		0: "FROM_SEARCH",
+		1: "LINK_CRAWL",
+	}
+	FilteredMessage_Source_value = map[string]int32{
+		"FROM_SEARCH": 0,
+		"LINK_CRAWL":  1,
+	}
+)
+
+func (x FilteredMessage_Source) Enum() *FilteredMessage_Source {
+	p := new(FilteredMessage_Source)
+	*p = x
+	return p
+}
+
+func (x FilteredMessage_Source) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (FilteredMessage_Source) Descriptor() protoreflect.EnumDescriptor {
+	return file_api_tgwatch_proto_enumTypes[0].Descriptor()
+}
+
+func (FilteredMessage_Source) Type() protoreflect.EnumType {
+	return &file_api_tgwatch_proto_enumTypes[0]
+}
+
+func (x FilteredMessage_Source) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use FilteredMessage_Source.Descriptor instead.
+func (FilteredMessage_Source) EnumDescriptor() ([]byte, []int) {
+	return file_api_tgwatch_proto_rawDescGZIP(), []int{7, 0}
+}
+
+type FilteredMessage_Verdict int32
+
+const (
+	FilteredMessage_OK_ONLY_CHANNEL_LINKS  FilteredMessage_Verdict = 0
+	FilteredMessage_FAIL_HAS_MESSAGE_LINKS FilteredMessage_Verdict = 1
+)
+
+// Enum value maps for FilteredMessage_Verdict.
+var (
+	FilteredMessage_Verdict_name = map[int32]string{
+		0: "OK_ONLY_CHANNEL_LINKS",
+		1: "FAIL_HAS_MESSAGE_LINKS",
+	}
+	FilteredMessage_Verdict_value = map[string]int32{
+		"OK_ONLY_CHANNEL_LINKS":  0,
+		"FAIL_HAS_MESSAGE_LINKS": 1,
+	}
+)
+
+func (x FilteredMessage_Verdict) Enum() *FilteredMessage_Verdict {
+	p := new(FilteredMessage_Verdict)
+	*p = x
+	return p
+}
+
+func (x FilteredMessage_Verdict) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (FilteredMessage_Verdict) Descriptor() protoreflect.EnumDescriptor {
+	return file_api_tgwatch_proto_enumTypes[1].Descriptor()
+}
+
+func (FilteredMessage_Verdict) Type() protoreflect.EnumType {
+	return &file_api_tgwatch_proto_enumTypes[1]
+}
+
+func (x FilteredMessage_Verdict) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use FilteredMessage_Verdict.Descriptor instead.
+func (FilteredMessage_Verdict) EnumDescriptor() ([]byte, []int) {
+	return file_api_tgwatch_proto_rawDescGZIP(), []int{7, 1}
+}
+
 type GetMeRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -215,6 +307,102 @@ func (x *SearchPublicPostsResponse) GetFoundMessages() []*Message {
 	return nil
 }
 
+type SearchPublicPostsFilteredRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Query         string                 `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
+	Limit         int32                  `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SearchPublicPostsFilteredRequest) Reset() {
+	*x = SearchPublicPostsFilteredRequest{}
+	mi := &file_api_tgwatch_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SearchPublicPostsFilteredRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SearchPublicPostsFilteredRequest) ProtoMessage() {}
+
+func (x *SearchPublicPostsFilteredRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_tgwatch_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SearchPublicPostsFilteredRequest.ProtoReflect.Descriptor instead.
+func (*SearchPublicPostsFilteredRequest) Descriptor() ([]byte, []int) {
+	return file_api_tgwatch_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *SearchPublicPostsFilteredRequest) GetQuery() string {
+	if x != nil {
+		return x.Query
+	}
+	return ""
+}
+
+func (x *SearchPublicPostsFilteredRequest) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+type SearchPublicPostsFilteredResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	FoundMessages []*FilteredMessage     `protobuf:"bytes,1,rep,name=found_messages,json=foundMessages,proto3" json:"found_messages,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SearchPublicPostsFilteredResponse) Reset() {
+	*x = SearchPublicPostsFilteredResponse{}
+	mi := &file_api_tgwatch_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SearchPublicPostsFilteredResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SearchPublicPostsFilteredResponse) ProtoMessage() {}
+
+func (x *SearchPublicPostsFilteredResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_tgwatch_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SearchPublicPostsFilteredResponse.ProtoReflect.Descriptor instead.
+func (*SearchPublicPostsFilteredResponse) Descriptor() ([]byte, []int) {
+	return file_api_tgwatch_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *SearchPublicPostsFilteredResponse) GetFoundMessages() []*FilteredMessage {
+	if x != nil {
+		return x.FoundMessages
+	}
+	return nil
+}
+
 type Message struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -229,7 +417,7 @@ type Message struct {
 
 func (x *Message) Reset() {
 	*x = Message{}
-	mi := &file_api_tgwatch_proto_msgTypes[4]
+	mi := &file_api_tgwatch_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -241,7 +429,7 @@ func (x *Message) String() string {
 func (*Message) ProtoMessage() {}
 
 func (x *Message) ProtoReflect() protoreflect.Message {
-	mi := &file_api_tgwatch_proto_msgTypes[4]
+	mi := &file_api_tgwatch_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -254,7 +442,7 @@ func (x *Message) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Message.ProtoReflect.Descriptor instead.
 func (*Message) Descriptor() ([]byte, []int) {
-	return file_api_tgwatch_proto_rawDescGZIP(), []int{4}
+	return file_api_tgwatch_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *Message) GetId() int64 {
@@ -299,6 +487,122 @@ func (x *Message) GetText() string {
 	return ""
 }
 
+type FilteredMessage struct {
+	state         protoimpl.MessageState  `protogen:"open.v1"`
+	Id            int64                   `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	ChatId        int64                   `protobuf:"varint,2,opt,name=chat_id,json=chatId,proto3" json:"chat_id,omitempty"`
+	Link          string                  `protobuf:"bytes,3,opt,name=link,proto3" json:"link,omitempty"`
+	Source        FilteredMessage_Source  `protobuf:"varint,4,opt,name=source,proto3,enum=tgwatch.FilteredMessage_Source" json:"source,omitempty"`
+	Verdict       FilteredMessage_Verdict `protobuf:"varint,5,opt,name=verdict,proto3,enum=tgwatch.FilteredMessage_Verdict" json:"verdict,omitempty"`
+	SenderName    string                  `protobuf:"bytes,6,opt,name=sender_name,json=senderName,proto3" json:"sender_name,omitempty"`
+	Date          *timestamppb.Timestamp  `protobuf:"bytes,7,opt,name=date,proto3" json:"date,omitempty"`
+	Text          string                  `protobuf:"bytes,8,opt,name=text,proto3" json:"text,omitempty"`
+	Links         []string                `protobuf:"bytes,9,rep,name=links,proto3" json:"links,omitempty"`
+	FilteredLinks []string                `protobuf:"bytes,10,rep,name=filtered_links,json=filteredLinks,proto3" json:"filtered_links,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FilteredMessage) Reset() {
+	*x = FilteredMessage{}
+	mi := &file_api_tgwatch_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FilteredMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FilteredMessage) ProtoMessage() {}
+
+func (x *FilteredMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_api_tgwatch_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FilteredMessage.ProtoReflect.Descriptor instead.
+func (*FilteredMessage) Descriptor() ([]byte, []int) {
+	return file_api_tgwatch_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *FilteredMessage) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *FilteredMessage) GetChatId() int64 {
+	if x != nil {
+		return x.ChatId
+	}
+	return 0
+}
+
+func (x *FilteredMessage) GetLink() string {
+	if x != nil {
+		return x.Link
+	}
+	return ""
+}
+
+func (x *FilteredMessage) GetSource() FilteredMessage_Source {
+	if x != nil {
+		return x.Source
+	}
+	return FilteredMessage_FROM_SEARCH
+}
+
+func (x *FilteredMessage) GetVerdict() FilteredMessage_Verdict {
+	if x != nil {
+		return x.Verdict
+	}
+	return FilteredMessage_OK_ONLY_CHANNEL_LINKS
+}
+
+func (x *FilteredMessage) GetSenderName() string {
+	if x != nil {
+		return x.SenderName
+	}
+	return ""
+}
+
+func (x *FilteredMessage) GetDate() *timestamppb.Timestamp {
+	if x != nil {
+		return x.Date
+	}
+	return nil
+}
+
+func (x *FilteredMessage) GetText() string {
+	if x != nil {
+		return x.Text
+	}
+	return ""
+}
+
+func (x *FilteredMessage) GetLinks() []string {
+	if x != nil {
+		return x.Links
+	}
+	return nil
+}
+
+func (x *FilteredMessage) GetFilteredLinks() []string {
+	if x != nil {
+		return x.FilteredLinks
+	}
+	return nil
+}
+
 var File_api_tgwatch_proto protoreflect.FileDescriptor
 
 const file_api_tgwatch_proto_rawDesc = "" +
@@ -313,7 +617,12 @@ const file_api_tgwatch_proto_rawDesc = "" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x16\n" +
 	"\x06offset\x18\x02 \x01(\tR\x06offset\"T\n" +
 	"\x19SearchPublicPostsResponse\x127\n" +
-	"\x0efound_messages\x18\x01 \x03(\v2\x10.tgwatch.MessageR\rfoundMessages\"\xab\x01\n" +
+	"\x0efound_messages\x18\x01 \x03(\v2\x10.tgwatch.MessageR\rfoundMessages\"N\n" +
+	" SearchPublicPostsFilteredRequest\x12\x14\n" +
+	"\x05query\x18\x01 \x01(\tR\x05query\x12\x14\n" +
+	"\x05limit\x18\x02 \x01(\x05R\x05limit\"d\n" +
+	"!SearchPublicPostsFilteredResponse\x12?\n" +
+	"\x0efound_messages\x18\x01 \x03(\v2\x18.tgwatch.FilteredMessageR\rfoundMessages\"\xab\x01\n" +
 	"\aMessage\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x17\n" +
 	"\achat_id\x18\x02 \x01(\x03R\x06chatId\x12\x12\n" +
@@ -321,10 +630,31 @@ const file_api_tgwatch_proto_rawDesc = "" +
 	"\vsender_name\x18\x04 \x01(\tR\n" +
 	"senderName\x12.\n" +
 	"\x04date\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\x04date\x12\x12\n" +
-	"\x04text\x18\x06 \x01(\tR\x04text2\xa8\x01\n" +
+	"\x04text\x18\x06 \x01(\tR\x04text\"\xd2\x03\n" +
+	"\x0fFilteredMessage\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x17\n" +
+	"\achat_id\x18\x02 \x01(\x03R\x06chatId\x12\x12\n" +
+	"\x04link\x18\x03 \x01(\tR\x04link\x127\n" +
+	"\x06source\x18\x04 \x01(\x0e2\x1f.tgwatch.FilteredMessage.SourceR\x06source\x12:\n" +
+	"\averdict\x18\x05 \x01(\x0e2 .tgwatch.FilteredMessage.VerdictR\averdict\x12\x1f\n" +
+	"\vsender_name\x18\x06 \x01(\tR\n" +
+	"senderName\x12.\n" +
+	"\x04date\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\x04date\x12\x12\n" +
+	"\x04text\x18\b \x01(\tR\x04text\x12\x14\n" +
+	"\x05links\x18\t \x03(\tR\x05links\x12%\n" +
+	"\x0efiltered_links\x18\n" +
+	" \x03(\tR\rfilteredLinks\")\n" +
+	"\x06Source\x12\x0f\n" +
+	"\vFROM_SEARCH\x10\x00\x12\x0e\n" +
+	"\n" +
+	"LINK_CRAWL\x10\x01\"@\n" +
+	"\aVerdict\x12\x19\n" +
+	"\x15OK_ONLY_CHANNEL_LINKS\x10\x00\x12\x1a\n" +
+	"\x16FAIL_HAS_MESSAGE_LINKS\x10\x012\x9e\x02\n" +
 	"\x0eTgwatchService\x128\n" +
 	"\x05GetMe\x12\x15.tgwatch.GetMeRequest\x1a\x16.tgwatch.GetMeResponse\"\x00\x12\\\n" +
-	"\x11SearchPublicPosts\x12!.tgwatch.SearchPublicPostsRequest\x1a\".tgwatch.SearchPublicPostsResponse\"\x00B<Z:github.com/alexbilevskiy/tgwatch/internal/generated/pb/apib\x06proto3"
+	"\x11SearchPublicPosts\x12!.tgwatch.SearchPublicPostsRequest\x1a\".tgwatch.SearchPublicPostsResponse\"\x00\x12t\n" +
+	"\x19SearchPublicPostsFiltered\x12).tgwatch.SearchPublicPostsFilteredRequest\x1a*.tgwatch.SearchPublicPostsFilteredResponse\"\x00B<Z:github.com/alexbilevskiy/tgwatch/internal/generated/pb/apib\x06proto3"
 
 var (
 	file_api_tgwatch_proto_rawDescOnce sync.Once
@@ -338,27 +668,39 @@ func file_api_tgwatch_proto_rawDescGZIP() []byte {
 	return file_api_tgwatch_proto_rawDescData
 }
 
-var file_api_tgwatch_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_api_tgwatch_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_api_tgwatch_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_api_tgwatch_proto_goTypes = []any{
-	(*GetMeRequest)(nil),              // 0: tgwatch.GetMeRequest
-	(*GetMeResponse)(nil),             // 1: tgwatch.GetMeResponse
-	(*SearchPublicPostsRequest)(nil),  // 2: tgwatch.SearchPublicPostsRequest
-	(*SearchPublicPostsResponse)(nil), // 3: tgwatch.SearchPublicPostsResponse
-	(*Message)(nil),                   // 4: tgwatch.Message
-	(*timestamppb.Timestamp)(nil),     // 5: google.protobuf.Timestamp
+	(FilteredMessage_Source)(0),               // 0: tgwatch.FilteredMessage.Source
+	(FilteredMessage_Verdict)(0),              // 1: tgwatch.FilteredMessage.Verdict
+	(*GetMeRequest)(nil),                      // 2: tgwatch.GetMeRequest
+	(*GetMeResponse)(nil),                     // 3: tgwatch.GetMeResponse
+	(*SearchPublicPostsRequest)(nil),          // 4: tgwatch.SearchPublicPostsRequest
+	(*SearchPublicPostsResponse)(nil),         // 5: tgwatch.SearchPublicPostsResponse
+	(*SearchPublicPostsFilteredRequest)(nil),  // 6: tgwatch.SearchPublicPostsFilteredRequest
+	(*SearchPublicPostsFilteredResponse)(nil), // 7: tgwatch.SearchPublicPostsFilteredResponse
+	(*Message)(nil),                           // 8: tgwatch.Message
+	(*FilteredMessage)(nil),                   // 9: tgwatch.FilteredMessage
+	(*timestamppb.Timestamp)(nil),             // 10: google.protobuf.Timestamp
 }
 var file_api_tgwatch_proto_depIdxs = []int32{
-	4, // 0: tgwatch.SearchPublicPostsResponse.found_messages:type_name -> tgwatch.Message
-	5, // 1: tgwatch.Message.date:type_name -> google.protobuf.Timestamp
-	0, // 2: tgwatch.TgwatchService.GetMe:input_type -> tgwatch.GetMeRequest
-	2, // 3: tgwatch.TgwatchService.SearchPublicPosts:input_type -> tgwatch.SearchPublicPostsRequest
-	1, // 4: tgwatch.TgwatchService.GetMe:output_type -> tgwatch.GetMeResponse
-	3, // 5: tgwatch.TgwatchService.SearchPublicPosts:output_type -> tgwatch.SearchPublicPostsResponse
-	4, // [4:6] is the sub-list for method output_type
-	2, // [2:4] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	8,  // 0: tgwatch.SearchPublicPostsResponse.found_messages:type_name -> tgwatch.Message
+	9,  // 1: tgwatch.SearchPublicPostsFilteredResponse.found_messages:type_name -> tgwatch.FilteredMessage
+	10, // 2: tgwatch.Message.date:type_name -> google.protobuf.Timestamp
+	0,  // 3: tgwatch.FilteredMessage.source:type_name -> tgwatch.FilteredMessage.Source
+	1,  // 4: tgwatch.FilteredMessage.verdict:type_name -> tgwatch.FilteredMessage.Verdict
+	10, // 5: tgwatch.FilteredMessage.date:type_name -> google.protobuf.Timestamp
+	2,  // 6: tgwatch.TgwatchService.GetMe:input_type -> tgwatch.GetMeRequest
+	4,  // 7: tgwatch.TgwatchService.SearchPublicPosts:input_type -> tgwatch.SearchPublicPostsRequest
+	6,  // 8: tgwatch.TgwatchService.SearchPublicPostsFiltered:input_type -> tgwatch.SearchPublicPostsFilteredRequest
+	3,  // 9: tgwatch.TgwatchService.GetMe:output_type -> tgwatch.GetMeResponse
+	5,  // 10: tgwatch.TgwatchService.SearchPublicPosts:output_type -> tgwatch.SearchPublicPostsResponse
+	7,  // 11: tgwatch.TgwatchService.SearchPublicPostsFiltered:output_type -> tgwatch.SearchPublicPostsFilteredResponse
+	9,  // [9:12] is the sub-list for method output_type
+	6,  // [6:9] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_api_tgwatch_proto_init() }
@@ -371,13 +713,14 @@ func file_api_tgwatch_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_tgwatch_proto_rawDesc), len(file_api_tgwatch_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   5,
+			NumEnums:      2,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_api_tgwatch_proto_goTypes,
 		DependencyIndexes: file_api_tgwatch_proto_depIdxs,
+		EnumInfos:         file_api_tgwatch_proto_enumTypes,
 		MessageInfos:      file_api_tgwatch_proto_msgTypes,
 	}.Build()
 	File_api_tgwatch_proto = out.File

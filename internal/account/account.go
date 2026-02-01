@@ -32,7 +32,8 @@ type tdApiInterface interface {
 	GetLink(ctx context.Context, chatId int64, messageId int64) string
 	AddChatsToFolder(ctx context.Context, chats []int64, folder int32) error
 	SendMessage(ctx context.Context, text string, chatId int64, replyToMessageId *int64)
-	GetLinkInfo(ctx context.Context, link string) (client.InternalLinkType, interface{}, error)
+	GetLinkInfoResolved(ctx context.Context, link string) (client.InternalLinkType, interface{}, error)
+	GetLinkType(ctx context.Context, link string) (client.InternalLinkType, error)
 	GetMessage(ctx context.Context, chatId int64, messageId int64) (*client.Message, error)
 	LoadChatHistory(ctx context.Context, chatId int64, fromMessageId int64, offset int32) (*client.Messages, error)
 	MarkJoinAsRead(ctx context.Context, chatId int64, messageId int64)

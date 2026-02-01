@@ -279,7 +279,7 @@ func (t *TdApi) SendMessage(ctx context.Context, text string, chatId int64, repl
 	}
 }
 
-func (t *TdApi) GetLinkInfo(ctx context.Context, link string) (client.InternalLinkType, interface{}, error) {
+func (t *TdApi) GetLinkInfoResolved(ctx context.Context, link string) (client.InternalLinkType, interface{}, error) {
 	linkTypeReq := &client.GetInternalLinkTypeRequest{Link: link}
 	linkType, err := t.tdlibClient.GetInternalLinkType(ctx, linkTypeReq)
 	if err != nil {
@@ -319,6 +319,15 @@ func (t *TdApi) GetLinkInfo(ctx context.Context, link string) (client.InternalLi
 	default:
 		return linkType, errors.New(fmt.Sprintf("unknown link type: %s", linkType.InternalLinkTypeConstructor())), nil
 	}
+}
+
+func (t *TdApi) GetLinkType(ctx context.Context, link string) (client.InternalLinkType, error) {
+	linkTypeReq := &client.GetInternalLinkTypeRequest{Link: link}
+	linkType, err := t.tdlibClient.GetInternalLinkType(ctx, linkTypeReq)
+	if err != nil {
+		return nil, fmt.Errorf("GetInternalLinkType: %w", err)
+	}
+	return linkType, nil
 }
 
 func (t *TdApi) GetMessage(ctx context.Context, chatId int64, messageId int64) (*client.Message, error) {

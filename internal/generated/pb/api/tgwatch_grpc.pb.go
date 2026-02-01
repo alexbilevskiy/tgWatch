@@ -19,8 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	TgwatchService_GetMe_FullMethodName             = "/tgwatch.TgwatchService/GetMe"
-	TgwatchService_SearchPublicPosts_FullMethodName = "/tgwatch.TgwatchService/SearchPublicPosts"
+	TgwatchService_GetMe_FullMethodName                     = "/tgwatch.TgwatchService/GetMe"
+	TgwatchService_SearchPublicPosts_FullMethodName         = "/tgwatch.TgwatchService/SearchPublicPosts"
+	TgwatchService_SearchPublicPostsFiltered_FullMethodName = "/tgwatch.TgwatchService/SearchPublicPostsFiltered"
 )
 
 // TgwatchServiceClient is the client API for TgwatchService service.
@@ -29,6 +30,7 @@ const (
 type TgwatchServiceClient interface {
 	GetMe(ctx context.Context, in *GetMeRequest, opts ...grpc.CallOption) (*GetMeResponse, error)
 	SearchPublicPosts(ctx context.Context, in *SearchPublicPostsRequest, opts ...grpc.CallOption) (*SearchPublicPostsResponse, error)
+	SearchPublicPostsFiltered(ctx context.Context, in *SearchPublicPostsFilteredRequest, opts ...grpc.CallOption) (*SearchPublicPostsFilteredResponse, error)
 }
 
 type tgwatchServiceClient struct {
@@ -59,12 +61,23 @@ func (c *tgwatchServiceClient) SearchPublicPosts(ctx context.Context, in *Search
 	return out, nil
 }
 
+func (c *tgwatchServiceClient) SearchPublicPostsFiltered(ctx context.Context, in *SearchPublicPostsFilteredRequest, opts ...grpc.CallOption) (*SearchPublicPostsFilteredResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SearchPublicPostsFilteredResponse)
+	err := c.cc.Invoke(ctx, TgwatchService_SearchPublicPostsFiltered_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TgwatchServiceServer is the server API for TgwatchService service.
 // All implementations must embed UnimplementedTgwatchServiceServer
 // for forward compatibility.
 type TgwatchServiceServer interface {
 	GetMe(context.Context, *GetMeRequest) (*GetMeResponse, error)
 	SearchPublicPosts(context.Context, *SearchPublicPostsRequest) (*SearchPublicPostsResponse, error)
+	SearchPublicPostsFiltered(context.Context, *SearchPublicPostsFilteredRequest) (*SearchPublicPostsFilteredResponse, error)
 	mustEmbedUnimplementedTgwatchServiceServer()
 }
 
@@ -80,6 +93,9 @@ func (UnimplementedTgwatchServiceServer) GetMe(context.Context, *GetMeRequest) (
 }
 func (UnimplementedTgwatchServiceServer) SearchPublicPosts(context.Context, *SearchPublicPostsRequest) (*SearchPublicPostsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SearchPublicPosts not implemented")
+}
+func (UnimplementedTgwatchServiceServer) SearchPublicPostsFiltered(context.Context, *SearchPublicPostsFilteredRequest) (*SearchPublicPostsFilteredResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SearchPublicPostsFiltered not implemented")
 }
 func (UnimplementedTgwatchServiceServer) mustEmbedUnimplementedTgwatchServiceServer() {}
 func (UnimplementedTgwatchServiceServer) testEmbeddedByValue()                        {}
@@ -138,6 +154,24 @@ func _TgwatchService_SearchPublicPosts_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TgwatchService_SearchPublicPostsFiltered_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SearchPublicPostsFilteredRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TgwatchServiceServer).SearchPublicPostsFiltered(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TgwatchService_SearchPublicPostsFiltered_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TgwatchServiceServer).SearchPublicPostsFiltered(ctx, req.(*SearchPublicPostsFilteredRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TgwatchService_ServiceDesc is the grpc.ServiceDesc for TgwatchService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -152,6 +186,10 @@ var TgwatchService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SearchPublicPosts",
 			Handler:    _TgwatchService_SearchPublicPosts_Handler,
+		},
+		{
+			MethodName: "SearchPublicPostsFiltered",
+			Handler:    _TgwatchService_SearchPublicPostsFiltered_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

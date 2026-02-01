@@ -506,7 +506,7 @@ func (wc *webController) processTgLink(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	linkInfo, LinkData, err := req.Context().Value("current_acc").(*account.Account).TdApi.GetLinkInfo(req.Context(), link)
+	linkInfo, LinkData, err := req.Context().Value("current_acc").(*account.Account).TdApi.GetLinkInfoResolved(req.Context(), link)
 	if err != nil {
 		errorResponse(models.WebError{T: "Bad request", Error: err.Error()}, 400, req, w)
 		return

@@ -12,6 +12,7 @@ service TgwatchService {
   }
   rpc SearchPublicPosts(SearchPublicPostsRequest) returns (SearchPublicPostsResponse) {
   }
+  rpc SearchPublicPostsFiltered(SearchPublicPostsFilteredRequest) returns (SearchPublicPostsFilteredResponse) {}
 }
 
 message GetMeRequest {
@@ -33,6 +34,15 @@ message SearchPublicPostsResponse {
   repeated Message found_messages = 1;
 }
 
+message SearchPublicPostsFilteredRequest {
+  string query = 1;
+  int32 limit = 2;
+}
+
+message SearchPublicPostsFilteredResponse {
+  repeated FilteredMessage found_messages = 1;
+}
+
 message Message {
   int64 id = 1;
   int64 chat_id = 2;
@@ -41,3 +51,27 @@ message Message {
   google.protobuf.Timestamp date = 5;
   string text = 6;
 }
+
+message FilteredMessage {
+  enum Source {
+    FROM_SEARCH = 0;
+    LINK_CRAWL = 1;
+  }
+  enum Verdict {
+    OK_ONLY_CHANNEL_LINKS = 0;
+    FAIL_HAS_MESSAGE_LINKS = 1;
+  }
+
+  int64 id = 1;
+  int64 chat_id = 2;
+  string link = 3;
+  Source source = 4;
+  Verdict verdict = 5;
+  string sender_name = 6;
+  google.protobuf.Timestamp date = 7;
+  string text = 8;
+  repeated string links = 9;
+  repeated string filtered_links = 10;
+}
+
+
