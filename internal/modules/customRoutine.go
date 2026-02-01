@@ -24,43 +24,47 @@ func sendCoffee(ctx context.Context, tdlibClient *client.Client, content client.
 	if !strings.Contains(strings.ToLower(cnt.Text.Text), "по кофейку!") {
 		return
 	}
-	fmt.Printf("Sending coffee!!!")
+	fmt.Printf("Sending coffee!!!\n")
 	req := &client.ForwardMessagesRequest{ChatId: dudeChatId, FromChatId: myUserId, MessageIds: append(make([]int64, 0), repostMsgId), RemoveCaption: true, SendCopy: true}
 	messages, err := tdlibClient.ForwardMessages(ctx, req)
 	if err != nil {
-		fmt.Printf("Failed to send coffee: %s", err.Error())
+		fmt.Printf("Failed to send coffee: %s\n", err.Error())
 	} else {
-		fmt.Printf("Sent coffee! count: %d", messages.TotalCount)
+		fmt.Printf("Sent coffee! count: %d\n", messages.TotalCount)
 	}
 }
 
 func sendTgNotification(ctx context.Context, acc int64, tdlibClient *client.Client, update *client.UpdateNewMessage) {
+	fmt.Printf("[%d] New notification from tg: %d\n", acc, update.Message.Id)
 	gcReq := client.GetChatRequest{ChatId: myUserId}
 	_, err := tdlibClient.GetChat(ctx, &gcReq)
 	if err != nil {
-		fmt.Printf("Failed to get chat (%s), trying to create", err.Error())
+		if err.Error() != "404 Not Found" {
+			fmt.Printf("Failed to get chat %d (%s), stopping\n", myUserId, err.Error())
+			return
+		}
+		fmt.Printf("Failed to get chat %d (%s), trying to create\n", myUserId, err.Error())
 
 		srReq := client.SearchPublicChatRequest{Username: myUsername}
 		_, err := tdlibClient.SearchPublicChat(ctx, &srReq)
 		if err != nil {
-			fmt.Printf("Failed to search public chat: %s", err.Error())
+			fmt.Printf("Failed to search public chat %s: %s\n", myUsername, err.Error())
 			return
 		}
 		chReq := client.CreatePrivateChatRequest{UserId: myUserId}
 		_, err = tdlibClient.CreatePrivateChat(ctx, &chReq)
 		if err != nil {
-			fmt.Printf("Failed to create private chat: %s", err.Error())
+			fmt.Printf("Failed to create private chat %d: %s\n", myUserId, err.Error())
 			return
 		}
 	}
 	req := client.SendMessageRequest{ChatId: myUserId, InputMessageContent: &client.InputMessageText{Text: &client.FormattedText{Text: "got new message from tg"}}}
 	_, err = tdlibClient.SendMessage(ctx, &req)
 	if err != nil {
-		fmt.Printf("Failed to notify: %s", err.Error())
+		fmt.Printf("Failed to notify: %s\n", err.Error())
 		return
 	}
-	fmt.Printf("[%d] New notification from tg: %d", acc, update.Message.Id)
-
+	fmt.Printf("[%d] Reported notification from tg to %d: %d\n", acc, myUserId, update.Message.Id)
 }
 
 func CustomNewMessageRoutine(ctx context.Context, acc int64, tdlibClient *client.Client, update *client.UpdateNewMessage) {
