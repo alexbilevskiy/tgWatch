@@ -74,7 +74,7 @@ func (t *TdApi) RunTdlib(ctx context.Context) (*client.User, error) {
 	client.WithFallbackTimeout(60)
 
 	tdlibClient, err := client.NewClient(authorizer, client.WithResultHandler(client.NewCallbackResultHandler(func(result client.Type) {
-		t.UpdatesCallback(ctx, result)
+		go t.UpdatesCallback(ctx, result)
 	})))
 	if err != nil {
 		return nil, fmt.Errorf("create tdlib client: %w", err)
