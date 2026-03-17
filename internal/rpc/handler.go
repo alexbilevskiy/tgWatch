@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 	"unicode/utf16"
 
@@ -28,7 +29,7 @@ func NewHandler(log *slog.Logger, astore *account.AccountsStore) *TgRpcApi {
 	return tgApi
 }
 
-var accId int64 = 118137353
+var accId int64 = 118137353 // книжные хотелки
 
 func (t *TgRpcApi) GetMe(ctx context.Context, req *pbapi.GetMeRequest) (*pbapi.GetMeResponse, error) {
 	acc := t.astore.Get(accId)
@@ -89,6 +90,7 @@ func (t *TgRpcApi) SearchPublicPostsFiltered(ctx context.Context, req *pbapi.Sea
 		FoundMessages: make([]*pbapi.FilteredMessage, 0, req.Limit),
 	}
 
+	t.log.Info("run search")
 	var foundCnt int32
 	offset := ""
 	for foundCnt < req.Limit {
@@ -97,22 +99,28 @@ func (t *TgRpcApi) SearchPublicPostsFiltered(ctx context.Context, req *pbapi.Sea
 			return nil, fmt.Errorf("search public posts filtered: %w", err)
 		}
 		offset = foundPosts.NextOffset
-		parsed := t.ParseMessages(ctx, acc, foundPosts.Messages)
+		parsed := t.ParseMessages(ctx, acc, foundPosts.Messages, pbapi.FilteredMessage_SOURCE_FROM_SEARCH)
 		res.FoundMessages = append(res.FoundMessages, parsed...)
 		foundCnt += int32(len(parsed))
 		if foundCnt >= req.Limit {
 			break
 		}
 	}
+	t.log.Info("set verdicts for search")
 	extraLinks := t.SetVerdictsByLinks(ctx, acc, res.FoundMessages)
+	t.log.Info("process extra links", "len", len(extraLinks))
 	extraMessages := t.GetExtraMessages(ctx, acc, extraLinks)
-	parsedExtra := t.ParseMessages(ctx, acc, extraMessages)
+	t.log.Info("process extra messages", "len", len(extraMessages))
+	parsedExtra := t.ParseMessages(ctx, acc, extraMessages, pbapi.FilteredMessage_SOURCE_LINK_CRAWL)
+	t.log.Info("process extra posts", "len", len(parsedExtra))
 	_ = t.SetVerdictsByLinks(ctx, acc, parsedExtra)
+	//res.FoundMessages = parsedExtra
 	for _, m := range parsedExtra {
 		found := false
 		for _, existing := range res.FoundMessages {
 			if existing.Id == m.Id && existing.ChatId == m.ChatId {
 				found = true
+				break
 			}
 		}
 		if !found {
@@ -123,9 +131,13 @@ func (t *TgRpcApi) SearchPublicPostsFiltered(ctx context.Context, req *pbapi.Sea
 	return res, nil
 }
 
-func (t *TgRpcApi) ParseMessages(ctx context.Context, acc *account.Account, messages []*client.Message) []*pbapi.FilteredMessage {
+func (t *TgRpcApi) ParseMessages(ctx context.Context, acc *account.Account, messages []*client.Message, source pbapi.FilteredMessage_Source) []*pbapi.FilteredMessage {
 	var res []*pbapi.FilteredMessage
 	for _, p := range messages {
+		if  p == nil {
+			fmt.Println("nil message", messages)
+			continue
+		}
 		msg, errMsg := acc.TdApi.GetMessage(ctx, p.ChatId, p.Id)
 		if errMsg != nil {
 			t.log.Warn("unable to get message", "err", errMsg, "chat_id", p.ChatId, "id", p.Id)
@@ -145,7 +157,7 @@ func (t *TgRpcApi) ParseMessages(ctx context.Context, acc *account.Account, mess
 			Id:         p.Id,
 			ChatId:     p.ChatId,
 			Link:       link,
-			Source:     pbapi.FilteredMessage_FROM_SEARCH,
+			Source:     source,
 			SenderName: acc.TdApi.GetSenderName(ctx, p.SenderId),
 			Date:       timestamppb.New(time.Unix(int64(p.Date), 0)),
 			Text:       formattedText.Text,
@@ -164,6 +176,10 @@ func (t *TgRpcApi) SetVerdictsByLinks(ctx context.Context, acc *account.Account,
 		for _, l := range m.Links {
 			linkType, err := acc.TdApi.GetLinkType(ctx, l)
 			if err != nil {
+				if strings.Contains(err.Error(), "404 Not Found") {
+					t.log.Info("skip non-tg link", "link", l, "source", m.Link)
+					continue
+				}
 				t.log.Warn("unable to get link info", "link", l, "source", m.Link, "err", err)
 				continue
 			}
@@ -181,9 +197,13 @@ func (t *TgRpcApi) SetVerdictsByLinks(ctx context.Context, acc *account.Account,
 			}
 		}
 		if cntLinkToMessage == 0 {
-			m.Verdict = pbapi.FilteredMessage_OK_ONLY_CHANNEL_LINKS
+			if cntLinkToChat == 0 {
+				m.Verdict = pbapi.FilteredMessage_VERDICT_OK_NO_VALID_LINKS
+			} else {
+				m.Verdict = pbapi.FilteredMessage_VERDICT_OK_ONLY_CHANNEL_LINKS
+			}
 		} else {
-			m.Verdict = pbapi.FilteredMessage_FAIL_HAS_MESSAGE_LINKS
+			m.Verdict = pbapi.FilteredMessage_VERDICT_FAIL_HAS_MESSAGE_LINKS
 		}
 	}
 
@@ -193,18 +213,22 @@ func (t *TgRpcApi) SetVerdictsByLinks(ctx context.Context, acc *account.Account,
 func (t *TgRpcApi) GetExtraMessages(ctx context.Context, acc *account.Account, extraLinks map[string]bool) []*client.Message {
 	extraMessages := make([]*client.Message, 0, len(extraLinks))
 	for l, _ := range extraLinks {
-		_, m, err := acc.TdApi.GetLinkInfoResolved(ctx, l)
+		i, m, err := acc.TdApi.GetLinkInfoResolved(ctx, l)
 		if err != nil {
-			t.log.Warn("unable to get link info", "link", l, "err", err)
+			t.log.Warn("unable to get link info", "link", l, "info", i, "err", err)
 			continue
 		}
 		if me, ok := m.(error); ok {
-			t.log.Warn("unable to resolve link", "link", l, "err", me)
+			t.log.Warn("unable to resolve link", "link", l, "info", i, "err", me)
 			continue
 		}
 		mm, ok := m.(*client.Message)
 		if !ok {
-			t.log.Warn("unable to cast resolved message", "link", l, "m, m")
+			t.log.Warn("unable to cast resolved message", "link", "info", i, l, "m", m)
+			continue
+		}
+		if mm == nil {
+			t.log.Warn("casted message is still nil", "link", l, "info", i, "m", m)
 			continue
 		}
 
@@ -230,6 +254,8 @@ func (t *TgRpcApi) getLinks(content client.MessageContent) []string {
 	case client.ConstructorMessageAnimation:
 		msg := content.(*client.MessageAnimation)
 		caption = msg.Caption
+	case client.ConstructorMessageGiveaway:
+		return nil
 	default:
 		t.log.Warn("unknown content type", "type", cType)
 		return nil

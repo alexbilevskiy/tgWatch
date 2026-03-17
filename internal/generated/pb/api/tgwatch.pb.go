@@ -26,19 +26,22 @@ const (
 type FilteredMessage_Source int32
 
 const (
-	FilteredMessage_FROM_SEARCH FilteredMessage_Source = 0
-	FilteredMessage_LINK_CRAWL  FilteredMessage_Source = 1
+	FilteredMessage_SOURCE_UNKNOWN     FilteredMessage_Source = 0
+	FilteredMessage_SOURCE_FROM_SEARCH FilteredMessage_Source = 1
+	FilteredMessage_SOURCE_LINK_CRAWL  FilteredMessage_Source = 2
 )
 
 // Enum value maps for FilteredMessage_Source.
 var (
 	FilteredMessage_Source_name = map[int32]string{
-		0: "FROM_SEARCH",
-		1: "LINK_CRAWL",
+		0: "SOURCE_UNKNOWN",
+		1: "SOURCE_FROM_SEARCH",
+		2: "SOURCE_LINK_CRAWL",
 	}
 	FilteredMessage_Source_value = map[string]int32{
-		"FROM_SEARCH": 0,
-		"LINK_CRAWL":  1,
+		"SOURCE_UNKNOWN":     0,
+		"SOURCE_FROM_SEARCH": 1,
+		"SOURCE_LINK_CRAWL":  2,
 	}
 )
 
@@ -72,19 +75,25 @@ func (FilteredMessage_Source) EnumDescriptor() ([]byte, []int) {
 type FilteredMessage_Verdict int32
 
 const (
-	FilteredMessage_OK_ONLY_CHANNEL_LINKS  FilteredMessage_Verdict = 0
-	FilteredMessage_FAIL_HAS_MESSAGE_LINKS FilteredMessage_Verdict = 1
+	FilteredMessage_VERDICT_UNKNOWN                FilteredMessage_Verdict = 0
+	FilteredMessage_VERDICT_OK_ONLY_CHANNEL_LINKS  FilteredMessage_Verdict = 1
+	FilteredMessage_VERDICT_FAIL_HAS_MESSAGE_LINKS FilteredMessage_Verdict = 2
+	FilteredMessage_VERDICT_OK_NO_VALID_LINKS      FilteredMessage_Verdict = 3
 )
 
 // Enum value maps for FilteredMessage_Verdict.
 var (
 	FilteredMessage_Verdict_name = map[int32]string{
-		0: "OK_ONLY_CHANNEL_LINKS",
-		1: "FAIL_HAS_MESSAGE_LINKS",
+		0: "VERDICT_UNKNOWN",
+		1: "VERDICT_OK_ONLY_CHANNEL_LINKS",
+		2: "VERDICT_FAIL_HAS_MESSAGE_LINKS",
+		3: "VERDICT_OK_NO_VALID_LINKS",
 	}
 	FilteredMessage_Verdict_value = map[string]int32{
-		"OK_ONLY_CHANNEL_LINKS":  0,
-		"FAIL_HAS_MESSAGE_LINKS": 1,
+		"VERDICT_UNKNOWN":                0,
+		"VERDICT_OK_ONLY_CHANNEL_LINKS":  1,
+		"VERDICT_FAIL_HAS_MESSAGE_LINKS": 2,
+		"VERDICT_OK_NO_VALID_LINKS":      3,
 	}
 )
 
@@ -558,14 +567,14 @@ func (x *FilteredMessage) GetSource() FilteredMessage_Source {
 	if x != nil {
 		return x.Source
 	}
-	return FilteredMessage_FROM_SEARCH
+	return FilteredMessage_SOURCE_UNKNOWN
 }
 
 func (x *FilteredMessage) GetVerdict() FilteredMessage_Verdict {
 	if x != nil {
 		return x.Verdict
 	}
-	return FilteredMessage_OK_ONLY_CHANNEL_LINKS
+	return FilteredMessage_VERDICT_UNKNOWN
 }
 
 func (x *FilteredMessage) GetSenderName() string {
@@ -630,7 +639,7 @@ const file_api_tgwatch_proto_rawDesc = "" +
 	"\vsender_name\x18\x04 \x01(\tR\n" +
 	"senderName\x12.\n" +
 	"\x04date\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\x04date\x12\x12\n" +
-	"\x04text\x18\x06 \x01(\tR\x04text\"\xd2\x03\n" +
+	"\x04text\x18\x06 \x01(\tR\x04text\"\xb9\x04\n" +
 	"\x0fFilteredMessage\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x17\n" +
 	"\achat_id\x18\x02 \x01(\x03R\x06chatId\x12\x12\n" +
@@ -643,14 +652,16 @@ const file_api_tgwatch_proto_rawDesc = "" +
 	"\x04text\x18\b \x01(\tR\x04text\x12\x14\n" +
 	"\x05links\x18\t \x03(\tR\x05links\x12%\n" +
 	"\x0efiltered_links\x18\n" +
-	" \x03(\tR\rfilteredLinks\")\n" +
-	"\x06Source\x12\x0f\n" +
-	"\vFROM_SEARCH\x10\x00\x12\x0e\n" +
-	"\n" +
-	"LINK_CRAWL\x10\x01\"@\n" +
-	"\aVerdict\x12\x19\n" +
-	"\x15OK_ONLY_CHANNEL_LINKS\x10\x00\x12\x1a\n" +
-	"\x16FAIL_HAS_MESSAGE_LINKS\x10\x012\x9e\x02\n" +
+	" \x03(\tR\rfilteredLinks\"K\n" +
+	"\x06Source\x12\x12\n" +
+	"\x0eSOURCE_UNKNOWN\x10\x00\x12\x16\n" +
+	"\x12SOURCE_FROM_SEARCH\x10\x01\x12\x15\n" +
+	"\x11SOURCE_LINK_CRAWL\x10\x02\"\x84\x01\n" +
+	"\aVerdict\x12\x13\n" +
+	"\x0fVERDICT_UNKNOWN\x10\x00\x12!\n" +
+	"\x1dVERDICT_OK_ONLY_CHANNEL_LINKS\x10\x01\x12\"\n" +
+	"\x1eVERDICT_FAIL_HAS_MESSAGE_LINKS\x10\x02\x12\x1d\n" +
+	"\x19VERDICT_OK_NO_VALID_LINKS\x10\x032\x9e\x02\n" +
 	"\x0eTgwatchService\x128\n" +
 	"\x05GetMe\x12\x15.tgwatch.GetMeRequest\x1a\x16.tgwatch.GetMeResponse\"\x00\x12\\\n" +
 	"\x11SearchPublicPosts\x12!.tgwatch.SearchPublicPostsRequest\x1a\".tgwatch.SearchPublicPostsResponse\"\x00\x12t\n" +

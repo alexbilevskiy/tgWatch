@@ -54,12 +54,15 @@ message Message {
 
 message FilteredMessage {
   enum Source {
-    FROM_SEARCH = 0;
-    LINK_CRAWL = 1;
+    SOURCE_UNKNOWN = 0;
+    SOURCE_FROM_SEARCH = 1;
+    SOURCE_LINK_CRAWL = 2;
   }
   enum Verdict {
-    OK_ONLY_CHANNEL_LINKS = 0;
-    FAIL_HAS_MESSAGE_LINKS = 1;
+    VERDICT_UNKNOWN = 0;
+    VERDICT_OK_ONLY_CHANNEL_LINKS = 1;
+    VERDICT_FAIL_HAS_MESSAGE_LINKS = 2;
+    VERDICT_OK_NO_VALID_LINKS = 3;
   }
 
   int64 id = 1;
