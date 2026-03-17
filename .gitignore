@@ -5,3 +5,4 @@ test
 tgWatch
 test.txt
 *.patch
+vendor/

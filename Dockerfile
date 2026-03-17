@@ -32,7 +32,8 @@ COPY --from=tdlib /td/tdlib/ /td/tdlib/
 
 COPY go.mod .
 COPY go.sum .
-RUN go mod download -x
+#RUN go mod download -x
+COPY vendor .
 
 COPY . .
 RUN CGO_CFLAGS="-I/td/tdlib/include" CGO_LDFLAGS="-L/td/tdlib/lib" go build -o tgwatch cmd/tgwatch/main.go
