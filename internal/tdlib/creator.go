@@ -81,8 +81,11 @@ func (c *AccountCreator) RunAccountCreationFlow(phone string) {
 		var err error
 		var opts []client.Option
 		if c.cfg.ProxyHost != "" {
+			c.log.Info("using proxy: %s:%s", c.cfg.ProxyHost, c.cfg.ProxyPort)
 			proxyReq := client.AddProxyRequest{Type: &client.ProxyTypeSocks5{Username: c.cfg.ProxyUser, Password: c.cfg.ProxyPass}, Port: c.cfg.ProxyPort, Server: c.cfg.ProxyHost, Enable: true}
 			opts = append(opts, client.WithProxy(&proxyReq))
+		} else {
+			c.log.Info("not using proxy")
 		}
 		tdlibClientLocal, err = client.NewClient(c.Authorizer, opts...)
 		if err != nil {
