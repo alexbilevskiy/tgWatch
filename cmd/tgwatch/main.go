@@ -7,6 +7,8 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/joho/godotenv"
+
 	"github.com/alexbilevskiy/tgwatch/internal/account"
 	"github.com/alexbilevskiy/tgwatch/internal/config"
 	"github.com/alexbilevskiy/tgwatch/internal/db"
@@ -17,6 +19,8 @@ import (
 func main() {
 	baseCtx := context.Background()
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+
+	_ = godotenv.Load()
 
 	cfg, err := config.InitConfiguration()
 	if err != nil {

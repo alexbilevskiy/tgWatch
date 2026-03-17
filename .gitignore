@@ -6,3 +6,4 @@ tgWatch
 test.txt
 *.patch
 vendor/
+.env
