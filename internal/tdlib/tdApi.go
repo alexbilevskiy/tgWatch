@@ -71,21 +71,21 @@ func (t *TdApi) RunTdlib(ctx context.Context) (*client.User, error) {
 	_, _ = client.SetLogVerbosityLevel(&client.SetLogVerbosityLevelRequest{
 		NewVerbosityLevel: 1,
 	})
-	client.WithFallbackTimeout(60)
 
 	var opts []client.Option
 	if t.cfg.ProxyHost != "" {
-		t.log.Info("using proxy: %s:%s", t.cfg.ProxyHost, t.cfg.ProxyPort)
+		t.log.Info("using proxy", "host", t.cfg.ProxyHost, "port", t.cfg.ProxyPort)
 		proxyReq := client.AddProxyRequest{Type: &client.ProxyTypeSocks5{Username: t.cfg.ProxyUser, Password: t.cfg.ProxyPass}, Port: t.cfg.ProxyPort, Server: t.cfg.ProxyHost, Enable: true}
 		opts = append(opts, client.WithProxy(&proxyReq))
 	} else {
 		t.log.Info("not using proxy")
 	}
-
-
-	tdlibClient, err := client.NewClient(authorizer, client.WithResultHandler(client.NewCallbackResultHandler(func(result client.Type) {
+	opts = append(opts, client.WithResultHandler(client.NewCallbackResultHandler(func(result client.Type) {
 		go t.UpdatesCallback(ctx, result)
 	})))
+	opts = append(opts, client.WithFallbackTimeout(60))
+
+	tdlibClient, err := client.NewClient(authorizer, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("create tdlib client: %w", err)
 	}
