@@ -83,7 +83,7 @@ func (t *TdApi) RunTdlib(ctx context.Context) (*client.User, error) {
 	opts = append(opts, client.WithResultHandler(client.NewCallbackResultHandler(func(result client.Type) {
 		go t.UpdatesCallback(ctx, result)
 	})))
-	opts = append(opts, client.WithFallbackTimeout(60))
+	opts = append(opts, client.WithFallbackTimeout(60*time.Second))
 
 	tdlibClient, err := client.NewClient(authorizer, opts...)
 	if err != nil {
