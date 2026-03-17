@@ -14,6 +14,10 @@ type Config struct {
 	Mongo     map[string]string `json:"Mongo"`
 	Debug     bool              `json:"Debug"`
 	TDataDir  string            `json:"TDataDir"`
+	ProxyPort int32             `json:"ProxyPort"`
+	ProxyHost string            `json:"ProxyHost"`
+	ProxyUser string            `json:"ProxyUser"`
+	ProxyPass string            `json:"ProxyPass"`
 }
 
 func InitConfiguration() (*Config, error) {

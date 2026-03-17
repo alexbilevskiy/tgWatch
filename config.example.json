@@ -7,5 +7,9 @@
     "db": "tg"
   },
   "TDataDir": ".tdlib",
-  "Debug": false
+  "Debug": false,
+  "ProxyPort": 1080,
+  "ProxyHost": "localhost",
+  "ProxyUser": "user",
+  "ProxyPass": "pass"
 }

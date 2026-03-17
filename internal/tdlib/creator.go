@@ -3,8 +3,6 @@ package tdlib
 import (
 	"context"
 	"log/slog"
-	"os"
-	"strconv"
 
 	"github.com/zelenin/go-tdlib/client"
 
@@ -81,9 +79,12 @@ func (c *AccountCreator) RunAccountCreationFlow(phone string) {
 		c.log.Info("create authorizing client instance", "phone", phone)
 
 		var err error
-		proxyport, _ := strconv.ParseInt(os.Getenv("PROXY_PORT"), 32, 10)
-		proxyReq := client.AddProxyRequest{Type: &client.ProxyTypeSocks5{Username: os.Getenv("PROXY_USER"), Password: os.Getenv("PROXY_PASS")}, Port: int32(proxyport), Server: os.Getenv("PROXY_HOST"), Enable: true}
-		tdlibClientLocal, err = client.NewClient(c.Authorizer, client.WithProxy(&proxyReq))
+		var opts []client.Option
+		if c.cfg.ProxyHost != "" {
+			proxyReq := client.AddProxyRequest{Type: &client.ProxyTypeSocks5{Username: c.cfg.ProxyUser, Password: c.cfg.ProxyPass}, Port: c.cfg.ProxyPort, Server: c.cfg.ProxyHost, Enable: true}
+			opts = append(opts, client.WithProxy(&proxyReq))
+		}
+		tdlibClientLocal, err = client.NewClient(c.Authorizer, opts...)
 		if err != nil {
 			c.log.Error("NewClient", "phone", phone, "error", err)
 			c.CurrentAuthorizingAcc.Status = consts.AccStatusError
