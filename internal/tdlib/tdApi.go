@@ -73,9 +73,13 @@ func (t *TdApi) RunTdlib(ctx context.Context) (*client.User, error) {
 	})
 
 	var opts []client.Option
-	if t.cfg.ProxyHost != "" {
-		t.log.Info("using proxy", "host", t.cfg.ProxyHost, "port", t.cfg.ProxyPort)
+	if t.cfg.ProxyUser != "" {
+		t.log.Info("using socks proxy", "host", t.cfg.ProxyHost, "port", t.cfg.ProxyPort)
 		proxyReq := client.AddProxyRequest{Type: &client.ProxyTypeSocks5{Username: t.cfg.ProxyUser, Password: t.cfg.ProxyPass}, Port: t.cfg.ProxyPort, Server: t.cfg.ProxyHost, Enable: true}
+		opts = append(opts, client.WithProxy(&proxyReq))
+	} else if t.cfg.ProxySecret != "" {
+		t.log.Info("using mtproto proxy", "host", t.cfg.ProxyHost, "port", t.cfg.ProxyPort)
+		proxyReq := client.AddProxyRequest{Type: &client.ProxyTypeMtproto{Secret: t.cfg.ProxySecret}, Port: t.cfg.ProxyPort, Server: t.cfg.ProxyHost, Enable: true}
 		opts = append(opts, client.WithProxy(&proxyReq))
 	} else {
 		t.log.Info("not using proxy")

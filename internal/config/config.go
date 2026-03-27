@@ -8,16 +8,17 @@ import (
 )
 
 type Config struct {
-	ApiId     int32             `json:"ApiId"`
-	ApiHash   string            `json:"ApiHash"`
-	WebListen string            `json:"WebListen"`
-	Mongo     map[string]string `json:"Mongo"`
-	Debug     bool              `json:"Debug"`
-	TDataDir  string            `json:"TDataDir"`
-	ProxyPort int32             `json:"ProxyPort"`
-	ProxyHost string            `json:"ProxyHost"`
-	ProxyUser string            `json:"ProxyUser"`
-	ProxyPass string            `json:"ProxyPass"`
+	ApiId       int32             `json:"ApiId"`
+	ApiHash     string            `json:"ApiHash"`
+	WebListen   string            `json:"WebListen"`
+	Mongo       map[string]string `json:"Mongo"`
+	Debug       bool              `json:"Debug"`
+	TDataDir    string            `json:"TDataDir"`
+	ProxyPort   int32             `json:"ProxyPort"`
+	ProxyHost   string            `json:"ProxyHost"`
+	ProxyUser   string            `json:"ProxyUser"`
+	ProxyPass   string            `json:"ProxyPass"`
+	ProxySecret string            `json:"ProxySecret"`
 }
 
 func InitConfiguration() (*Config, error) {
