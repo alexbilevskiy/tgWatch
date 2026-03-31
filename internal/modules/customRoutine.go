@@ -39,7 +39,7 @@ func sendTgNotification(ctx context.Context, acc int64, tdlibClient *client.Clie
 	gcReq := client.GetChatRequest{ChatId: myUserId}
 	_, err := tdlibClient.GetChat(ctx, &gcReq)
 	if err != nil {
-		if err.Error() != "404 Not Found" {
+		if err.Error() != "404 Not Found" && err.Error() != "400 Chat not found" {
 			fmt.Printf("Failed to get chat %d (%s), stopping\n", myUserId, err.Error())
 			return
 		}
