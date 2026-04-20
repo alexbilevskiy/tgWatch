@@ -183,7 +183,6 @@ func (t *TdApi) UpdatesCallback(ctx context.Context, update client.Type) {
 			chatName := t.GetChatName(ctx, upd.ChatId)
 			t.log.Info("message auto-delete time updated", "chat_id", upd.ChatId, "name", chatName, "value", upd.MessageAutoDeleteTime)
 
-
 		default:
 			t.log.Info("unknown update", "type", typ, "value", update)
 		}

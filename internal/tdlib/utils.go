@@ -64,3 +64,18 @@ func LoadOptionsList() error {
 
 	return nil
 }
+
+func buildProxyOption(cfg *config.Config) client.Option {
+	if cfg.ProxyUser != "" {
+		proxy := client.Proxy{Type: &client.ProxyTypeSocks5{Username: cfg.ProxyUser, Password: cfg.ProxyPass}, Server: cfg.ProxyHost, Port: cfg.ProxyPort}
+		proxyReq := client.AddProxyRequest{Proxy: &proxy, Enable: true}
+		return client.WithProxy(&proxyReq)
+	} else if cfg.ProxySecret != "" {
+		proxy := client.Proxy{Type: &client.ProxyTypeMtproto{Secret: cfg.ProxySecret}, Server: cfg.ProxyHost, Port: cfg.ProxyPort}
+		proxyReq := client.AddProxyRequest{Proxy: &proxy, Enable: true}
+		return client.WithProxy(&proxyReq)
+	} else {
+		return nil
+	}
+
+}

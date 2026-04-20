@@ -9,7 +9,7 @@ RUN apt-get install -y git cmake build-essential gperf libssl-dev zlib1g-dev
 # or with clang also
 #RUN apt-get install -y clang libc++-dev libc++abi-dev
 
-RUN git clone https://github.com/tdlib/td.git && cd td && git checkout cb863c1600082404428f1a84e407b866b9d412a8
+RUN git clone https://github.com/tdlib/td.git && cd td && git checkout 8921c22f0f85b3cb0b56303f9cba81ba8549f4e8
 RUN mkdir td/build
 
 WORKDIR td/build

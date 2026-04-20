@@ -80,10 +80,10 @@ func (c *AccountCreator) RunAccountCreationFlow(phone string) {
 
 		var err error
 		var opts []client.Option
-		if c.cfg.ProxyHost != "" {
-			c.log.Info("using proxy", "host", c.cfg.ProxyHost, "port", c.cfg.ProxyPort)
-			proxyReq := client.AddProxyRequest{Type: &client.ProxyTypeSocks5{Username: c.cfg.ProxyUser, Password: c.cfg.ProxyPass}, Port: c.cfg.ProxyPort, Server: c.cfg.ProxyHost, Enable: true}
-			opts = append(opts, client.WithProxy(&proxyReq))
+		proxyOpt := buildProxyOption(c.cfg)
+		if proxyOpt != nil {
+			c.log.Info("using proxy", "proxy", proxyOpt)
+			opts = append(opts, proxyOpt)
 		} else {
 			c.log.Info("not using proxy")
 		}

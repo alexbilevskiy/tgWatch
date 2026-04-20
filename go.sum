@@ -1,5 +1,5 @@
-github.com/alexbilevskiy/go-tdlib v0.4.2-0.20260126110543-2954e7af4231 h1:+nv7hTvb9Ac9fN9/LN14UqMa/s4cYK6bLuoUJW+geJY=
-github.com/alexbilevskiy/go-tdlib v0.4.2-0.20260126110543-2954e7af4231/go.mod h1:rnHzyHJ4Gn54sFVALInIgnCNDVKzhCuvEIvdBY+xyxU=
+github.com/alexbilevskiy/go-tdlib v0.4.2-0.20260420160604-26cef5dcf2be h1:aIhNPEzvVPzaM2ntOCN9wGCJWGgMmbuy2KcPZFxEbGU=
+github.com/alexbilevskiy/go-tdlib v0.4.2-0.20260420160604-26cef5dcf2be/go.mod h1:rnHzyHJ4Gn54sFVALInIgnCNDVKzhCuvEIvdBY+xyxU=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

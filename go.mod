@@ -4,7 +4,8 @@ go 1.24.0
 
 require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.5
-	github.com/zelenin/go-tdlib v0.0.0-00010101000000-000000000000
+	github.com/joho/godotenv v1.5.1
+	github.com/zelenin/go-tdlib v0.7.6
 	go.mongodb.org/mongo-driver v1.9.1
 	golang.org/x/net v0.47.0
 	google.golang.org/grpc v1.78.0
@@ -14,7 +15,6 @@ require (
 require (
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
-	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/stretchr/testify v1.10.0 // indirect
@@ -30,4 +30,4 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260120221211-b8f7ae30c516 // indirect
 )
 
-replace github.com/zelenin/go-tdlib => github.com/alexbilevskiy/go-tdlib v0.4.2-0.20260126110543-2954e7af4231
+replace github.com/zelenin/go-tdlib => github.com/alexbilevskiy/go-tdlib v0.4.2-0.20260420160604-26cef5dcf2be
