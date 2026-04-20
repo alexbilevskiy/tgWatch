@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -514,9 +515,19 @@ func (wc *webController) processTgLink(w http.ResponseWriter, req *http.Request)
 	respStruct := struct {
 		T           string
 		SourceLink  string
+		ResultLink  string
 		LinkInfoRaw string
 		LinkDataRaw string
 	}{T: "Link info", SourceLink: link, LinkInfoRaw: string(helpers.JsonMarshalPretty(linkInfo)), LinkDataRaw: string(helpers.JsonMarshalPretty(LinkData))}
+	switch linkInfo.InternalLinkTypeConstructor() {
+	case client.ConstructorInternalLinkTypeMessage:
+		message, ok := LinkData.(*client.Message)
+		if ok {
+			respStruct.ResultLink = fmt.Sprintf("/m/%d/%d", message.ChatId, message.Id)
+		} else {
+			fmt.Printf("invalid message cast: %s\n", reflect.TypeOf(LinkData))
+		}
+	}
 
 	renderTemplates(req, w, respStruct, `templates/base.gohtml`, `templates/navbar.gohtml`, `templates/link_info.gohtml`)
 }

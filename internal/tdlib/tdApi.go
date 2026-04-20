@@ -183,21 +183,25 @@ func (t *TdApi) GetGroupsInCommon(ctx context.Context, userId int64) (*client.Ch
 
 func (t *TdApi) DownloadFile(ctx context.Context, id int32) (*client.File, error) {
 	req := client.DownloadFileRequest{FileId: id, Priority: 1, Synchronous: true}
+	t.log.Debug("DownloadFile start", "id", id, "req", req)
 	file, err := t.tdlibClient.DownloadFile(ctx, &req)
 	if err != nil {
 		return nil, fmt.Errorf("download file by id: %w", err)
 	}
+	t.log.Debug("DownloadFile done", "id", id, "resp", file)
 
 	return file, nil
 }
 
 func (t *TdApi) DownloadFileByRemoteId(ctx context.Context, id string) (*client.File, error) {
 	remoteFileReq := client.GetRemoteFileRequest{RemoteFileId: id}
+	t.log.Debug("GetRemoteFile start", "id", id)
 	remoteFile, err := t.tdlibClient.GetRemoteFile(ctx, &remoteFileReq)
 	if err != nil {
 
 		return nil, fmt.Errorf("download file by remote id: %w", err)
 	}
+	t.log.Debug("GetRemoteFile done", "id", id, "resp", remoteFile)
 
 	return t.DownloadFile(ctx, remoteFile.Id)
 }

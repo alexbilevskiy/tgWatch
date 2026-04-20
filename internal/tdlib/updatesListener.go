@@ -99,6 +99,12 @@ func (t *TdApi) UpdatesCallback(ctx context.Context, update client.Type) {
 		case client.ConstructorUpdateConnectionState:
 		case client.ConstructorUpdateChatAction:
 		case client.ConstructorUpdateFile:
+			upd := update.(*client.UpdateFile)
+			if upd.File.Local.IsDownloadingActive {
+				t.log.Info("file downloading", "bytes", upd.File.Local.DownloadedSize, "total", upd.File.ExpectedSize)
+			} else {
+				t.log.Info("file downloaded", "bytes", upd.File.Local.DownloadedSize, "path", upd.File.Local.Path)
+			}
 		case client.ConstructorUpdateChatAvailableReactions:
 
 		case client.ConstructorUpdateMessageSendSucceeded:
